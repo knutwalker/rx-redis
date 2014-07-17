@@ -1,14 +1,16 @@
 package rx.redis.api
 
+import scala.concurrent.Future
+
 import io.netty.buffer.ByteBuf
 import rx.lang.scala.Observable
 import rx.redis.resp.RespType
 
-trait Client {
-  def command(cmd: ByteBuf): Observable[RespType]
-  def command(cmd: Array[Byte]): Observable[RespType]
-  def command(cmd: String): Observable[RespType]
+trait Client[A] {
+  def command(cmd: ByteBuf): Observable[A]
+  def command(cmd: Array[Byte]): Observable[A]
+  def command(cmd: String): Observable[A]
 
-  def shutdown(): Unit
-  def await(): Unit
+  def shutdown(): Future[Unit]
+  def closeFuture: Future[Unit]
 }

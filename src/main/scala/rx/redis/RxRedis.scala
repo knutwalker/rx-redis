@@ -1,56 +1,61 @@
 package rx.redis
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import io.netty.buffer.ByteBuf
 import io.reactivex.netty.RxNetty
+import io.reactivex.netty.client.RxClient
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 import rx.redis.pipeline.Configurator
 import rx.redis.resp.RespType
-import rx.redis.util.atom._
+import rx.redis.util.observeAsFuture
 
 object RxRedis {
-  def apply(host: String, port: Int): api.Client = new RxRedis(host, port)
-}
-final class RxRedis private (host: String, port: Int) extends api.Client {
-
-  private val client =
-    RxNetty.newTcpClientBuilder(host, port)
+  def apply(host: String, port: Int): api.Client[RespType] = {
+    val client =
+      RxNetty.newTcpClientBuilder(host, port)
         .defaultTcpOptions()
         .withName("Redis")
         .pipelineConfigurator(new Configurator)
         .build()
+    new RxRedis(client)
+  }
+}
+final class RxRedis[A] private (client: RxClient[ByteBuf, A]) extends api.Client[A] {
 
   private val connect = toScalaObservable(client.connect().cache())
-  private val allResponses = connect.flatMap(_.getInput)
+  private val elementsInFlight = new AtomicInteger(0)
 
-  private val response = Atom(allResponses)
-  private def nextResponse() = {
-    response.swapAndReturn { r =>
-      (r.drop(1), r.take(1))
-    }
+  val responseStream = connect.flatMap(_.getInput)
+
+  private def nextResponse(n: Int = 1) = {
+    val inFlight = elementsInFlight.getAndIncrement
+    responseStream.drop(inFlight).take(n)
+      .doOnCompleted(elementsInFlight.decrementAndGet())
   }
 
-  def command(cmd: ByteBuf): Observable[RespType] = {
+  def command(cmd: ByteBuf): Observable[A] = {
     connect.foreach(_.writeAndFlush(cmd))
     nextResponse()
   }
 
-  def command(cmd: Array[Byte]): Observable[RespType] = {
+  def command(cmd: Array[Byte]): Observable[A] = {
     connect.foreach(_.writeBytesAndFlush(cmd))
     nextResponse()
   }
 
-  def command(cmd: String): Observable[RespType] = {
+  def command(cmd: String): Observable[A] = {
     connect.foreach(_.writeStringAndFlush(cmd))
     nextResponse()
   }
 
   def shutdown() = {
-    connect.foreach(_.close(true))
+    val closeObs = connect flatMap (_.close(true))
     client.shutdown()
+    observeAsFuture(toScalaObservable(closeObs))
   }
 
-  def await() = {
-    allResponses.toBlocking.last
-  }
+  lazy val closeFuture =
+    observeAsFuture(responseStream)
 }

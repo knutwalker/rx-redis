@@ -1,5 +1,10 @@
 package rx.redis
 
+import rx.lang.scala.Observable
+
+import scala.concurrent.{Future, Promise}
+
+// all temp in here
 package object util {
   val command = (s: String) => {
     val sb = new StringBuilder
@@ -19,6 +24,11 @@ package object util {
     }
 
     sb.result()
+  }
 
+  def observeAsFuture[T](o: Observable[T]): Future[Unit] = {
+    val p = Promise[Unit]()
+    o.subscribe(new FutureObserver[T](p))
+    p.future
   }
 }
