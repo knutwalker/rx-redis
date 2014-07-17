@@ -1,8 +1,7 @@
 package rx.redis
 
-import rx.lang.scala.Observable
+import rx.redis.resp._
 
-import scala.concurrent.{Future, Promise}
 
 // all temp in here
 package object util {
@@ -26,9 +25,15 @@ package object util {
     sb.result()
   }
 
-  def observeAsFuture[T](o: Observable[T]): Future[Unit] = {
-    val p = Promise[Unit]()
-    o.subscribe(new FutureObserver[T](p))
-    p.future
+  val respContent: (RespType) => String = {
+    case RespString(data) => data
+    case RespError(reason) => reason
+    case RespInteger(value: Long) => value.toString
+    case RespArray(elements) => elements.map(respContent).mkString("[", ", ", "]")
+    case NullString => "NULL"
+    case NullArray => "NULL"
+    case _ => "ERROR"
   }
+
+  val preview = respContent andThen (_.replaceAllLiterally("\r\n", "\\r\\n").take(30))
 }

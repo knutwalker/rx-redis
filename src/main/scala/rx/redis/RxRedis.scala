@@ -9,7 +9,7 @@ import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 import rx.redis.pipeline.Configurator
 import rx.redis.resp.RespType
-import rx.redis.util.observeAsFuture
+import rx.redis.util.observers.DiscardingObserver
 
 object RxRedis {
   def apply(host: String, port: Int): api.Client[RespType] = {
@@ -20,6 +20,10 @@ object RxRedis {
         .pipelineConfigurator(new Configurator)
         .build()
     new RxRedis(client)
+  }
+
+  def await[A](client: api.Client[A]): Unit = {
+    client.closedObservable.toBlocking.toList.lastOption
   }
 }
 final class RxRedis[A] private (client: RxClient[ByteBuf, A]) extends api.Client[A] {
@@ -51,11 +55,12 @@ final class RxRedis[A] private (client: RxClient[ByteBuf, A]) extends api.Client
   }
 
   def shutdown() = {
-    val closeObs = connect flatMap (_.close(true))
+    val closeObs = connect.flatMap(_.close(true)) map (_ => ())
+    closeObs.subscribe()
     client.shutdown()
-    observeAsFuture(toScalaObservable(closeObs))
+    closeObs
   }
 
-  lazy val closeFuture =
-    observeAsFuture(responseStream)
+  lazy val closedObservable =
+    DiscardingObserver(responseStream)
 }
