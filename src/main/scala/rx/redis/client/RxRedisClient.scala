@@ -8,7 +8,7 @@ import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
 import rx.redis.api
-import rx.redis.api.Write
+import rx.redis.api.Writes
 import rx.redis.resp.RespType
 import rx.redis.util.observers.DiscardingObserver
 
@@ -36,7 +36,7 @@ private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
     nextResponse()
   }
 
-  def command[B](cmd: B)(implicit B: Write[B]): Observable[RespType] = {
+  def command[B](cmd: B)(implicit B: Writes[B]): Observable[RespType] = {
     connection.writeAndFlush(cmd, B.contentTransformer)
     nextResponse()
   }

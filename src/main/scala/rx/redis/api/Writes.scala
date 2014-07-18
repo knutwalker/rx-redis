@@ -9,12 +9,12 @@ import io.reactivex.netty.channel.ContentTransformer
 
 
 @implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.api.Write[${A}] in order to send ${A} directly.")
-trait Write[A] {
+trait Writes[A] {
 
   def toBytes(value: A, allocator: ByteBufAllocator): ByteBuf
 
   def toBytes(value: A): ByteBuf =
-    toBytes(value, Write.unpooled)
+    toBytes(value, Writes.unpooled)
 
   lazy val contentTransformer: ContentTransformer[A] =
     new ContentTransformer[A] {
@@ -22,13 +22,13 @@ trait Write[A] {
     }
 }
 
-object Write {
+object Writes {
   final val unpooled = UnpooledByteBufAllocator.DEFAULT
   final val pooled = PooledByteBufAllocator.DEFAULT
 
-  @inline def apply[T](implicit T: Write[T]) = T
+  @inline def apply[T](implicit T: Writes[T]) = T
 
-  implicit object DefaultStringWrite extends Write[String] {
+  implicit object DefaultStringWrites$ extends Writes[String] {
     private final val charset = Charset.defaultCharset
 
     def toBytes(value: String, allocator: ByteBufAllocator): ByteBuf = {
@@ -37,7 +37,7 @@ object Write {
     }
   }
 
-  implicit object ByteArrayWrite extends Write[Array[Byte]] {
+  implicit object ByteArrayWrites$ extends Writes[Array[Byte]] {
     def toBytes(value: Array[Byte], allocator: ByteBufAllocator): ByteBuf = {
       allocator.buffer(value.length).writeBytes(value)
     }

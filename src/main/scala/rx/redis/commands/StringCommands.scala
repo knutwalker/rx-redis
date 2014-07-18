@@ -4,12 +4,12 @@ import java.nio.charset.Charset
 
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
-import rx.redis.api.Write
+import rx.redis.api.Writes
 
 
 case class Get(key: String)
 object Get {
-  implicit object GetWrite extends Write[Get] {
+  implicit object GetWrites extends Writes[Get] {
     private final val charset = Charset.defaultCharset
 
     def toBytes(value: Get, allocator: ByteBufAllocator): ByteBuf =
@@ -35,10 +35,10 @@ object Get {
 
 case class Set(key: String, value: ByteBuf)
 object Set {
-  def apply[A: Write](key: String, value: A): Set =
-    new Set(key, Write[A].toBytes(value))
+  def apply[A: Writes](key: String, value: A): Set =
+    new Set(key, Writes[A].toBytes(value))
 
-  implicit object SetWrite extends Write[Set] {
+  implicit object SetWrites extends Writes[Set] {
     private final val charset = Charset.defaultCharset
 
     def toBytes(value: Set, allocator: ByteBufAllocator): ByteBuf =
