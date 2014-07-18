@@ -1,17 +1,17 @@
 name := """rx-redis"""
 
-organization := """de.knutwalker"""
+organization in ThisBuild := """de.knutwalker"""
 
-version := "0.1-SNAPSHOT"
+version in ThisBuild := "0.1-SNAPSHOT"
 
-scalaVersion := "2.11.1"
+scalaVersion in ThisBuild := "2.11.1"
 
 libraryDependencies ++= List(
-  "org.scala-lang"        %  "scala-reflect"    % scalaVersion.value,
-  "com.codahale.metrics"  %  "metrics-core"     % "3.0.2",
   "com.netflix.rxnetty"   %  "rx-netty"         % "0.3.9",
   "com.netflix.rxjava"    %  "rxjava-scala"     % "0.19.1",
   "org.scalatest"        %%  "scalatest"        % "2.2.0" % "test"
 )
 
-Revolver.settings
+lazy val root = project.in(file("."))
+
+lazy val example = project.dependsOn(root)

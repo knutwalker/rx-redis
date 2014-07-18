@@ -1,9 +1,10 @@
-package rx.redis
+package com.example
 
+import rx.redis.RxRedis
 import rx.redis.util.{command, preview}
 
 
-object Test extends App {
+object Example extends App {
 
   val client = RxRedis("localhost", 6379)
 
@@ -44,10 +45,15 @@ object Test extends App {
 
   client.command(SERVER_INFO).foreach { r =>
     println(s"SERVER INFO: ${preview(r)}")
-    client.shutdown()
   }
 
   println("after SERVER INFO")
+
+  client.set("foo", "bar")
+  client.get("foo").foreach { r =>
+    println(s"GET foo: ${preview(r)}")
+    client.shutdown()
+  }
 
   RxRedis.await(client)
 
