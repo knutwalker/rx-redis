@@ -43,19 +43,19 @@ class RespSpec extends FunSuite with Inside {
   }
 
   test("parse bulk strings") {
-    compare("$6\r\nfoobar\r\n", RespString("foobar"))
+    compare("$6\r\nfoobar\r\n", RespBytes("foobar"))
   }
 
   test("allow new lines in bulk strings") {
-    compare("$8\r\nfoo\r\nbar\r\n", RespString("foo\r\nbar"))
+    compare("$8\r\nfoo\r\nbar\r\n", RespBytes("foo\r\nbar"))
   }
 
   test("parse multiple bulk strings") {
-    compare("$6\r\nfoobar\r\n$4\r\n1337\r\n", RespString("foobar"), RespString("1337"))
+    compare("$6\r\nfoobar\r\n$4\r\n1337\r\n", RespBytes("foobar"), RespBytes("1337"))
   }
 
   test("parse an empty string") {
-    compare("$0\r\n\r\n", RespString(""))
+    compare("$0\r\n\r\n", RespBytes(""))
   }
 
   test("parse the null string") {
@@ -63,7 +63,7 @@ class RespSpec extends FunSuite with Inside {
   }
 
   test("parse arrays") {
-    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(List(RespString("foo"), RespString("bar"))))
+    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(List(RespBytes("foo"), RespBytes("bar"))))
   }
 
   test("parse integer arrays") {
@@ -77,7 +77,7 @@ class RespSpec extends FunSuite with Inside {
         RespInteger(2),
         RespInteger(3),
         RespInteger(4),
-        RespString("foobar")
+        RespBytes("foobar")
       )))
   }
 

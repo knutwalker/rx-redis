@@ -132,7 +132,7 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   private def parseBulkString() = {
     val len = parseLen()
     if (len == -1) NullString
-    else readStringOfLen(len)(b => RespString(b.toString(Utf8)))
+    else readStringOfLen(len)(b => RespBytes(b))
   }
 
   private def parseArray() = {

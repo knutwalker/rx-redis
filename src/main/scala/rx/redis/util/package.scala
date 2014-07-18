@@ -30,6 +30,7 @@ package object util {
   val respContent: (RespType) => String = {
     case RespString(data) => data
     case RespError(reason) => reason
+    case RespBytes(bytes) => bytes.toString(Charset.defaultCharset)
     case RespInteger(value: Long) => value.toString
     case RespArray(elements) => elements.map(respContent).mkString("[", ", ", "]")
     case NullString => "NULL"
