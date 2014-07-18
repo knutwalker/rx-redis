@@ -105,7 +105,7 @@ class RespSpec extends FunSuite with Inside {
     )
   }
 
-  // bad path behavior
+  // sad path behavior
 
   test("missing CrLf for simple strings") {
     compare("+OK") {
