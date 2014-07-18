@@ -2,9 +2,8 @@ package rx.redis.client
 
 import io.netty.buffer.ByteBuf
 import io.reactivex.netty.client.RxClient
-import rx.functions.Func2
-import rx.lang.scala.JavaConversions.toScalaObservable
-import rx.lang.scala.Observable
+import rx.{Observable, Observer}
+import rx.functions.{Func1, Func2}
 import rx.subjects.{AsyncSubject, PublishSubject}
 
 import rx.redis.api
@@ -14,29 +13,29 @@ import rx.redis.util.observers.DiscardingObserver
 
 
 private[redis] object RxRedisClient {
-  final private class JoinFun[Req <: rx.Observer[Res], Res] extends Func2[Req, Res, Unit] {
-    def call(t1: Req, t2: Res): Unit = {
+  private object JoinFun extends Func2[Observer[RespType], RespType, Unit] {
+    def call(t1: Observer[RespType], t2: RespType): Unit = {
       t1.onNext(t2)
       t1.onCompleted()
     }
+  }
+  private object VoidToUnit extends Func1[Void, Unit] {
+    def call(t1: Void): Unit = ()
   }
 }
 private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
   extends api.Client
   with StringCommands {
-
-  type Req = rx.Observer[RespType]
-  type Res = RespType
+  import RxRedisClient._
 
   private val connect = client.connect()
-  // TODO: .cache() and flatMap all the time?
+  // TODO: cache() and flatMap all the time?
   private val connection = connect.toBlocking.first()
 
-  private val requestStream = PublishSubject.create[Req]()
+  private val requestStream = PublishSubject.create[Observer[RespType]]()
   private val responseStream =  connection.getInput
   private val requestResponseStream =
-    requestStream.zip[Res, Unit](responseStream, new RxRedisClient.JoinFun[Req, Res])
-  requestResponseStream.subscribe()
+    requestStream.zip[RespType, Unit](responseStream, JoinFun)
 
   protected def allocator = connection.getAllocator
 
@@ -58,12 +57,12 @@ private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
 
   def shutdown(): Observable[Unit] = {
     requestStream.onCompleted()
-    val closeObs = toScalaObservable(connection.close(true)).map(_ => ())
+    val closeObs = connection.close(true).map[Unit](VoidToUnit)
     closeObs.subscribe()
     client.shutdown()
     closeObs
   }
 
-  lazy val closedObservable: Observable[Unit] =
+  val closedObservable: Observable[Unit] =
     DiscardingObserver(requestResponseStream)
 }

@@ -1,6 +1,6 @@
 package rx.redis.client
 
-import rx.lang.scala.Observable
+import rx.Observable
 
 import rx.redis.api
 import rx.redis.api.Writes

@@ -1,6 +1,6 @@
 package rx.redis.api
 
-import rx.lang.scala.Observable
+import rx.Observable
 
 import rx.redis.resp.RespType
 

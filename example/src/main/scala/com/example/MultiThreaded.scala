@@ -1,5 +1,8 @@
 package com.example
 
+import rx.lang.scala.JavaConversions._
+import rx.lang.scala.Observable
+
 import rx.redis.api.{Client, Writes}
 import rx.redis.resp.{DataType, RespBytes, RespString, RespType}
 import rx.redis.{RxRedis, util}
@@ -11,7 +14,8 @@ object MultiThreaded extends App {
     private final var _incorrect = 0
     override def run(): Unit = {
       for (n <- 1 to total) {
-        client.command(command).toBlocking.foreach { r =>
+        val observable: Observable[RespType] = client.command(command)
+        observable.toBlocking.foreach { r =>
           if (r == expected) _correct +=1
           else _incorrect += 1
           f(r)

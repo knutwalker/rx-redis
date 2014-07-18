@@ -1,5 +1,8 @@
 package com.example
 
+import rx.lang.scala.JavaConversions._
+import rx.lang.scala.XJavaConversions._
+
 import rx.redis.RxRedis
 import rx.redis.util.{command, preview}
 

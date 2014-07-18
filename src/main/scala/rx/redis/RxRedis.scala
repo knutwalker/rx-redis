@@ -16,6 +16,6 @@ object RxRedis {
   }
 
   def await(client: api.Client): Unit = {
-    client.closedObservable.toBlocking.toList.lastOption
+    client.closedObservable.toBlocking.lastOrDefault(())
   }
 }
