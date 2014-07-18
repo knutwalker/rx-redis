@@ -54,32 +54,41 @@ object Parser {
 final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   import rx.redis.resp.Parser._
 
+  @inline private def notEnoughData() =
+    NotEnoughData(bb.resetReaderIndex())
+
+  @inline private def unknownType() =
+    ProtocolError(bb.resetReaderIndex(), typeChars)
+
+  @inline private def expected(expected: Byte) =
+    ProtocolError(bb, List(expected))
+
   @inline private def peek =
     bb.getByte(bb.readerIndex())
 
   @inline private def read(): Byte =
     bb.readByte()
 
-  @inline private def read(b: Byte): Boolean = {
-    val expected = peek == b
-    if (expected) read()
-    expected
-  }
-
-  @inline private def requireCrLf[T](ok: => RespType) = {
-    if (!read(Cr)) ProtocolError(bb, List(Cr))
-    else if (!read(Lf)) ProtocolError(bb, List(Lf))
-    else ok
-  }
-
   @inline private def requireLen(len: Int) =
     bb.isReadable(len)
 
-  @inline private def notEnoughData() =
-    NotEnoughData(bb.resetReaderIndex())
+  @inline private def read(b: Byte): Option[ProtocolError] = {
+    if (peek == b) {
+      read()
+      None
+    } else {
+      Some(expected(b))
+    }
+  }
 
-  @inline private def unknownType() =
-    ProtocolError(bb.resetReaderIndex(), typeChars)
+  @inline private def andRequireCrLf(value: RespType) =
+    read(Cr).orElse(read(Lf)).getOrElse(value)
+
+  @inline private def parseLen() =
+    parseInt()
+
+  @inline private def parseInteger() =
+    RespInteger(parseLong())
 
   @tailrec
   private def parseInt(n: Int, neg: Boolean): Int = {
@@ -103,36 +112,27 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   }
   private def parseLong(): Long = parseLong(0, neg = false)
 
-  @inline private def parseLen() =
-    parseInt()
-
-  @inline private def parseInteger() =
-    RespInteger(parseLong())
-
-  private def readStringOfLen(len: Int)(ct: String => DataType) = {
+  private def readStringOfLen(len: Int)(ct: ByteBuf => DataType) = {
     if (!requireLen(len)) notEnoughData()
-    else {
-      val slice = bb.readSlice(len)
-      requireCrLf(ct(slice.toString(Utf8)))
-    }
+    else andRequireCrLf(ct(bb.readBytes(len)))
   }
 
   private def parseSimpleString() = {
     val len = bb.bytesBefore(Cr)
     if (len == -1) notEnoughData()
-    else readStringOfLen(len)(RespString)
+    else readStringOfLen(len)(b => RespString(b.toString(Utf8)))
   }
 
   private def parseError() = {
     val len = bb.bytesBefore(Cr)
     if (len == -1) notEnoughData()
-    else readStringOfLen(len)(RespError)
+    else readStringOfLen(len)(b => RespError(b.toString(Utf8)))
   }
 
   private def parseBulkString() = {
     val len = parseLen()
     if (len == -1) NullString
-    else readStringOfLen(len)(RespString)
+    else readStringOfLen(len)(b => RespString(b.toString(Utf8)))
   }
 
   private def parseArray() = {
