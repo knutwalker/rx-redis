@@ -2,6 +2,7 @@ package rx.redis.api
 
 import io.netty.buffer.ByteBuf
 import rx.lang.scala.Observable
+
 import rx.redis.resp.RespType
 
 

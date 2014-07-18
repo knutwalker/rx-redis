@@ -5,7 +5,6 @@ import io.reactivex.netty.RxNetty
 import rx.redis.client.RxRedisClient
 import rx.redis.pipeline.Configurator
 
-
 object RxRedis {
   def apply(host: String, port: Int): api.Client = {
     val builder =

@@ -16,20 +16,20 @@ import java.util.concurrent.atomic.AtomicInteger
 private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
   extends api.Client with StringCommands {
 
-  private val connect = toScalaObservable(client.connect().cache())
-  private val connection = connect.toBlocking.head
-
   private val elementsInFlight = new AtomicInteger(0)
 
-  val responseStream = connection.getInput
+  private val connect = toScalaObservable(client.connect().cache())
+  private val connection = connect.toBlocking.head
+  private val responseStream = connection.getInput
 
-  def allocator = connection.getAllocator
+  protected def allocator = connection.getAllocator
 
   private def nextResponse(n: Int = 1) = {
     val inFlight = elementsInFlight.getAndIncrement
     responseStream.drop(inFlight).take(n)
       .doOnCompleted(elementsInFlight.decrementAndGet())
   }
+
 
   def command(cmd: ByteBuf): Observable[RespType] = {
     connection.writeAndFlush(cmd)
@@ -41,13 +41,13 @@ private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
     nextResponse()
   }
 
-  def shutdown() = {
+  def shutdown(): Observable[Unit] = {
     val closeObs = connect.flatMap(_.close(true)) map (_ => ())
     closeObs.subscribe()
     client.shutdown()
     closeObs
   }
 
-  lazy val closedObservable =
+  lazy val closedObservable: Observable[Unit] =
     DiscardingObserver(responseStream)
 }
