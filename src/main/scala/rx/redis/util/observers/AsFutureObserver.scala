@@ -13,7 +13,7 @@ object AsFutureObserver {
   }
 }
 
-class AsFutureObserver[A](p: Promise[Unit]) extends Observer[A] {
+final class AsFutureObserver[A](p: Promise[Unit]) extends Observer[A] {
   override def onCompleted(): Unit = p.success(())
   override def onError(error: Throwable): Unit = p.failure(error)
 }

@@ -55,6 +55,8 @@ object Example extends App {
     client.shutdown()
   }
 
+  println("before await")
+
   RxRedis.await(client)
 
   println("Client is closed")

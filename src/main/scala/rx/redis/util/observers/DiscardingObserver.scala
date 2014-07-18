@@ -11,7 +11,8 @@ object DiscardingObserver {
     s
   }
 }
-class DiscardingObserver[A](target: Observer[_]) extends Observer[A] {
+
+final class DiscardingObserver[A](target: Observer[_]) extends Observer[A] {
   override def onError(error: Throwable): Unit = target.onError(error)
   override def onCompleted(): Unit = target.onCompleted()
 }
