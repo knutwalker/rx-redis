@@ -8,7 +8,7 @@ import io.netty.buffer.{ByteBuf, ByteBufAllocator, PooledByteBufAllocator, Unpoo
 import io.reactivex.netty.channel.ContentTransformer
 
 
-@implicitNotFound("You have to implement the type class rx.redis.api.Write[$T] in order to send $T directly.")
+@implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.api.Write[${A}] in order to send ${A} directly.")
 trait Write[A] {
 
   def toBytes(value: A, allocator: ByteBufAllocator): ByteBuf

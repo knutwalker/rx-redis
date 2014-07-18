@@ -12,7 +12,7 @@ private[redis] trait StringCommands extends api.StringCommands { this: RxRedisCl
   def get(key: String): Observable[RespType] = {
     command(Get.GetWrite.toBytes(key, allocator))
   }
-  def set[A](key: String, value: A)(implicit A: Write[A]): Observable[RespType] = {
-    command(Set.SetWrite.toBytes(key, A.toBytes(value), allocator))
+  def set[A: Write](key: String, value: A): Observable[RespType] = {
+    command(Set.SetWrite.toBytes(key, Write[A].toBytes(value, allocator), allocator))
   }
 }

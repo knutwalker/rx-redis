@@ -6,5 +6,5 @@ import rx.redis.resp.RespType
 
 trait StringCommands {
   def get(key: String): Observable[RespType]
-  def set[A](key: String, value: A)(implicit A: Write[A]): Observable[RespType]
+  def set[A : Write](key: String, value: A): Observable[RespType]
 }
