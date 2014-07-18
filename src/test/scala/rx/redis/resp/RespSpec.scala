@@ -111,7 +111,7 @@ class RespSpec extends FunSuite with Inside {
     compare("+OK") {
       case NotEnoughData(bb) =>
         assert(bb.readableBytes() == bb.writerIndex())
-        assert(bb.toString(Parser.utf8) == "+OK")
+        assert(bb.toString(Parser.Utf8) == "+OK")
     }
   }
 
@@ -119,7 +119,7 @@ class RespSpec extends FunSuite with Inside {
     compare("$9\r\nfoobar\r\n") {
       case NotEnoughData(bb) =>
         assert(bb.readableBytes() == bb.writerIndex())
-        assert(bb.toString(Parser.utf8) == "$9\r\nfoobar\r\n")
+        assert(bb.toString(Parser.Utf8) == "$9\r\nfoobar\r\n")
     }
   }
 
@@ -135,7 +135,7 @@ class RespSpec extends FunSuite with Inside {
     compare("*3\r\n:1\r\n:2\r\n") {
       case NotEnoughData(bb) =>
         assert(bb.readableBytes() == bb.writerIndex())
-        assert(bb.toString(Parser.utf8) == "*3\r\n:1\r\n:2\r\n")
+        assert(bb.toString(Parser.Utf8) == "*3\r\n:1\r\n:2\r\n")
     }
   }
 

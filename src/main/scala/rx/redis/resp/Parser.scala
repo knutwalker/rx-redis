@@ -9,23 +9,25 @@ import scala.collection.mutable.ListBuffer
 import io.netty.buffer.{ByteBuf, Unpooled}
 
 object Parser {
-  private final val `+` = '+'.toByte
-  private final val `-` = '-'.toByte
-  private final val `:` = ':'.toByte
-  private final val `$` = '$'.toByte
-  private final val `*` = '*'.toByte
+  private final val Plus = '+'.toByte
+  private final val Minus = '-'.toByte
+  private final val Colon = ':'.toByte
+  private final val Dollar = '$'.toByte
+  private final val Asterisk = '*'.toByte
 
-  private final val `\r` = '\r'.toByte
-  private final val `\n` = '\n'.toByte
+  private final  val typeChars = List(Plus, Minus, Colon, Dollar, Asterisk)
+  
+  private final val Cr = '\r'.toByte
+  private final val Lf = '\n'.toByte
 
-  final val utf8 = StandardCharsets.UTF_8
+  final val Utf8 = StandardCharsets.UTF_8
 
   type ParserFn = () => RespType
   type RespHandler = RespType => Unit
 
   def apply(bb: ByteBuf): ParserFn = new Parser(bb)
   def apply(bytes: Array[Byte]): ParserFn = new Parser(Unpooled.copiedBuffer(bytes))
-  def apply(string: String): ParserFn = new Parser(Unpooled.copiedBuffer(string, utf8))
+  def apply(string: String): ParserFn = new Parser(Unpooled.copiedBuffer(string, Utf8))
 
   def foreach(bb: ByteBuf)(f: RespHandler): Option[NotEnoughData] = {
     val parser = Parser(bb)
@@ -38,7 +40,7 @@ object Parser {
     loop()
   }
   def foreach(bytes: Array[Byte])(f: RespHandler): Option[NotEnoughData] = foreach(Unpooled.copiedBuffer(bytes))(f)
-  def foreach(string: String)(f: RespHandler): Option[NotEnoughData] = foreach(Unpooled.copiedBuffer(string, utf8))(f)
+  def foreach(string: String)(f: RespHandler): Option[NotEnoughData] = foreach(Unpooled.copiedBuffer(string, Utf8))(f)
 
   def parseAll(bb: ByteBuf): immutable.Seq[RespType] = {
     val lb = new ListBuffer[RespType]()
@@ -46,7 +48,7 @@ object Parser {
     lb.result()
   }
   def parseAll(bytes: Array[Byte]): immutable.Seq[RespType] = parseAll(Unpooled.copiedBuffer(bytes))
-  def parseAll(string: String): immutable.Seq[RespType] = parseAll(Unpooled.copiedBuffer(string, utf8))
+  def parseAll(string: String): immutable.Seq[RespType] = parseAll(Unpooled.copiedBuffer(string, Utf8))
 }
 
 final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
@@ -65,8 +67,8 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   }
 
   @inline private def requireCrLf[T](ok: => RespType) = {
-    if (!read(`\r`)) ProtocolError(bb, List(`\r`))
-    else if (!read(`\n`)) ProtocolError(bb, List(`\n`))
+    if (!read(Cr)) ProtocolError(bb, List(Cr))
+    else if (!read(Lf)) ProtocolError(bb, List(Lf))
     else ok
   }
 
@@ -77,15 +79,14 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
     NotEnoughData(bb.resetReaderIndex())
 
   @inline private def unknownType() =
-    ProtocolError(bb.resetReaderIndex(),
-      List('+', '-', ':', '$', '*').map(_.toByte))
+    ProtocolError(bb.resetReaderIndex(), typeChars)
 
   @tailrec
   private def parseInt(n: Int, neg: Boolean): Int = {
     val current = read()
     current match {
-      case `\r` => read(); if (neg) -n else n
-      case `-` => parseInt(n, neg = true)
+      case Cr => read(); if (neg) -n else n
+      case Minus => parseInt(n, neg = true)
       case b => parseInt(n * 10 + (b - '0'), neg)
     }
   }
@@ -95,8 +96,8 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   private def parseLong(n: Long, neg: Boolean): Long = {
     val current = read()
     current match {
-      case `\r` => read(); if (neg) -n else n
-      case `-` => parseLong(n * -1, neg = true)
+      case Cr => read(); if (neg) -n else n
+      case Minus => parseLong(n * -1, neg = true)
       case b => parseLong(n * 10 + (b - '0'), neg)
     }
   }
@@ -112,18 +113,18 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
     if (!requireLen(len)) notEnoughData()
     else {
       val slice = bb.readSlice(len)
-      requireCrLf(ct(slice.toString(utf8)))
+      requireCrLf(ct(slice.toString(Utf8)))
     }
   }
 
   private def parseSimpleString() = {
-    val len = bb.bytesBefore(`\r`)
+    val len = bb.bytesBefore(Cr)
     if (len == -1) notEnoughData()
     else readStringOfLen(len)(RespString)
   }
 
   private def parseError() = {
-    val len = bb.bytesBefore(`\r`)
+    val len = bb.bytesBefore(Cr)
     if (len == -1) notEnoughData()
     else readStringOfLen(len)(RespError)
   }
@@ -155,12 +156,13 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   private def quickApply(): RespType = {
     if (!bb.isReadable(1)) notEnoughData()
     else {
-      read() match {
-        case `+` => parseSimpleString()
-        case `-` => parseError()
-        case `:` => parseInteger()
-        case `$` => parseBulkString()
-        case `*` => parseArray()
+      val firstByte = read()
+      firstByte match {
+        case Plus => parseSimpleString()
+        case Minus => parseError()
+        case Colon => parseInteger()
+        case Dollar => parseBulkString()
+        case Asterisk => parseArray()
         case _ => unknownType()
       }
     }
