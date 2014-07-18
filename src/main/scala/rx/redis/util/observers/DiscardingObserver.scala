@@ -1,7 +1,7 @@
 package rx.redis.util.observers
 
-import rx.lang.scala.{Observable, Observer}
 import rx.lang.scala.subjects.AsyncSubject
+import rx.lang.scala.{Observable, Observer}
 
 
 object DiscardingObserver {

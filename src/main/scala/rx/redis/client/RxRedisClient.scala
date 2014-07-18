@@ -1,7 +1,5 @@
 package rx.redis.client
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import io.netty.buffer.ByteBuf
 import io.reactivex.netty.client.RxClient
 import rx.lang.scala.JavaConversions._
@@ -11,6 +9,8 @@ import rx.redis.api
 import rx.redis.api.Writes
 import rx.redis.resp.RespType
 import rx.redis.util.observers.DiscardingObserver
+
+import java.util.concurrent.atomic.AtomicInteger
 
 
 private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])

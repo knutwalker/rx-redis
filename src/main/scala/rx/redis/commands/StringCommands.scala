@@ -1,10 +1,10 @@
 package rx.redis.commands
 
-import java.nio.charset.Charset
-
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
 import rx.redis.api.Writes
+
+import java.nio.charset.Charset
 
 
 case class Get(key: String)

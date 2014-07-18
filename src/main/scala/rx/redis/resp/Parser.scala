@@ -1,12 +1,12 @@
 package rx.redis.resp
 
-import java.nio.charset.StandardCharsets
+import io.netty.buffer.{ByteBuf, Unpooled}
 
+import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
 
-import io.netty.buffer.{ByteBuf, Unpooled}
 
 object Parser {
   private final val Plus = '+'.toByte
