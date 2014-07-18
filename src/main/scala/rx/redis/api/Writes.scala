@@ -22,12 +22,12 @@ trait Writes[A] {
 }
 
 object Writes {
-  final val unpooled = UnpooledByteBufAllocator.DEFAULT
-  final val pooled = PooledByteBufAllocator.DEFAULT
+  private[redis] final val unpooled = UnpooledByteBufAllocator.DEFAULT
+  private[redis] final val pooled = PooledByteBufAllocator.DEFAULT
 
   @inline def apply[T](implicit T: Writes[T]) = T
 
-  implicit object DefaultStringWrites$ extends Writes[String] {
+  implicit object DefaultStringWrites extends Writes[String] {
     private final val charset = Charset.defaultCharset
 
     def toBytes(value: String, allocator: ByteBufAllocator): ByteBuf = {
@@ -36,7 +36,7 @@ object Writes {
     }
   }
 
-  implicit object ByteArrayWrites$ extends Writes[Array[Byte]] {
+  implicit object ByteArrayWrites extends Writes[Array[Byte]] {
     def toBytes(value: Array[Byte], allocator: ByteBufAllocator): ByteBuf = {
       allocator.buffer(value.length).writeBytes(value)
     }

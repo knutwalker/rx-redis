@@ -15,6 +15,8 @@ object RxRedis {
     new RxRedisClient(builder.build())
   }
 
+  def connect(host: String, port: Int): api.Client = apply(host, port)
+
   def await(client: api.Client): Unit = {
     client.closedObservable.toBlocking.lastOrDefault(())
   }

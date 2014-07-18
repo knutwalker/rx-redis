@@ -52,7 +52,8 @@ object MultiThreaded extends App {
   threads foreach (_.start())
   threads foreach (_.join())
 
-  threads foreach { t =>
+  println("Erroneous threads: ")
+  threads filter (_.incorrect > 0) foreach { t =>
     println(s"Thread: ${t.getName}")
     println(s"  Correct: ${t.correct}")
     println(s"  Incorrect: ${t.incorrect}")
