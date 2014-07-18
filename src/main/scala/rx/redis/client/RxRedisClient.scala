@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf
 import io.reactivex.netty.client.RxClient
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
+
 import rx.redis.api
 import rx.redis.api.Write
 import rx.redis.resp.RespType

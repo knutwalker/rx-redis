@@ -1,6 +1,7 @@
 package rx.redis
 
 import io.reactivex.netty.RxNetty
+
 import rx.redis.client.RxRedisClient
 import rx.redis.pipeline.Configurator
 

@@ -1,9 +1,10 @@
 package rx.redis.resp
 
-import scala.annotation.{switch, tailrec}
+import java.nio.charset.StandardCharsets
+
+import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
-import java.nio.charset.StandardCharsets
 
 import io.netty.buffer.{ByteBuf, Unpooled}
 
@@ -72,10 +73,10 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   @inline private def requireLen(len: Int) =
     bb.isReadable(len)
 
-  private def notEnoughData() =
+  @inline private def notEnoughData() =
     NotEnoughData(bb.resetReaderIndex())
 
-  private def unknownType() =
+  @inline private def unknownType() =
     ProtocolError(bb.resetReaderIndex(),
       List('+', '-', ':', '$', '*').map(_.toByte))
 
@@ -154,8 +155,7 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   private def quickApply(): RespType = {
     if (!bb.isReadable(1)) notEnoughData()
     else {
-      val firstByte = read()
-      firstByte match {
+      read() match {
         case `+` => parseSimpleString()
         case `-` => parseError()
         case `:` => parseInteger()

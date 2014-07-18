@@ -2,10 +2,10 @@ package rx.redis.api
 
 import java.nio.charset.Charset
 
-import io.netty.buffer.{PooledByteBufAllocator, ByteBufAllocator, UnpooledByteBufAllocator, ByteBuf}
-import io.reactivex.netty.channel.ContentTransformer
-
 import scala.annotation.implicitNotFound
+
+import io.netty.buffer.{ByteBuf, ByteBufAllocator, PooledByteBufAllocator, UnpooledByteBufAllocator}
+import io.reactivex.netty.channel.ContentTransformer
 
 
 @implicitNotFound("You have to implement the type class rx.redis.api.Write[$T] in order to send $T directly.")

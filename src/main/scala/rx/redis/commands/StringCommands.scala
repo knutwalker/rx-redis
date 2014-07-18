@@ -3,6 +3,7 @@ package rx.redis.commands
 import java.nio.charset.Charset
 
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
+
 import rx.redis.api.Write
 
 

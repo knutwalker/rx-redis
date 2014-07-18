@@ -1,10 +1,12 @@
-package rx.redis.protocol
+package rx.redis
+package protocol
 
-import io.netty.buffer.{Unpooled, ByteBuf}
+import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
+
 import rx.redis.resp.Parser
 
-final class Decoder extends ChannelInboundHandlerAdapter {
+private[redis] final class Decoder extends ChannelInboundHandlerAdapter {
 
   private var incompleteBit: Option[ByteBuf] = None
 

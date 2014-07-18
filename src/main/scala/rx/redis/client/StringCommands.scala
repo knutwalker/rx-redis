@@ -1,6 +1,7 @@
 package rx.redis.client
 
 import rx.lang.scala.Observable
+
 import rx.redis.api
 import rx.redis.api.Write
 import rx.redis.commands.{Get, Set}
