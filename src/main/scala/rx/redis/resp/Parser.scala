@@ -25,6 +25,31 @@ object Parser {
   type ParserFn = () => RespType
   type RespHandler = RespType => Unit
 
+  private trait Num[@specialized(Int, Long) A] {
+    def times(a: A, b: A): A
+    def decShiftLeft(a: A, ones: Int): A
+    def zero: A
+    def one: A
+    def minusOne: A
+  }
+
+  implicit private object IntIsNum extends Num[Int] {
+    def times(a: Int, b: Int): Int = a * b
+    def decShiftLeft(a: Int, ones: Int): Int = (a * 10) + ones
+    val one: Int = 1
+    val minusOne: Int = -1
+    val zero: Int = 0
+  }
+
+  implicit private object LongIsNum extends Num[Long] {
+    def times(a: Long, b: Long): Long = a * b
+    def decShiftLeft(a: Long, ones: Int): Long = (a * 10) + ones
+    val one: Long = 1
+    val minusOne: Long = -1
+    val zero: Long = 0
+  }
+
+
   def apply(bb: ByteBuf): ParserFn = new Parser(bb)
   def apply(bytes: Array[Byte]): ParserFn = new Parser(Unpooled.copiedBuffer(bytes))
   def apply(string: String): ParserFn = new Parser(Unpooled.copiedBuffer(string, Utf8))
@@ -35,7 +60,10 @@ object Parser {
       if (!bb.isReadable) None
       else parser() match {
         case ned: NotEnoughData => Some(ned)
-        case x => f(x); loop()
+        case x => {
+          f(x)
+          loop()
+        }
       }
     loop()
   }
@@ -54,63 +82,61 @@ object Parser {
 final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
   import rx.redis.resp.Parser._
 
-  @inline private def notEnoughData() =
+  private def notEnoughData() =
     NotEnoughData(bb.resetReaderIndex())
 
-  @inline private def unknownType() =
+  private def unknownType() =
     ProtocolError(bb.resetReaderIndex(), typeChars)
 
-  @inline private def expected(expected: Byte) =
+  private def expected(expected: Byte) =
     ProtocolError(bb, List(expected))
 
-  @inline private def peek =
+  private def peek =
     bb.getByte(bb.readerIndex())
 
-  @inline private def read(): Byte =
+  private def read() =
     bb.readByte()
 
-  @inline private def requireLen(len: Int) =
+  private def skip() =
+    bb.readerIndex(bb.readerIndex() + 1)
+
+  private def requireLen(len: Int) =
     bb.isReadable(len)
 
-  @inline private def read(b: Byte): Option[ProtocolError] = {
-    if (peek == b) {
-      read()
+  private def read(b: Byte): Option[ErrorType] = {
+    if (!bb.isReadable) Some(notEnoughData())
+    else if (peek != b) Some(expected(b))
+    else {
+      skip()
       None
-    } else {
-      Some(expected(b))
     }
   }
 
-  @inline private def andRequireCrLf(value: RespType) =
+  private def andRequireCrLf(value: RespType) =
     read(Cr).orElse(read(Lf)).getOrElse(value)
 
-  @inline private def parseLen() =
-    parseInt()
+  private def parseLen() =
+    parseNum[Int]
 
-  @inline private def parseInteger() =
-    RespInteger(parseLong())
+  private def parseInteger() = parseNum[Long] match {
+    case Left(e) => e
+    case Right(l) => RespInteger(l)
+  }
 
   @tailrec
-  private def parseInt(n: Int, neg: Boolean): Int = {
-    val current = read()
-    current match {
-      case Cr => read(); if (neg) -n else n
-      case Minus => parseInt(n, neg = true)
-      case b => parseInt(n * 10 + (b - '0'), neg)
+  private def parseNum[@specialized(Int, Long) A](n: A, neg: A)(implicit A: Num[A]): Either[ErrorType, A] = {
+    if (!bb.isReadable) {
+      Left(notEnoughData())
+    } else {
+      val current = read()
+      current match {
+        case Cr => read(Lf).toLeft(A.times(n, neg))
+        case Minus => parseNum(n, A.minusOne)
+        case b => parseNum(A.decShiftLeft(n, b - '0'), neg)
+      }
     }
   }
-  private def parseInt(): Int = parseInt(0, neg = false)
-
-  @tailrec
-  private def parseLong(n: Long, neg: Boolean): Long = {
-    val current = read()
-    current match {
-      case Cr => read(); if (neg) -n else n
-      case Minus => parseLong(n * -1, neg = true)
-      case b => parseLong(n * 10 + (b - '0'), neg)
-    }
-  }
-  private def parseLong(): Long = parseLong(0, neg = false)
+  private def parseNum[@specialized(Int, Long) A](implicit A: Num[A]): Either[ErrorType, A] = parseNum(A.zero, A.one)
 
   private def readStringOfLen(len: Int)(ct: ByteBuf => DataType) = {
     if (!requireLen(len)) notEnoughData()
@@ -129,32 +155,36 @@ final class Parser private (bb: ByteBuf) extends Parser.ParserFn {
     else readStringOfLen(len)(b => RespError(b.toString(Utf8)))
   }
 
-  private def parseBulkString() = {
-    val len = parseLen()
-    if (len == -1) NullString
-    else readStringOfLen(len)(b => RespBytes(b))
+  private def parseBulkString() = parseLen() match {
+    case Left(ned) => ned
+    case Right(len) => {
+      if (len == -1) NullString
+      else readStringOfLen(len)(b => RespBytes(b))
+    }
   }
 
-  private def parseArray() = {
-    val size = parseLen()
-    if (size == -1) NullArray
-    else {
-      val lb = new ListBuffer[DataType]()
-      @tailrec def loop(n: Int): RespType = {
-        if (n == 0) RespArray(lb.result())
-        else quickApply() match {
-          case dt: DataType =>
-            lb += dt
-            loop(n - 1)
-          case et: ErrorType => et
+  private def parseArray() = parseLen() match {
+    case Left(ned) => ned
+    case Right(size) => {
+      if (size == -1) NullArray
+      else {
+        val lb = new ListBuffer[DataType]()
+        @tailrec def loop(n: Int): RespType = {
+          if (n == 0) RespArray(lb.result())
+          else quickApply() match {
+            case dt: DataType =>
+              lb += dt
+              loop(n - 1)
+            case et: ErrorType => et
+          }
         }
+        loop(size)
       }
-      loop(size)
     }
   }
 
   private def quickApply(): RespType = {
-    if (!bb.isReadable(1)) notEnoughData()
+    if (!bb.isReadable) notEnoughData()
     else {
       val firstByte = read()
       firstByte match {
