@@ -12,8 +12,6 @@ import rx.redis.api.Writes
 import rx.redis.resp.RespType
 import rx.redis.util.observers.DiscardingObserver
 
-import java.util.concurrent.locks.ReentrantLock
-
 
 private[redis] object RxRedisClient {
   final private class JoinFun[Req <: rx.Observer[Res], Res] extends Func2[Req, Res, Unit] {
@@ -22,24 +20,10 @@ private[redis] object RxRedisClient {
       t1.onCompleted()
     }
   }
-  private[redis] trait Locking {
-    private val _lock = new ReentrantLock(false)
-    protected def locked[A](f: => A): A = {
-      val lock = _lock
-      lock.lockInterruptibly()
-      try {
-        f
-      }
-      finally {
-        lock.unlock()
-      }
-    }
-  }
 }
 private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
   extends api.Client
-  with StringCommands
-  with RxRedisClient.Locking {
+  with StringCommands {
 
   type Req = rx.Observer[RespType]
   type Res = RespType
@@ -62,12 +46,12 @@ private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
     s
   }
 
-  def command(cmd: ByteBuf): Observable[RespType] = locked {
+  def command(cmd: ByteBuf): Observable[RespType] = synchronized {
     connection.writeAndFlush(cmd)
     createResponse()
   }
 
-  def command[B](cmd: B)(implicit B: Writes[B]): Observable[RespType] = locked {
+  def command[B](cmd: B)(implicit B: Writes[B]): Observable[RespType] = synchronized {
     connection.writeAndFlush(cmd, B.contentTransformer)
     createResponse()
   }
