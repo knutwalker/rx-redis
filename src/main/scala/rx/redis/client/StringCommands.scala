@@ -3,9 +3,9 @@ package rx.redis.client
 import rx.Observable
 
 import rx.redis.api
-import rx.redis.api.Writes
 import rx.redis.commands.{Get, Set}
 import rx.redis.resp.RespType
+import rx.redis.serialization.Writes
 
 
 private[redis] trait StringCommands extends api.StringCommands { this: RxRedisClient =>

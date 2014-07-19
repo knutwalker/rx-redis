@@ -2,7 +2,7 @@ package rx.redis.japi
 
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
-import rx.redis.api.Writes
+import rx.redis.serialization.Writes
 
 
 object DefaultWrites {

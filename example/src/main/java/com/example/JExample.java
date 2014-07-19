@@ -3,9 +3,9 @@ package com.example;
 import rx.Observer;
 import rx.redis.RxRedis;
 import rx.redis.api.Client;
-import rx.redis.api.Writes;
 import rx.redis.japi.DefaultWrites;
 import rx.redis.resp.RespType;
+import rx.redis.serialization.Writes;
 
 import java.util.Random;
 

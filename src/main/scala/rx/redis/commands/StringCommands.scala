@@ -1,22 +1,15 @@
 package rx.redis.commands
 
-import rx.redis.api.Writes
-import rx.redis.api.Writes._
+import rx.redis.serialization.Writes
 
 
 case class Get(key: String)
 object Get {
-  implicit object GetWrites extends ArgsWrites1[Get, String] {
-    val name: String = "GET"
-    def arg(value: Get): String = value.key
-  }
+  implicit val GetWrites: Writes[Get] = Writes.writes[Get]
 }
 
 
 case class Set[A: Writes](key: String, value: A)
 object Set {
-  implicit def setWrites[A: Writes] = new ArgsWrites2[Set[A], String, A] {
-    val name: String = "SET"
-    def args(value: Set[A]): (String, A) = (value.key, value.value)
-  }
+  implicit def SetWrites[A: Writes]: Writes[Set[A]] = Writes.writes[Set[A]]
 }

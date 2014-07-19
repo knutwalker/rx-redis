@@ -1,19 +1,13 @@
 package rx.redis.commands
 
-import rx.redis.api.Writes
-import rx.redis.api.Writes._
+import rx.redis.serialization.Writes
 
 
 case object Ping {
-  implicit object PingWrites extends ZeroArgsWrites[Ping.type] {
-    val name: String = "PING"
-  }
+  implicit val PingWrites = Writes.writes[Ping.type]
 }
 
 case class Echo[A: Writes](value: A)
 object Echo {
-  implicit def echoWrites[A: Writes] = new ArgsWrites1[Echo[A], A] {
-    def name: String = "ECHO"
-    def arg(value: Echo[A]): A = value.value
-  }
+  implicit def echoWrites[A: Writes]: Writes[Echo[A]] = Writes.writes[Echo[A]]
 }

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf
 import rx.Observable
 
 import rx.redis.resp.RespType
+import rx.redis.serialization.Writes
 
 
 trait Client
