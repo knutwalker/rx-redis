@@ -2,14 +2,13 @@ package rx.redis.client
 
 import io.netty.buffer.ByteBuf
 import io.reactivex.netty.client.RxClient
-import rx.{Observable, Observer}
 import rx.functions.{Func1, Func2}
 import rx.subjects.{AsyncSubject, PublishSubject}
+import rx.{Observable, Observer}
 
 import rx.redis.api
 import rx.redis.api.Writes
 import rx.redis.resp.RespType
-import rx.redis.util.observers.DiscardingObserver
 
 
 private[redis] object RxRedisClient {
@@ -22,11 +21,25 @@ private[redis] object RxRedisClient {
   private object VoidToUnit extends Func1[Void, Unit] {
     def call(t1: Void): Unit = ()
   }
+
+  private object DiscardingObserver {
+    def apply[A](o: Observable[Unit]): Observable[Unit] = {
+      val s = AsyncSubject.create[Unit]()
+      o.subscribe(new DiscardingObserver(s))
+      s
+    }
+  }
+
+  final class DiscardingObserver(target: Observer[_]) extends Observer[Unit] {
+    def onNext(t: Unit): Unit = ()
+    def onError(error: Throwable): Unit = target.onError(error)
+    def onCompleted(): Unit = target.onCompleted()
+  }
 }
 private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
   extends api.Client
   with Commands {
-  import RxRedisClient._
+  import rx.redis.client.RxRedisClient._
 
   private val connect = client.connect()
   // TODO: cache() and flatMap all the time?
