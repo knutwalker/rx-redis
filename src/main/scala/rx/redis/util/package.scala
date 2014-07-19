@@ -6,7 +6,7 @@ import rx.redis.resp._
 package object util {
 
   implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
-    def cmd(args: Any*): String = {
+    def resp(args: Any*): String = {
       val strings = ctx.parts.iterator
       val expressions = args.iterator
       val result = strings.

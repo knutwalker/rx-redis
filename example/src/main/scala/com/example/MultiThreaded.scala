@@ -34,15 +34,15 @@ object MultiThreaded extends App {
   val client = RxRedis("localhost", 6379)
 
   val rrs: List[(String, DataType)] = List(
-    cmd"PING" -> RespString("PONG"),
-    cmd"ECHO foo" -> RespBytes("foo"),
-    cmd"ECHO bar" -> RespBytes("bar"),
-    cmd"ECHO baz" -> RespBytes("baz"),
-    cmd"ECHO qux" -> RespBytes("qux"),
-    cmd"ECHO foobar" -> RespBytes("foobar"),
-    cmd"ECHO barbaz" -> RespBytes("barbaz"),
-    cmd"ECHO quxall" -> RespBytes("quxall"),
-    cmd"ECHO miau" -> RespBytes("miau")
+    resp"PING" -> RespString("PONG"),
+    resp"ECHO foo" -> RespBytes("foo"),
+    resp"ECHO bar" -> RespBytes("bar"),
+    resp"ECHO baz" -> RespBytes("baz"),
+    resp"ECHO qux" -> RespBytes("qux"),
+    resp"ECHO foobar" -> RespBytes("foobar"),
+    resp"ECHO barbaz" -> RespBytes("barbaz"),
+    resp"ECHO quxall" -> RespBytes("quxall"),
+    resp"ECHO miau" -> RespBytes("miau")
   )
 
   val repetitions = args(0).toInt

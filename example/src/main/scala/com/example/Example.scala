@@ -11,12 +11,12 @@ object Example extends App {
 
   val client = RxRedis("localhost", 6379)
 
-  val PING = cmd"PING"
-  val INFO = cmd"INFO"
-  val CLIENT_LIST = cmd"CLIENT LIST"
+  val PING = resp"PING"
+  val INFO = resp"INFO"
+  val CLIENT_LIST = resp"CLIENT LIST"
 
   val infoPart = "server"
-  val SERVER_INFO = cmd"INFO $infoPart"
+  val SERVER_INFO = resp"INFO $infoPart"
 
   client.command(PING).toBlocking.foreach { r =>
     println(s"first PING : ${preview(r)}")
