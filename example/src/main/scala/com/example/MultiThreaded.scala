@@ -3,9 +3,11 @@ package com.example
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
-import rx.redis.api.{Client, Writes}
+import rx.redis.api.Client
 import rx.redis.resp.{DataType, RespBytes, RespString, RespType}
-import rx.redis.{RxRedis, util}
+import rx.redis.serialization.Writes
+import rx.redis.RxRedis
+import rx.redis.util._
 
 object MultiThreaded extends App {
 
@@ -30,22 +32,22 @@ object MultiThreaded extends App {
   val client = RxRedis("localhost", 6379)
 
   val rrs: List[(String, DataType)] = List(
-    util.command("PING") -> RespString("PONG"),
-    util.command("ECHO foo") -> RespBytes("foo"),
-    util.command("ECHO bar") -> RespBytes("bar"),
-    util.command("ECHO baz") -> RespBytes("baz"),
-    util.command("ECHO qux") -> RespBytes("qux"),
-    util.command("ECHO foobar") -> RespBytes("foobar"),
-    util.command("ECHO barbaz") -> RespBytes("barbaz"),
-    util.command("ECHO quxall") -> RespBytes("quxall"),
-    util.command("ECHO miau") -> RespBytes("miau")
+    cmd"PING" -> RespString("PONG"),
+    cmd"ECHO foo" -> RespBytes("foo"),
+    cmd"ECHO bar" -> RespBytes("bar"),
+    cmd"ECHO baz" -> RespBytes("baz"),
+    cmd"ECHO qux" -> RespBytes("qux"),
+    cmd"ECHO foobar" -> RespBytes("foobar"),
+    cmd"ECHO barbaz" -> RespBytes("barbaz"),
+    cmd"ECHO quxall" -> RespBytes("quxall"),
+    cmd"ECHO miau" -> RespBytes("miau")
   )
 
   val threadCount = rrs.size
 
   val threads = rrs map {
     case (cmd, res) => new MyThread(client, args(0).toInt, cmd, res, r => {
-      if (res != r) println(util.preview(r) + "  VS.  " + util.preview(res))
+      if (res != r) println(preview(r) + "  VS.  " + preview(res))
     })
   }
 

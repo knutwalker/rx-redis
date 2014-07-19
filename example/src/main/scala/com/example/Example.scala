@@ -4,17 +4,19 @@ import rx.lang.scala.JavaConversions._
 import rx.lang.scala.XJavaConversions._
 
 import rx.redis.RxRedis
-import rx.redis.util.{command, preview}
+import rx.redis.util._
 
 
 object Example extends App {
 
   val client = RxRedis("localhost", 6379)
 
-  val PING = command("PING")
-  val INFO = command("INFO")
-  val CLIENT_LIST = command("CLIENT LIST")
-  val SERVER_INFO = command("INFO SERVER")
+  val PING = cmd"PING"
+  val INFO = cmd"INFO"
+  val CLIENT_LIST = cmd"CLIENT LIST"
+
+  val infoPart = "server"
+  val SERVER_INFO = cmd"INFO $infoPart"
 
   client.command(PING).toBlocking.foreach { r =>
     println(s"first PING : ${preview(r)}")

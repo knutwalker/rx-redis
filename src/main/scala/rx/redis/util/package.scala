@@ -2,27 +2,25 @@ package rx.redis
 
 import rx.redis.resp._
 
-
-// all temp in here
+// some temp in here
 package object util {
-  val command = (s: String) => {
-    val sb = new StringBuilder
 
-    val items = s.split(' ')
+  implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
+    def cmd(args: Any*): String = {
+      val strings = ctx.parts.iterator
+      val expressions = args.iterator
+      val result = strings.
+        zipAll(expressions.map(_.toString), "", "").
+        map { case (a, b) => a + b }.
+        foldLeft("")(_ + _)
 
-    sb += '*'
-    sb ++= items.size.toString
-    sb ++= "\r\n"
-
-    for (item <- items) {
-    sb += '$'
-    sb ++= item.length.toString
-    sb ++= "\r\n"
-    sb ++= item
-    sb ++= "\r\n"
+      val items = result.split(' ')
+      val buf = new StringBuffer("*").append(items.size).append("\r\n")
+      for (item <- items) {
+        buf.append("$").append(item.size).append("\r\n").append(item).append("\r\n")
+      }
+      buf.toString
     }
-
-    sb.result()
   }
 
   val respContent: (RespType) => String = _.toString
