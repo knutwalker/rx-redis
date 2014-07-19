@@ -6,11 +6,11 @@ import rx.redis.resp._
 package object util {
 
   implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
-    def resp(args: Any*): String = {
+    def resp(args: String*): String = {
       val strings = ctx.parts.iterator
       val expressions = args.iterator
       val result = strings.
-        zipAll(expressions.map(_.toString), "", "").
+        zipAll(expressions, "", "").
         map { case (a, b) => a + b }.
         foldLeft("")(_ + _)
 
