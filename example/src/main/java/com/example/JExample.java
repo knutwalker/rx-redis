@@ -26,7 +26,8 @@ public final class JExample {
     client.set("foo2", msg("foo2"), stringWrites);
     client.set("foo3", msg("foo3"), stringWrites);
 
-    client.get("foo1")
+    client.ping()
+        .concatWith(client.get("foo1"))
         .concatWith(client.get("foo2"))
         .concatWith(client.get("foo3"))
         .subscribe(new Observer<RespType>() {

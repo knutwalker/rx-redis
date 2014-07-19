@@ -25,7 +25,7 @@ private[redis] object RxRedisClient {
 }
 private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
   extends api.Client
-  with StringCommands {
+  with Commands {
   import RxRedisClient._
 
   private val connect = client.connect()
@@ -50,7 +50,7 @@ private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
     createResponse()
   }
 
-  def command[B](cmd: B)(implicit B: Writes[B]): Observable[RespType] = synchronized {
+  def command[A](cmd: A)(implicit B: Writes[A]): Observable[RespType] = synchronized {
     connection.writeAndFlush(cmd, B.contentTransformer)
     createResponse()
   }
