@@ -11,6 +11,10 @@ libraryDependencies ++= List(
   "org.scalatest"        %%  "scalatest"        % "2.2.0" % "test"
 )
 
+initialCommands in console := """
+import rx.redis.RxRedis
+val client = RxRedis("localhost", 6379)"""
+
 lazy val root = project.in(file("."))
 
 lazy val example = project.dependsOn(root)

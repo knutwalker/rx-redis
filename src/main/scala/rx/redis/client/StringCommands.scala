@@ -10,9 +10,9 @@ import rx.redis.resp.RespType
 
 private[redis] trait StringCommands extends api.StringCommands { this: RxRedisClient =>
   def get(key: String): Observable[RespType] =
-    command(Get.GetWrites.toBytes(key, allocator))
+    command(Get(key))
 
   def set[A: Writes](key: String, value: A): Observable[RespType] =
-    command(Set.SetWrites.toBytes(key, Writes[A].toBytes(value, allocator), allocator))
+    command(Set(key, value))
 
 }

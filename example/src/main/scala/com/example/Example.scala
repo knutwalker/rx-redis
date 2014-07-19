@@ -52,10 +52,11 @@ object Example extends App {
 
   println("after SERVER INFO")
 
-  client.set("foo", "bar")
-  client.get("foo").foreach { r =>
+  val set = client.set("foo", "bar")
+  val get = client.get("foo")
+
+  set.merge(get).doOnCompleted(client.shutdown()) foreach { r =>
     println(s"GET foo: ${preview(r)}")
-    client.shutdown()
   }
 
   println("before await")
