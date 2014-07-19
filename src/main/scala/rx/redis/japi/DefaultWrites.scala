@@ -1,6 +1,6 @@
 package rx.redis.japi
 
-import io.netty.buffer.{ByteBufAllocator, ByteBuf}
+import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
 import rx.redis.api.Writes
 

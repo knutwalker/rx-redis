@@ -1,6 +1,6 @@
 package rx.redis.resp
 
-import io.netty.buffer.{ByteBufUtil, ByteBuf, Unpooled}
+import io.netty.buffer.{ByteBuf, ByteBufUtil, Unpooled}
 
 import java.nio.charset.Charset
 

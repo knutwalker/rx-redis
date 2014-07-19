@@ -3,10 +3,10 @@ package com.example
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
+import rx.redis.RxRedis
 import rx.redis.api.Client
 import rx.redis.resp.{DataType, RespBytes, RespString, RespType}
 import rx.redis.serialization.Writes
-import rx.redis.RxRedis
 import rx.redis.util._
 
 object MultiThreaded extends App {
@@ -25,8 +25,8 @@ object MultiThreaded extends App {
       }
     }
 
-    def incorrect = _incorrect
-    def correct = _correct
+    def incorrect: Int = _incorrect
+    def correct: Int = _correct
   }
 
   val client = RxRedis("localhost", 6379)

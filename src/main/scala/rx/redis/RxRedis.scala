@@ -3,7 +3,8 @@ package rx.redis
 import io.reactivex.netty.RxNetty
 
 import rx.redis.client.RxRedisClient
-import rx.redis.pipeline.Configurator
+import rx.redis.protocol.Configurator
+
 
 object RxRedis {
   def apply(host: String, port: Int): api.Client = {
