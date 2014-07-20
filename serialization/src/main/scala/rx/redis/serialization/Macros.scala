@@ -1,6 +1,5 @@
 package rx.redis.serialization
 
-import rx.redis.serialization.Writes.MWrites
 import rx.redis.util.Utf8
 
 import java.util.Locale
@@ -11,10 +10,13 @@ import scala.reflect.macros.blackbox.Context
 class Macros(val c: Context) {
   import c.universe._
 
-  def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, Bytes, MWrites]
+  def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, Bytes, Writes]
 
   private def fail(msg: String) =
     c.abort(c.enclosingPosition, "\n" + msg)
+
+  private val ra = q"rx.redis.resp.RespArray"
+  private val rb = q"rx.redis.resp.RespBytes"
 
   private class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
     val proper: Type = field.infoIn(tpe).resultType
@@ -60,7 +62,7 @@ class Macros(val c: Context) {
     }
 
     private def generateSingleArg(value: c.Tree, tc: c.Tree): c.Tree = {
-      q"writeArg(buf, $value, $tc)"
+      q"buf += $rb($tc.bytes($value))"
     }
 
     private def generateSimpleArg(value: c.Tree): c.Tree =
@@ -141,20 +143,20 @@ class Macros(val c: Context) {
     }
     val argumentTrees = arguments map (_.generateArg())
 
-    val lbTpe = tq"scala.collection.mutable.ListBuffer[rx.redis.resp.DataType]"
-
+    val dt = tq"rx.redis.resp.DataType"
     val generated = q"""
     object $objectName extends $finalTpe {
-      def sizeHint(value: $tpe): Long = ${sizeHeader(arguments)}
-      def nameHeader: Array[Byte] = ${nameHeader(typeName)}
-      def writeArgs(buf: $lbTpe, value: $tpe): Unit = {
+      def write(value: $tpe): $dt = {
+        val buf = new scala.collection.mutable.ArrayBuffer[$dt](${sizeHeader(arguments)})
+        buf += $rb(${nameHeader(typeName)})
         ..$argumentTrees
+        $ra(buf.toArray)
       }
     }
     $objectName
     """
 
-//    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
+    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
 
     generated
   }

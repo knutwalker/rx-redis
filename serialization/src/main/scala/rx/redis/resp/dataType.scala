@@ -22,7 +22,7 @@ case class RespInteger(value: Long) extends DataType {
   override def toString: String = value.toString
 }
 
-case class RespArray(elements: List[DataType]) extends DataType {
+case class RespArray(elements: Array[DataType]) extends DataType {
   override def toString: String = elements.map(_.toString).mkString("[", ", ", "]")
 }
 

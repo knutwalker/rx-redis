@@ -40,10 +40,8 @@ final class Serializer private () {
     bb.writeByte(Colon).writeBytes(content).writeBytes(CrLf)
   }
 
-  private def writeArray(bb: ByteBuf, items: List[DataType]): Unit = {
-    val size = Bytes[Long].bytes(items.size)
-//    println("Array size = " + items.size)
-//    println("size as bytes = " + java.util.Arrays.toString(size))
+  private def writeArray(bb: ByteBuf, items: Array[DataType]): Unit = {
+    val size = Bytes[Long].bytes(items.length)
     bb.writeByte(Asterisk).
       writeBytes(size).
       writeBytes(CrLf)

@@ -7,7 +7,7 @@ import rx.redis.util.Utf8
 import java.nio.charset.Charset
 import scala.annotation.tailrec
 import scala.collection.immutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 
 object Parser {
@@ -97,8 +97,8 @@ object Parser {
 }
 
 final class Parser private () {
-  import rx.redis.resp.Protocol._
   import rx.redis.resp.Parser._
+  import rx.redis.resp.Protocol._
 
   private def notEnoughData(bb: ByteBuf) = {
     bb.resetReaderIndex()
@@ -202,9 +202,9 @@ final class Parser private () {
     case Right(size) => {
       if (size == -1) NullArray
       else {
-        val lb = new ListBuffer[DataType]()
+        val lb = new ArrayBuffer[DataType](size)
         @tailrec def loop(n: Int): RespType = {
-          if (n == 0) RespArray(lb.result())
+          if (n == 0) RespArray(lb.toArray)
           else quickApply(bb) match {
             case dt: DataType =>
               lb += dt
