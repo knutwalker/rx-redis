@@ -1,16 +1,15 @@
-package rx.redis.resp
-
+package rx.redis.protocol
 
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
+import rx.redis.resp._
 import rx.redis.serialization.Bytes
 
 import java.nio.charset.Charset
 
 
 object Serializer {
-
-  private def INSTANCE = new Serializer()
+  private final val INSTANCE = new Serializer()
 
   def apply(dt: DataType, bb: ByteBuf): ByteBuf = INSTANCE(dt, bb)
 
@@ -74,11 +73,6 @@ final class Serializer private () {
   }
 
   def apply(data: DataType, bb: ByteBuf): ByteBuf = {
-//    bb.markWriterIndex()
-//    try quickApply(data, bb) catch {
-//      case _: Throwable => bb.resetWriterIndex()
-//    }
-//    bb
     quickApply(data, bb)
     bb
   }

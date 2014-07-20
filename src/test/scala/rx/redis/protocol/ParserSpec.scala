@@ -1,8 +1,10 @@
-package rx.redis.resp
+package rx.redis.protocol
 
 import io.netty.buffer.PooledByteBufAllocator
 
 import org.scalatest.{FunSuite, Inside}
+
+import rx.redis.resp._
 
 
 class ParserSpec extends FunSuite with Inside {
@@ -10,14 +12,14 @@ class ParserSpec extends FunSuite with Inside {
   val alloc = PooledByteBufAllocator.DEFAULT
 
   def compare(resp: String, expecteds: DataType*): Unit = {
-    Parser.parseAll(resp, alloc).zip(expecteds) foreach {
+    Deserializer.parseAll(resp, alloc).zip(expecteds) foreach {
       case (actual, expected) =>
         assert(actual == expected)
     }
   }
 
   def compare(resp: String)(insidePf: PartialFunction[RespType, Unit]): Unit = {
-    inside(Parser(resp, alloc))(insidePf)
+    inside(Deserializer(resp, alloc))(insidePf)
   }
 
   // happy path behavior
@@ -67,16 +69,16 @@ class ParserSpec extends FunSuite with Inside {
   }
 
   test("parse arrays") {
-    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(List(RespBytes("foo"), RespBytes("bar"))))
+    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(Array(RespBytes("foo"), RespBytes("bar"))))
   }
 
   test("parse integer arrays") {
-    compare("*3\r\n:1\r\n:2\r\n:3\r\n", RespArray(List(RespInteger(1), RespInteger(2), RespInteger(3))))
+    compare("*3\r\n:1\r\n:2\r\n:3\r\n", RespArray(Array(RespInteger(1), RespInteger(2), RespInteger(3))))
   }
 
   test("parse mixed arrays") {
     compare("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nfoobar\r\n",
-      RespArray(List(
+      RespArray(Array(
         RespInteger(1),
         RespInteger(2),
         RespInteger(3),
@@ -86,7 +88,7 @@ class ParserSpec extends FunSuite with Inside {
   }
 
   test("parse an empty array") {
-    compare("*0\r\n", RespArray(List()))
+    compare("*0\r\n", RespArray(Array()))
   }
 
   test("parse the null array") {
@@ -95,13 +97,13 @@ class ParserSpec extends FunSuite with Inside {
 
   test("parse nested arrays") {
     compare("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n",
-      RespArray(List(
-        RespArray(List(
+      RespArray(Array(
+        RespArray(Array(
           RespInteger(1),
           RespInteger(2),
           RespInteger(3)
         )),
-        RespArray(List(
+        RespArray(Array(
           RespString("Foo"),
           RespError("Bar")
         ))
@@ -139,7 +141,7 @@ class ParserSpec extends FunSuite with Inside {
   }
 
   test("size underflow in arrays") {
-    compare("*1\r\n:1\r\n:2\r\n", RespArray(List(RespInteger(1))))
+    compare("*1\r\n:1\r\n:2\r\n", RespArray(Array(RespInteger(1))))
   }
 
   test("missing type marker") {

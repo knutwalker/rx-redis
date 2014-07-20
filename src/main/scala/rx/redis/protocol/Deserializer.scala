@@ -1,7 +1,8 @@
-package rx.redis.resp
+package rx.redis.protocol
 
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
 
+import rx.redis.resp._
 import rx.redis.util.Utf8
 
 import java.nio.charset.Charset
@@ -10,8 +11,8 @@ import scala.collection.immutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 
-object Parser {
-  private def INSTANCE = new Parser()
+object Deserializer {
+  private final val INSTANCE = new Deserializer()
 
   private trait Num[@specialized(Int, Long) A] {
     def times(a: A, b: A): A
@@ -96,9 +97,9 @@ object Parser {
   }
 }
 
-final class Parser private () {
-  import rx.redis.resp.Parser._
+final class Deserializer private () {
   import rx.redis.resp.Protocol._
+  import rx.redis.protocol.Deserializer._
 
   private def notEnoughData(bb: ByteBuf) = {
     bb.resetReaderIndex()

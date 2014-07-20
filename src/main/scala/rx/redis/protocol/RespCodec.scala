@@ -5,7 +5,7 @@ import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageCodec
 
-import rx.redis.resp.{DataType, Parser, Serializer}
+import rx.redis.resp.DataType
 
 import java.util
 
@@ -16,6 +16,6 @@ class RespCodec extends ByteToMessageCodec[DataType] {
   }
 
   def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
-    Parser.foreach(in)(out.add(_))
+    Deserializer.foreach(in)(out.add(_))
   }
 }

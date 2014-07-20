@@ -1,20 +1,21 @@
-package rx.redis.resp
+package rx.redis.protocol
 
 import io.netty.buffer.UnpooledByteBufAllocator
 
 import org.scalatest.{FunSuite, Inside}
 
 import rx.redis.commands.Ping
+import rx.redis.resp.{RespArray, RespBytes}
 import rx.redis.serialization.Writes
 import rx.redis.util.Utf8
 
-class SerialzerSpec extends FunSuite with Inside {
+class SerializerSpec extends FunSuite with Inside {
 
   val alloc = UnpooledByteBufAllocator.DEFAULT
 
   test("Ping") {
 
-    val dt1 = RespArray(List(RespBytes("PING")))
+    val dt1 = RespArray(Array(RespBytes("PING")))
 
     val result = Serializer(dt1, Utf8, alloc)
     println("result = " + result)
