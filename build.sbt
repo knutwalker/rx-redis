@@ -10,6 +10,17 @@ libraryDependencies ++= List(
   "org.scalatest"        %%  "scalatest"        % "2.2.0" % "test"
 )
 
+scalacOptions in ThisBuild ++= List(
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-feature",
+  "-language:postfixOps",
+  "-target:jvm-1.7",
+  "-unchecked",
+  "-Xlint",
+  "-Ywarn-dead-code"
+)
+
 initialCommands in console := """
 import rx.redis.RxRedis
 val client = RxRedis("localhost", 6379)"""

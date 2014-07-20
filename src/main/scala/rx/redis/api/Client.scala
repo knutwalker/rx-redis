@@ -8,7 +8,10 @@ import rx.redis.serialization.Writes
 
 trait Client
 extends StringCommands
-with ConnectionCommands {
+with ConnectionCommands
+with HashCommands
+with KeyCommands
+{
 
   def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType]
 

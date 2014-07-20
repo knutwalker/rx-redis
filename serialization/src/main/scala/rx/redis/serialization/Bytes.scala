@@ -5,7 +5,7 @@ import io.reactivex.netty.channel.ContentTransformer
 
 import java.nio.charset.Charset
 import scala.annotation.implicitNotFound
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Deadline, FiniteDuration}
 
 
 @implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.serialization.Bytes[${A}] in order to use ${A} as custom value.")
@@ -23,6 +23,20 @@ object Bytes {
 
   @inline def apply[T](implicit T: Bytes[T]): Bytes[T] = T
 
+  abstract class CompositeBytes[A, B: Bytes] extends Bytes[A] {
+    final def write(value: A, allocator: ByteBufAllocator): ByteBuf = {
+      val composed = compose(value)
+      Bytes[B].write(composed, allocator)
+    }
+    def compose(value: A): B
+  }
+  object CompositeBytes {
+    def apply[A, B: Bytes](f: A => B): Bytes[A] =
+      new CompositeBytes[A, B] {
+        def compose(value: A): B = f(value)
+      }
+  }
+
   implicit object StringBytes extends Bytes[String] {
     private final val charset = Charset.defaultCharset
 
@@ -35,18 +49,6 @@ object Bytes {
   implicit object ByteArrayBytes extends Bytes[Array[Byte]] {
     def write(value: Array[Byte], allocator: ByteBufAllocator): ByteBuf = {
       allocator.buffer(value.length).writeBytes(value)
-    }
-  }
-
-  implicit object LongBytes extends Bytes[Long] {
-    def write(value: Long, allocator: ByteBufAllocator): ByteBuf = {
-      ByteArrayBytes.write(Writes.long2bytes(value), allocator)
-    }
-  }
-
-  implicit object DurationBytes extends Bytes[Duration] {
-    def write(value: Duration, allocator: ByteBufAllocator): ByteBuf = {
-      LongBytes.write(value.toSeconds, allocator)
     }
   }
 
@@ -63,5 +65,13 @@ object Bytes {
       }
       buf
     }
+  }
+
+  implicit val LongBytes = CompositeBytes(Writes.long2bytes(_: Long))
+
+  implicit val DurationBytes = CompositeBytes((_: FiniteDuration).toSeconds)
+
+  implicit val DeadlineBytes = CompositeBytes { d: Deadline =>
+    (d.timeLeft.toMillis + System.currentTimeMillis()) / 1000
   }
 }
