@@ -1,8 +1,8 @@
 package rx.redis.serialization
 
 import rx.redis.serialization.Writes.MWrites
+import rx.redis.util.Utf8
 
-import java.nio.charset.Charset
 import java.util.Locale
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox.Context
@@ -12,9 +12,6 @@ class Macros(val c: Context) {
   import c.universe._
 
   def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, Bytes, MWrites]
-
-
-  private val charset = Charset.defaultCharset()
 
   private def fail(msg: String) =
     c.abort(c.enclosingPosition, "\n" + msg)
@@ -61,7 +58,7 @@ class Macros(val c: Context) {
     val resolvedTypeClasses: List[c.Tree] = {
       neededTypeClasses.map(resolvedOneTypeClass)
     }
-    
+
     private def generateSingleArg(value: c.Tree, tc: c.Tree): c.Tree = {
       q"writeArg(buf, $value, $tc)"
     }
@@ -127,8 +124,8 @@ class Macros(val c: Context) {
   }
 
   private def nameHeader(name: String): c.Tree = {
-    val header = s"$$${name.getBytes(charset).length}\r\n${name.toUpperCase(Locale.ROOT)}\r\n"
-    q"${header.getBytes(charset)}"
+    val header = name.toUpperCase(Locale.ROOT).getBytes(Utf8)
+    q"$header"
   }
 
   private def macroImpl[A, TC[_], M[_]](implicit aTag: c.WeakTypeTag[A], tcaTag: c.WeakTypeTag[TC[A]], maTag: c.WeakTypeTag[M[A]]): c.Tree = {
@@ -144,18 +141,20 @@ class Macros(val c: Context) {
     }
     val argumentTrees = arguments map (_.generateArg())
 
+    val lbTpe = tq"scala.collection.mutable.ListBuffer[rx.redis.resp.DataType]"
+
     val generated = q"""
     object $objectName extends $finalTpe {
       def sizeHint(value: $tpe): Long = ${sizeHeader(arguments)}
       def nameHeader: Array[Byte] = ${nameHeader(typeName)}
-      def writeArgs(buf: io.netty.buffer.ByteBuf, value: $tpe): Unit = {
+      def writeArgs(buf: $lbTpe, value: $tpe): Unit = {
         ..$argumentTrees
       }
     }
     $objectName
     """
 
-    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
+//    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
 
     generated
   }

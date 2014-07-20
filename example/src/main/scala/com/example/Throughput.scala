@@ -4,31 +4,73 @@ import rx.redis.RxRedis
 
 object Throughput extends App {
 
-  val client = RxRedis("127.0.0.1", 6379, shareable = false)
-
   val total = args.headOption.fold(1000000)(_.toInt)
-  val start = System.currentTimeMillis()
+  
+  def testAsync() = {
+    val client = RxRedis("127.0.0.1", 6379)
+    val start = System.currentTimeMillis()
 
-  for (_ <- 1 until total) {
-    client.ping()
+    (1 to total).foreach(_ => client.ping())
+    val took = System.currentTimeMillis() - start
+
+    client.shutdown()
+    RxRedis.await(client)
+    
+    took
   }
 
-  val async = System.currentTimeMillis()
+  def testParAsync() = {
+    val client = RxRedis("127.0.0.1", 6379)
+    val start = System.currentTimeMillis()
 
-  client.ping().toBlocking.first()
+    (1 to total).par.foreach(_ => client.ping())
+    val took = System.currentTimeMillis() - start
 
-  val end = System.currentTimeMillis()
+    client.shutdown()
+    RxRedis.await(client)
 
-  client.shutdown()
-  RxRedis.await(client)
+    took
+  }
 
-  val closed = System.currentTimeMillis()
+  def testSyncAtLast() = {
 
-  val tAsync = (async - start) / 1000.0
-  val tEnd = (end - start) / 1000.0
-  val tClosed = closed - end
+    val client = RxRedis("127.0.0.1", 6379)
+    val start = System.currentTimeMillis()
 
-  println(f"Sending ${total - 1} PINGs in $tAsync%.0f seconds | ${(total - 1) / tAsync}%.2f Req/s")
-  println(f"Sending and receiving $total PINGs in $tEnd%.0f seconds | ${total / tEnd}%.2f Req/s")
-  println(s"Closing took tClosed ms")
+    (1 until total).foreach(_ => client.ping())
+
+    client.ping().toBlocking.first()
+    
+    val took = System.currentTimeMillis() - start
+
+    client.shutdown()
+    RxRedis.await(client)
+
+    took
+  }
+  
+  def testSyncAll() = {
+
+    val client = RxRedis("127.0.0.1", 6379)
+    val start = System.currentTimeMillis()
+
+    (1 to total).foreach(_ => client.ping().toBlocking.first())
+
+    val took = System.currentTimeMillis() - start
+
+    client.shutdown()
+    RxRedis.await(client)
+
+    took
+  }
+  
+  val tAsync = testAsync() / 1000.0
+  val tParAsync = testParAsync() / 1000.0
+  val tSyncLast = testSyncAtLast() / 1000.0
+  val tSyncAll = testSyncAll() / 1000.0
+  
+  println(f"Async: ${total} PINGs took $tAsync%.0f s | ${total / tAsync}%.2f Req/s")
+  println(f"Par Async: ${total} PINGs took $tParAsync%.0f s | ${total / tParAsync}%.2f Req/s")
+  println(f"Sync last: ${total} PINGs took $tSyncLast%.0f s | ${total / tSyncLast}%.2f Req/s")
+  println(f"Sync all: ${total} PINGs took $tSyncAll%.0f s | ${total / tSyncAll}%.2f Req/s")
 }

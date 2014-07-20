@@ -1,13 +1,12 @@
 package rx.redis.client
 
-import io.netty.buffer.ByteBuf
 import io.reactivex.netty.client.RxClient
 import rx.functions.{Func1, Func2}
 import rx.subjects.{AsyncSubject, PublishSubject}
 import rx.{Observable, Observer}
 
 import rx.redis.api
-import rx.redis.resp.RespType
+import rx.redis.resp.{DataType, RespType}
 import rx.redis.serialization.Writes
 
 
@@ -36,7 +35,7 @@ private[redis] object DefaultClient {
     def onCompleted(): Unit = target.onCompleted()
   }
 }
-private[redis] final class DefaultClient (client: RxClient[ByteBuf, RespType])
+private[redis] final class DefaultClient (client: RxClient[DataType, RespType])
   extends api.Client
   with Commands {
   import rx.redis.client.DefaultClient._
@@ -56,9 +55,13 @@ private[redis] final class DefaultClient (client: RxClient[ByteBuf, RespType])
     s
   }
 
-  def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = {
-    connection.writeAndFlush(cmd, A.contentTransformer)
+  def command(cmd: DataType): Observable[RespType] = {
+    connection.writeAndFlush(cmd)
     createResponse()
+  }
+
+  def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = {
+    command(A.write(cmd))
   }
 
   def shutdown(): Observable[Unit] = {

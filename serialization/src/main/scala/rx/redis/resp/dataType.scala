@@ -1,8 +1,9 @@
 package rx.redis.resp
 
-import io.netty.buffer.{ByteBuf, ByteBufUtil, Unpooled}
+import rx.redis.util.Utf8
 
 import java.nio.charset.Charset
+import java.util
 
 
 sealed abstract class RespType
@@ -25,22 +26,27 @@ case class RespArray(elements: List[DataType]) extends DataType {
   override def toString: String = elements.map(_.toString).mkString("[", ", ", "]")
 }
 
-case class RespBytes(bytes: ByteBuf) extends DataType {
+case class RespBytes(bytes: Array[Byte]) extends DataType {
   override def equals(obj: scala.Any): Boolean = obj match {
-    case RespBytes(buf) => ByteBufUtil.equals(bytes, buf)
+    case RespBytes(bs) =>
+      // TODO: JMH this stuff
+      // 1. java.util.Arrays.equals(bytes, bs)
+      // 2. bytes.deep == bs.deep
+      // 3. bytes.corresponds(bs)(_ == _)
+      util.Arrays.equals(bytes, bs)
     case _ => super.equals(obj)
   }
 
-  override def toString: String = bytes.toString(Charset.defaultCharset())
+  override def toString: String = new String(bytes, Utf8)
 
-  def toString(charset: Charset): String = bytes.toString(charset)
+  def toString(charset: Charset): String = new String(bytes, charset)
 }
 object RespBytes {
   def apply(s: String, charset: Charset): RespBytes =
-    apply(Unpooled.copiedBuffer(s, charset))
+    apply(s.getBytes(charset))
 
   def apply(s: String): RespBytes =
-    apply(s, Charset.defaultCharset)
+    apply(s, Utf8)
 }
 
 case object NullString extends DataType {
@@ -54,13 +60,12 @@ case object NullArray extends DataType {
 
 sealed abstract class ErrorType extends RespType
 
-case class NotEnoughData(remaining: ByteBuf) extends ErrorType {
-  override def toString: String = "[INCOMPLETE]: " + ByteBufUtil.hexDump(remaining)
+case object NotEnoughData extends ErrorType {
+  override def toString: String = "[INCOMPLETE]"
 }
-case class ProtocolError(data: ByteBuf, expected: List[Byte]) extends ErrorType {
+case class ProtocolError(pos: Int, found: Char, expected: List[Byte]) extends ErrorType {
   override def toString: String = {
     val e = expected mkString ", "
-    val pos = data.readerIndex()
-    s"Protocol error at char $pos, expected [$e], but found [${data.getByte(pos).toChar}}]"
+    s"Protocol error at char $pos, expected [$e], but found [$found]"
   }
 }

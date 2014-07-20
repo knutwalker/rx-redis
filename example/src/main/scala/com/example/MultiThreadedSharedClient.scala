@@ -6,12 +6,11 @@ import rx.lang.scala.Observable
 import rx.redis.RxRedis
 import rx.redis.api.Client
 import rx.redis.resp.{DataType, RespBytes, RespString, RespType}
-import rx.redis.serialization.Writes
 import rx.redis.util._
 
 object MultiThreadedSharedClient extends App {
 
-  class MyThread[A: Writes](client: Client, total: Int, command: A, expected: RespType, f: RespType => Unit) extends Thread {
+  class MyThread(client: Client, total: Int, command: DataType, expected: RespType, f: RespType => Unit) extends Thread {
     private final var _correct = 0
     private final var _incorrect = 0
     private final val action = (r: RespType) => {
@@ -31,11 +30,11 @@ object MultiThreadedSharedClient extends App {
     def correct: Int = _correct
   }
 
-  val client = RxRedis("localhost", 6379)
+  val client = RxRedis("localhost", 6379, shareable = true)
 //  shareable is true by default
 //  val client = RxRedis("localhost", 6379, shareable = true)
 
-  val rrs: List[(String, DataType)] = List(
+  val rrs: List[(DataType, DataType)] = List(
     resp"PING" -> RespString("PONG"),
     resp"ECHO foo" -> RespBytes("foo"),
     resp"ECHO bar" -> RespBytes("bar"),
@@ -53,7 +52,7 @@ object MultiThreadedSharedClient extends App {
 
   val threads = rrs map {
     case (cmd, res) => new MyThread(client, repetitions, cmd, res, r => {
-      if (res != r) println(preview(r) + "  VS.  " + preview(res))
+//      if (res != r) println(preview(r) + "  VS.  " + preview(res))
     })
   }
 

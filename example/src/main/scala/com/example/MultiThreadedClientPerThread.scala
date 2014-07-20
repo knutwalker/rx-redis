@@ -5,13 +5,12 @@ import rx.lang.scala.Observable
 
 import rx.redis.RxRedis
 import rx.redis.resp.{DataType, RespBytes, RespString, RespType}
-import rx.redis.serialization.Writes
 import rx.redis.util._
 
 
 object MultiThreadedClientPerThread extends App {
 
-  class MyThread[A: Writes](total: Int, command: A, expected: RespType, f: RespType => Unit) extends Thread {
+  class MyThread(total: Int, command: DataType, expected: RespType, f: RespType => Unit) extends Thread {
     private final var _correct = 0
     private final var _incorrect = 0
     private final val action = (r: RespType) => {
@@ -36,7 +35,7 @@ object MultiThreadedClientPerThread extends App {
     def correct: Int = _correct
   }
 
-  val rrs: List[(String, DataType)] = List(
+  val rrs: List[(DataType, DataType)] = List(
     resp"PING" -> RespString("PONG"),
     resp"ECHO foo" -> RespBytes("foo"),
     resp"ECHO bar" -> RespBytes("bar"),

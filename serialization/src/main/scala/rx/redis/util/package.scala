@@ -1,12 +1,17 @@
 package rx.redis
 
 import rx.redis.resp._
+import rx.redis.serialization.Writes
+
+import java.nio.charset.StandardCharsets
 
 // some temp in here
 package object util {
 
+  val Utf8 = StandardCharsets.UTF_8
+
   implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
-    def resp(args: String*): String = {
+    def resp(args: String*): DataType = {
       val strings = ctx.parts.iterator
       val expressions = args.iterator
       val result = strings.
@@ -15,16 +20,11 @@ package object util {
         foldLeft("")(_ + _).
         replaceAllLiterally("\\r\\n", "\r\n")
 
-      val items = result.split(' ')
-      val buf = new StringBuffer("*").append(items.size).append("\r\n")
-      for (item <- items) {
-        buf.append("$").append(item.size).append("\r\n").append(item).append("\r\n")
-      }
-      buf.toString
+      Writes[String].write(result)
     }
   }
 
   val respContent: (RespType) => String = _.toString
 
-  val preview = respContent andThen (_.replaceAllLiterally("\r\n", "\\r\\n").take(30))
+  val preview = respContent andThen (_.replaceAllLiterally("\r\n", "\\r\\n").take(50))
 }

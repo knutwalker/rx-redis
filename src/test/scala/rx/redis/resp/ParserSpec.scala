@@ -1,19 +1,23 @@
 package rx.redis.resp
 
+import io.netty.buffer.PooledByteBufAllocator
+
 import org.scalatest.{FunSuite, Inside}
 
-class RespSpec extends FunSuite with Inside {
+
+class ParserSpec extends FunSuite with Inside {
+
+  val alloc = PooledByteBufAllocator.DEFAULT
 
   def compare(resp: String, expecteds: DataType*): Unit = {
-    val parser = Parser(resp)
-    expecteds foreach { expected =>
-      assert(parser() == expected)
+    Parser.parseAll(resp, alloc).zip(expecteds) foreach {
+      case (actual, expected) =>
+        assert(actual == expected)
     }
   }
 
   def compare(resp: String)(insidePf: PartialFunction[RespType, Unit]): Unit = {
-    val parser = Parser(resp)
-    inside(parser())(insidePf)
+    inside(Parser(resp, alloc))(insidePf)
   }
 
   // happy path behavior
@@ -109,33 +113,28 @@ class RespSpec extends FunSuite with Inside {
 
   test("missing CrLf for simple strings") {
     compare("+OK") {
-      case NotEnoughData(bb) =>
-        assert(bb.readableBytes() == bb.writerIndex())
-        assert(bb.toString(Parser.Utf8) == "+OK")
+      case NotEnoughData =>
     }
   }
 
   test("length overflow in bulk strings") {
     compare("$9\r\nfoobar\r\n") {
-      case NotEnoughData(bb) =>
-        assert(bb.readableBytes() == bb.writerIndex())
-        assert(bb.toString(Parser.Utf8) == "$9\r\nfoobar\r\n")
+      case NotEnoughData =>
     }
   }
 
   test("length underflow in bulk strings") {
     compare("$3\r\nfoobar\r\n") {
-      case ProtocolError(bb, expected) =>
+      case ProtocolError(pos, found, expected) =>
         assert(expected === List('\r'.toByte))
-        assert(bb.getByte(bb.readerIndex()) == 'b'.toByte)
+        assert(pos == 7)
+        assert(found == 'b'.toByte)
     }
   }
 
   test("size overflow in arrays") {
     compare("*3\r\n:1\r\n:2\r\n") {
-      case NotEnoughData(bb) =>
-        assert(bb.readableBytes() == bb.writerIndex())
-        assert(bb.toString(Parser.Utf8) == "*3\r\n:1\r\n:2\r\n")
+      case NotEnoughData =>
     }
   }
 
@@ -145,9 +144,10 @@ class RespSpec extends FunSuite with Inside {
 
   test("missing type marker") {
     compare("?MISSING") {
-      case ProtocolError(bb, expected) =>
+      case ProtocolError(pos, found,expected) =>
         assert(expected == List('+'.toByte, '-'.toByte, ':'.toByte, '$'.toByte, '*'.toByte))
-        assert(bb.getByte(bb.readerIndex()) == '?'.toByte)
+        assert(pos == 0)
+        assert(found == '?'.toByte)
     }
   }
 

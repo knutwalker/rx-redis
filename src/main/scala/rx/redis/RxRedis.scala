@@ -2,7 +2,7 @@ package rx.redis
 
 import io.reactivex.netty.RxNetty
 
-import rx.redis.client.{ThreadSafeClient, DefaultClient}
+import rx.redis.client.{DefaultClient, ThreadSafeClient}
 import rx.redis.protocol.Configurator
 
 
@@ -14,8 +14,7 @@ object RxRedis {
         .withName("Redis")
         .pipelineConfigurator(new Configurator)
     val client = new DefaultClient(builder.build())
-    if (shareable) new ThreadSafeClient(client)
-    else client
+    if (shareable) new ThreadSafeClient(client) else client
   }
 
   def connect(host: String, port: Int): api.Client = apply(host, port)
