@@ -1,6 +1,7 @@
 package rx.redis.commands
 
 import rx.redis.util._
+import scala.concurrent.duration._
 
 class StringCommandsSpec extends CommandsSuite {
 
@@ -24,10 +25,28 @@ class StringCommandsSpec extends CommandsSuite {
     cmd(set2, resp"SET foo foo\r\nbar")
   }
 
+  test("SETEX") {
+    val setEx = SetEx("foo", 13.seconds, "bar")
+    cmds(setEx, "*4", "$5", "SETEX", "$3", "foo", "$2", "13", "$3", "bar")
+    cmd(setEx, resp"SETEX foo 13 bar")
+  }
+
+  test("SETNX") {
+    val setNx = SetNx("foo", "bar")
+    cmds(setNx, "*3", "$5", "SETNX", "$3", "foo", "$3", "bar")
+    cmd(setNx, resp"SETNX foo bar")
+  }
+
   test("INCR") {
     val incr = Incr("foo")
     cmds(incr, "*2", "$4", "INCR", "$3", "foo")
     cmd(incr, resp"INCR foo")
+  }
+
+  test("DECR") {
+    val decr = Decr("foo")
+    cmds(decr, "*2", "$4", "DECR", "$3", "foo")
+    cmd(decr, resp"DECR foo")
   }
 
   test("INCRBY") {
@@ -36,10 +55,28 @@ class StringCommandsSpec extends CommandsSuite {
     cmd(incrBy, resp"INCRBY foo 42")
   }
 
+  test("DECRBY") {
+    val decrBy = DecrBy("foo", 42)
+    cmds(decrBy, "*3", "$6", "DECRBY", "$3", "foo", "$2", "42")
+    cmd(decrBy, resp"DECRBY foo 42")
+  }
+
   test("MGET") {
     val mget = MGet("foo", "bar", "baz")
     cmds(mget, "*4", "$4", "MGET", "$3", "foo", "$3", "bar", "$3", "baz")
     cmd(mget, resp"MGET foo bar baz")
+  }
+
+  test("MSET") {
+    val mset = MSet("foo" -> "bar", "bar" -> "baz")
+    cmds(mset, "*5", "$4", "MSET", "$3", "foo", "$3", "bar", "$3", "bar", "$3", "baz")
+    cmd(mset, resp"MSET foo bar bar baz")
+  }
+
+  test("STRLEN") {
+    val strLen = StrLen("foobar")
+    cmds(strLen, "*2", "$6", "STRLEN", "$6", "foobar")
+    cmd(strLen, resp"STRLEN foobar")
   }
 
 }

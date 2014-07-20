@@ -11,61 +11,111 @@ import scala.reflect.macros.blackbox.Context
 class Macros(val c: Context) {
   import c.universe._
 
+  def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, Bytes, MWrites]
+
+
   private val charset = Charset.defaultCharset()
 
   private def fail(msg: String) =
-    c.abort(c.enclosingPosition, msg)
+    c.abort(c.enclosingPosition, "\n" + msg)
 
   private class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
     val proper: Type = field.infoIn(tpe).resultType
+
+    val x = q"x"
+    val access = q"value.${field.name}"
+
     val isVarArgs =
-      proper.typeArgs.nonEmpty &&
-        !proper.typeSymbol.isAbstract &&
-        proper.getClass.getSimpleName.endsWith("ClassArgsTypeRef")
+      proper.typeArgs.size == 1 &&
+      !proper.typeSymbol.isAbstract &&
+      proper.getClass.getSimpleName.endsWith("ClassArgsTypeRef")
 
-    val neededTypeClass: Type = {
-      val tcType =
-        if (!isVarArgs) proper
-        else proper.typeArgs.head
-      appliedType(tc.typeConstructor, tcType :: Nil)
-    }
+    val neededTypeClassType: Type =
+      if (!isVarArgs) proper
+      else proper.typeArgs.head
 
-    val resolvedTypeClass: c.Tree = {
-      val paramWrites = c.inferImplicitValue(neededTypeClass)
+    val isTupleType =
+      neededTypeClassType.typeArgs.nonEmpty
+      neededTypeClassType.baseClasses.exists(_.asType.toType =:= typeOf[Product])
+
+    val tupleSize =
+      if (!isTupleType) q"1"
+      else q"${neededTypeClassType.typeArgs.size}"
+
+    val neededTypeClasses: List[Type] =
+      if (!isTupleType)
+        List(appliedType(tc.typeConstructor, neededTypeClassType :: Nil))
+      else
+        neededTypeClassType.typeArgs.map(t => appliedType(tc.typeConstructor, t :: Nil))
+
+    def resolvedOneTypeClass(tc: Type): c.Tree = {
+      val paramWrites = c.inferImplicitValue(tc)
       if (paramWrites == EmptyTree) {
-        fail("Could not find an implicit value for " + neededTypeClass)
+        fail(
+          "Missing implicit instance of " + tc + "\n" +
+          "This is required to serialize instances of " + tc.typeArgs.head)
       }
       paramWrites
     }
 
-    private def generateSingleArg(value: c.Tree) =
-      q"writeArg(buf, $value, $resolvedTypeClass)"
+    val resolvedTypeClasses: List[c.Tree] = {
+      neededTypeClasses.map(resolvedOneTypeClass)
+    }
+    
+    private def generateSingleArg(value: c.Tree, tc: c.Tree): c.Tree = {
+      q"writeArg(buf, $value, $tc)"
+    }
 
-    private def generateArgOfFixedArity() =
-      generateSingleArg(q"value.${field.name}")
+    private def generateSimpleArg(value: c.Tree): c.Tree =
+      generateSingleArg(value, resolvedTypeClasses.head)
 
-    private def generateArgOfVariableArity() = {
-      val enum = fq"x <- value.${field.name}"
-      val singleArg = generateSingleArg(q"x")
+    private def generateTupleArg(value: c.Tree): c.Tree = {
+      val tuples =
+        resolvedTypeClasses.zipWithIndex map { case (tcls, i) =>
+          val tupleAccess = TermName(s"_${i + 1}")
+          generateSingleArg(Select(value, tupleAccess), tcls)
+        }
+      q"..$tuples"
+    }
+
+    private def generateVariadicArgs(): c.Tree = {
+      val items = fq"x <- $access"
+      val singleArg = generateSimpleArg(x)
       q"""
-      for ($enum) {
+      for ($items) {
         $singleArg
       }
       """
     }
 
+    private def generateVariadicTupleArgs(): c.Tree = {
+      val items = fq"x <- $access"
+      val tupleArgs = generateTupleArg(x)
+      q"""
+      for ($items) {
+        $tupleArgs
+      }
+      """
+    }
+
     def generateArg(): c.Tree =
-      if (!isVarArgs)
-        generateArgOfFixedArity()
+      if (!isVarArgs && !isTupleType)
+        generateSimpleArg(access)
+      else if (!isVarArgs)
+        generateTupleArg(access)
+      else if (!isTupleType)
+        generateVariadicArgs()
       else
-        generateArgOfVariableArity()
+        generateVariadicTupleArgs()
 
     def generateSize(): Option[c.Tree] =
-      if (!isVarArgs) None
-      else Some(q"value.${field.name}.size")
+      if (!isVarArgs)
+        if (!isTupleType) None
+        else Some(tupleSize)
+      else
+        if (!isTupleType) Some(q"$access.size")
+        else Some(q"$tupleSize * $access.size")
   }
-
-  def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, Writes, MWrites]
 
   private def sizeHeader(args: List[ArgType]): c.Tree = {
     val argsSize = args.size
