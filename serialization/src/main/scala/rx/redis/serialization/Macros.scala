@@ -1,71 +1,105 @@
 package rx.redis.serialization
 
-import scala.language.higherKinds
+import rx.redis.serialization.Writes.MWrites
 
 import java.nio.charset.Charset
 import java.util.Locale
+import scala.language.higherKinds
 import scala.reflect.macros.blackbox.Context
 
 
 class Macros(val c: Context) {
   import c.universe._
 
-  val charset = Charset.defaultCharset()
-  val StringMarker = '$'.toByte
-  val Cr = '\r'.toByte
-  val Lf = '\n'.toByte
+  private val charset = Charset.defaultCharset()
 
-  def writes[A: c.WeakTypeTag]: c.Tree =
-    macroImpl[A, Writes]("write")
+  private def fail(msg: String) =
+    c.abort(c.enclosingPosition, msg)
 
-  def macroImpl[A, M[_]](methodName: String)(implicit atag: c.WeakTypeTag[A], matag: c.WeakTypeTag[M[A]]): c.Tree = {
+  private class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
+    val proper: Type = field.infoIn(tpe).resultType
+    val isVarArgs =
+      proper.typeArgs.nonEmpty &&
+        !proper.typeSymbol.isAbstract &&
+        proper.getClass.getSimpleName.endsWith("ClassArgsTypeRef")
 
-    val tpe = atag.tpe
-    val mtpe = matag.tpe
-    val finalTpe = appliedType(mtpe.typeConstructor, tpe :: Nil)
+    val neededTypeClass: Type = {
+      val tcType =
+        if (!isVarArgs) proper
+        else proper.typeArgs.head
+      appliedType(tc.typeConstructor, tcType :: Nil)
+    }
 
-    val arguments = tpe.decls.collect {
-      case method: MethodSymbol if method.isCaseAccessor => method
-    }.toList
-
-    val argumentTrees = arguments map { m =>
-      val properReturnType = m.infoIn(tpe).resultType
-      val neededImplicitType = appliedType(mtpe.typeConstructor, properReturnType :: Nil)
-      val paramWrites = c.inferImplicitValue(neededImplicitType)
+    val resolvedTypeClass: c.Tree = {
+      val paramWrites = c.inferImplicitValue(neededTypeClass)
       if (paramWrites == EmptyTree) {
-        c.abort(c.enclosingPosition, "Could not find an implicit value for " + neededImplicitType)
+        fail("Could not find an implicit value for " + neededTypeClass)
       }
+      paramWrites
+    }
+
+    private def generateSingleArg(value: c.Tree) =
+      q"writeArg(buf, $value, $resolvedTypeClass)"
+
+    private def generateArgOfFixedArity() =
+      generateSingleArg(q"value.${field.name}")
+
+    private def generateArgOfVariableArity() = {
+      val enum = fq"x <- value.${field.name}"
+      val singleArg = generateSingleArg(q"x")
       q"""
-          val content = value.${m.name}
-          val contentBytes = $paramWrites.write(content, allocator)
-          val contentLength = int2bytes(contentBytes.readableBytes())
-          buf
-            .writeByte($StringMarker)
-            .writeBytes(contentLength)
-            .writeByte($Cr).writeByte($Lf)
-            .writeBytes(contentBytes)
-            .writeByte($Cr).writeByte($Lf)
+      for ($enum) {
+        $singleArg
+      }
       """
     }
 
-    val argumentsSize = arguments.size
-    val size = 1 + argumentsSize
+    def generateArg(): c.Tree =
+      if (!isVarArgs)
+        generateArgOfFixedArity()
+      else
+        generateArgOfVariableArity()
 
-    val name = tpe.typeSymbol.name.toString
+    def generateSize(): Option[c.Tree] =
+      if (!isVarArgs) None
+      else Some(q"value.${field.name}.size")
+  }
 
-    val header = s"*$size\r\n$$${name.getBytes(charset).length}\r\n${name.toUpperCase(Locale.ROOT)}\r\n"
-    val headerBytes = header.getBytes(charset)
+  def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, Writes, MWrites]
 
-    val objectName = c.freshName(TermName(name + "Writes"))
+  private def sizeHeader(args: List[ArgType]): c.Tree = {
+    val argsSize = args.size
+    val argSizeTrees = args flatMap (_.generateSize())
+    val definiteSize = q"${1 + (argsSize - argSizeTrees.size)}"
+    argSizeTrees.foldLeft(definiteSize) { (tree, sizeHint) =>
+      q"$tree + $sizeHint"
+    }
+  }
 
-    val mName = TermName(methodName)
+  private def nameHeader(name: String): c.Tree = {
+    val header = s"$$${name.getBytes(charset).length}\r\n${name.toUpperCase(Locale.ROOT)}\r\n"
+    q"${header.getBytes(charset)}"
+  }
+
+  private def macroImpl[A, TC[_], M[_]](implicit aTag: c.WeakTypeTag[A], tcaTag: c.WeakTypeTag[TC[A]], maTag: c.WeakTypeTag[M[A]]): c.Tree = {
+
+    val tpe = aTag.tpe
+
+    val finalTpe = appliedType(maTag.tpe.typeConstructor, tpe :: Nil)
+    val typeName = tpe.typeSymbol.name.toString
+    val objectName = c.freshName(TermName(typeName + "Writes"))
+
+    val arguments = tpe.decls.toList.collect {
+      case method: MethodSymbol if method.isCaseAccessor => new ArgType(tpe, tcaTag.tpe, method)
+    }
+    val argumentTrees = arguments map (_.generateArg())
 
     val generated = q"""
     object $objectName extends $finalTpe {
-      def $mName(value: $tpe, allocator: io.netty.buffer.ByteBufAllocator): io.netty.buffer.ByteBuf = {
-        val buf = allocator.buffer(${headerBytes.length + argumentsSize * 16}).writeBytes($headerBytes)
+      def sizeHint(value: $tpe): Long = ${sizeHeader(arguments)}
+      def nameHeader: Array[Byte] = ${nameHeader(typeName)}
+      def writeArgs(buf: io.netty.buffer.ByteBuf, value: $tpe): Unit = {
         ..$argumentTrees
-        buf
       }
     }
     $objectName

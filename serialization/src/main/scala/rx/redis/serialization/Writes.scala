@@ -19,17 +19,8 @@ trait Writes[A] {
       def call(t1: A, t2: ByteBufAllocator): ByteBuf = write(t1, t2)
     }
 
-  protected def int2bytes(n: Int): Array[Byte] = {
-    @tailrec
-    def loop(l: Int, b: ArrayBuffer[Byte]): Array[Byte] = {
-      if (l == 0) b.reverse.toArray
-      else {
-        b += (l % 10 + '0').toByte
-        loop(l / 10, b)
-      }
-    }
-    loop(n, new ArrayBuffer[Byte](10))
-  }
+  protected def int2bytes(n: Int): Array[Byte] =
+    Writes.long2bytes(n)
 }
 
 object Writes {
@@ -50,6 +41,78 @@ object Writes {
   implicit object ByteArrayWrites extends Writes[Array[Byte]] {
     def write(value: Array[Byte], allocator: ByteBufAllocator): ByteBuf = {
       allocator.buffer(value.length).writeBytes(value)
+    }
+  }
+
+  implicit object LongWrites extends Writes[Long] {
+    def write(value: Long, allocator: ByteBufAllocator): ByteBuf = {
+      ByteArrayWrites.write(long2bytes(value), allocator)
+    }
+  }
+
+//  implicit object ByteBufWrites extends Writes[ByteBuf] {
+//    def write(value: ByteBuf, allocator: ByteBufAllocator): ByteBuf = value
+//  }
+
+  //  implicit def SeqWrites[A: Writes]: Writes[Seq[A]] = new Writes[Seq[A]] {
+  //    def write(value: Seq[A], allocator: ByteBufAllocator): ByteBuf = {
+  //      val buf = allocator.buffer()
+  //      val tci = Writes[A]
+  //      for (v <- value) {
+  //        buf.writeBytes(tci.write(v, allocator))
+  //      }
+  //      buf
+  //    }
+  //  }
+
+  private def long2bytes(n: Long): Array[Byte] = {
+    @tailrec
+    def loop(l: Long, b: ArrayBuffer[Byte]): Array[Byte] = {
+      if (l == 0) b.reverse.toArray
+      else {
+        b += (l % 10 + '0').toByte
+        loop(l / 10, b)
+      }
+    }
+    if (n == 0) Array((0 + '0').toByte)
+    else loop(n, new ArrayBuffer[Byte](10))
+  }
+
+  private val ArrayMarker = '*'.toByte
+  private val StringMarker = '$'.toByte
+  private val Cr = '\r'.toByte
+  private val Lf = '\n'.toByte
+
+  /* Gets implements by macro generation */
+  private[redis] trait MWrites[A] extends Writes[A] {
+    def nameHeader: Array[Byte]
+    def sizeHint(value: A): Long
+    def writeArgs(buf: ByteBuf, value: A): Unit
+
+    protected def writeArg[B](buf: ByteBuf, value: B, tci: Writes[B]): Unit = {
+      val contentBytes = tci.write(value, buf.alloc())
+      val contentLength = long2bytes(contentBytes.readableBytes())
+      buf.
+        writeByte(StringMarker).
+        writeBytes(contentLength).
+        writeByte(Cr).writeByte(Lf).
+        writeBytes(contentBytes).
+        writeByte(Cr).writeByte(Lf)
+    }
+
+    protected def writeHeader(buf: ByteBuf, value: A): Unit = {
+      buf.
+        writeByte(ArrayMarker).
+        writeBytes(long2bytes(sizeHint(value))).
+        writeByte(Cr).writeByte(Lf).
+        writeBytes(nameHeader)
+    }
+
+    final def write(value: A, allocator: ByteBufAllocator): ByteBuf = {
+      val buf = allocator.buffer()
+      writeHeader(buf, value)
+      writeArgs(buf, value)
+      buf
     }
   }
 }

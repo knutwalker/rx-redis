@@ -12,7 +12,8 @@ package object util {
       val result = strings.
         zipAll(expressions, "", "").
         map { case (a, b) => a + b }.
-        foldLeft("")(_ + _)
+        foldLeft("")(_ + _).
+        replaceAllLiterally("\\r\\n", "\r\n")
 
       val items = result.split(' ')
       val buf = new StringBuffer("*").append(items.size).append("\r\n")
