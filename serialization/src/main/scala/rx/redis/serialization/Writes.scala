@@ -21,9 +21,14 @@ trait Writes[A] {
 
 object Writes {
 
-  @inline def apply[T](implicit T: Writes[T]): Writes[T] = T
+  @inline def apply[A](implicit A: Writes[A]): Writes[A] = A
 
   def writes[A]: Writes[A] = macro Macros.writes[A]
+  
+  implicit object DirectStringWrites extends Writes[String] {
+    def write(value: String, allocator: ByteBufAllocator): ByteBuf =
+      Bytes.StringBytes.write(value, allocator)
+  }
 
   private[serialization] def long2bytes(n: Long): Array[Byte] = {
     @tailrec
