@@ -8,7 +8,7 @@ import rx.redis.resp.RespType
 import rx.redis.serialization.Bytes
 
 
-private[redis] trait ConnectionCommands extends api.ConnectionCommands { this: RxRedisClient =>
+private[redis] trait ConnectionCommands extends api.ConnectionCommands { this: api.Client =>
   def ping: Observable[RespType] =
     command(Ping)
 

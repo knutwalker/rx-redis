@@ -9,7 +9,7 @@ import rx.redis.resp.{DataType, RespBytes, RespString, RespType}
 import rx.redis.serialization.Writes
 import rx.redis.util._
 
-object MultiThreaded extends App {
+object MultiThreadedSharedClient extends App {
 
   class MyThread[A: Writes](client: Client, total: Int, command: A, expected: RespType, f: RespType => Unit) extends Thread {
     private final var _correct = 0
@@ -32,6 +32,8 @@ object MultiThreaded extends App {
   }
 
   val client = RxRedis("localhost", 6379)
+//  shareable is true by default
+//  val client = RxRedis("localhost", 6379, shareable = true)
 
   val rrs: List[(String, DataType)] = List(
     resp"PING" -> RespString("PONG"),

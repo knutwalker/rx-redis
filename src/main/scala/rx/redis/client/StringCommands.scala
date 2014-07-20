@@ -8,7 +8,7 @@ import rx.redis.resp.RespType
 import rx.redis.serialization.Bytes
 
 
-private[redis] trait StringCommands extends api.StringCommands { this: RxRedisClient =>
+private[redis] trait StringCommands extends api.StringCommands { this: api.Client =>
   def get(key: String): Observable[RespType] =
     command(Get(key))
 

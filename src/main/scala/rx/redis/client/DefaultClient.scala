@@ -11,7 +11,7 @@ import rx.redis.resp.RespType
 import rx.redis.serialization.Writes
 
 
-private[redis] object RxRedisClient {
+private[redis] object DefaultClient {
   private object JoinFun extends Func2[Observer[RespType], RespType, Unit] {
     def call(t1: Observer[RespType], t2: RespType): Unit = {
       t1.onNext(t2)
@@ -36,10 +36,10 @@ private[redis] object RxRedisClient {
     def onCompleted(): Unit = target.onCompleted()
   }
 }
-private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
+private[redis] final class DefaultClient (client: RxClient[ByteBuf, RespType])
   extends api.Client
   with Commands {
-  import rx.redis.client.RxRedisClient._
+  import rx.redis.client.DefaultClient._
 
   private val connect = client.connect()
   // TODO: cache() and flatMap all the time?
@@ -50,21 +50,19 @@ private[redis] final class RxRedisClient (client: RxClient[ByteBuf, RespType])
   private val requestResponseStream =
     requestStream.zip[RespType, Unit](responseStream, JoinFun)
 
-  protected def allocator = connection.getAllocator
-
   private def createResponse() = {
     val s = AsyncSubject.create[RespType]()
     requestStream.onNext(s)
     s
   }
 
-  def command(cmd: ByteBuf): Observable[RespType] = synchronized {
-    connection.writeAndFlush(cmd)
-    createResponse()
-  }
+//  def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = synchronized {
+//    connection.writeAndFlush(cmd, A.contentTransformer)
+//    createResponse()
+//  }
 
-  def command[A](cmd: A)(implicit B: Writes[A]): Observable[RespType] = synchronized {
-    connection.writeAndFlush(cmd, B.contentTransformer)
+  def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = {
+    connection.writeAndFlush(cmd, A.contentTransformer)
     createResponse()
   }
 
