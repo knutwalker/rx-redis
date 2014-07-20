@@ -7,7 +7,7 @@ import rx.redis.serialization.Bytes
 
 
 trait ConnectionCommands {
-  def ping: Observable[RespType]
+  def ping(): Observable[RespType]
 
   def echo[A](msg: A)(implicit A: Bytes[A]): Observable[RespType]
 }

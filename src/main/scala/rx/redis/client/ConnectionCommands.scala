@@ -9,7 +9,7 @@ import rx.redis.serialization.Bytes
 
 
 private[redis] trait ConnectionCommands extends api.ConnectionCommands { this: api.Client =>
-  def ping: Observable[RespType] =
+  def ping(): Observable[RespType] =
     command(Ping)
 
   def echo[A: Bytes](msg: A): Observable[RespType] =

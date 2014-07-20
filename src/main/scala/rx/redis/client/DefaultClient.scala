@@ -56,11 +56,6 @@ private[redis] final class DefaultClient (client: RxClient[ByteBuf, RespType])
     s
   }
 
-//  def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = synchronized {
-//    connection.writeAndFlush(cmd, A.contentTransformer)
-//    createResponse()
-//  }
-
   def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = {
     connection.writeAndFlush(cmd, A.contentTransformer)
     createResponse()

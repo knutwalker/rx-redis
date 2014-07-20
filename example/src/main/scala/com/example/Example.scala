@@ -11,20 +11,19 @@ object Example extends App {
 
   val client = RxRedis("localhost", 6379)
 
-  val PING = resp"PING"
   val INFO = resp"INFO"
   val CLIENT_LIST = resp"CLIENT LIST"
 
   val infoPart = "server"
   val SERVER_INFO = resp"INFO $infoPart"
 
-  client.command(PING).toBlocking.foreach { r =>
+  client.ping().toBlocking.foreach { r =>
     println(s"first PING : ${preview(r)}")
   }
 
   println("after first PING")
 
-  client.command(PING).toBlocking.foreach { r =>
+  client.ping().toBlocking.foreach { r =>
     println(s"second PING : ${preview(r)}")
   }
 
@@ -36,7 +35,7 @@ object Example extends App {
 
   println("after INFO")
 
-  client.command(PING).foreach { r =>
+  client.ping().foreach { r =>
     println(s"third PING : ${preview(r)}")
   }
 
