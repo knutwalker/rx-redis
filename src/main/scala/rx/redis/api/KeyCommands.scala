@@ -4,11 +4,13 @@ import rx.Observable
 
 import rx.redis.resp.RespType
 
+import scala.annotation.varargs
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 
 
 trait KeyCommands {
-  def del(key: String): Observable[RespType]
+  @varargs
+  def del(keys: String*): Observable[RespType]
 
   def exists(key: String): Observable[RespType]
 

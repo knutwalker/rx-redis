@@ -5,6 +5,7 @@ import rx.Observable
 import rx.redis.resp.RespType
 import rx.redis.serialization.Bytes
 
+import scala.annotation.varargs
 import scala.concurrent.duration.FiniteDuration
 
 
@@ -25,8 +26,10 @@ trait StringCommands {
 
   def decrBy(key: String, amount: Long): Observable[RespType]
 
+  @varargs
   def mget(keys: String*): Observable[RespType]
 
+  @varargs
   def mset[A](items: (String, A)*)(implicit A: Bytes[A]): Observable[RespType]
 
   def strLen(key: String): Observable[RespType]

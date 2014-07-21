@@ -10,8 +10,8 @@ import scala.concurrent.duration.{FiniteDuration, Deadline}
 
 
 private[redis] trait KeyCommands extends api.KeyCommands { this: api.Client =>
-  def del(key: String): Observable[RespType] =
-    command(Del(key))
+  def del(keys: String*): Observable[RespType] =
+    command(Del(keys: _*))
 
   def exists(key: String): Observable[RespType] =
     command(Exists(key))
