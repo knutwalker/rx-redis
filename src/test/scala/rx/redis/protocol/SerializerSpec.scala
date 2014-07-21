@@ -4,30 +4,103 @@ import io.netty.buffer.UnpooledByteBufAllocator
 
 import org.scalatest.{FunSuite, Inside}
 
-import rx.redis.commands.Ping
-import rx.redis.resp.{RespArray, RespBytes}
-import rx.redis.serialization.Writes
+import rx.redis.resp._
 import rx.redis.util.Utf8
 
 class SerializerSpec extends FunSuite with Inside {
 
   val alloc = UnpooledByteBufAllocator.DEFAULT
 
-  test("Ping") {
-
-    val dt1 = RespArray(Array(RespBytes("PING")))
-
-    val result = Serializer(dt1, Utf8, alloc)
-    println("result = " + result)
-
-    val dt2 = implicitly[Writes[Ping.type]].write(Ping)
-
-    println("dt1 = " + dt1)
-    println("dt2 = " + dt2)
-
-    val result2 = Serializer(dt2, Utf8, alloc)
-
-    println("result2 = " + result2)
-
+  private def compare(dt: DataType, resp: String) = {
+    val buf = alloc.buffer()
+    Serializer(dt, buf)
+    val result = buf.toString(Utf8)
+    assert(result == resp)
+    assert(Deserializer(buf) == dt)
+    buf.release()
   }
+
+  test("serialize strings") {
+    compare(RespString("OK"), "+OK\r\n")
+  }
+
+  test("serialize errors") {
+    compare(RespError("Error"), "-Error\r\n")
+  }
+
+  test("serialize integers") {
+    compare(RespInteger(42), ":42\r\n")
+    compare(RespInteger(Long.MaxValue), ":9223372036854775807\r\n")
+
+    compare(RespInteger(-42), ":-42\r\n")
+    compare(RespInteger(Long.MinValue), ":-9223372036854775808\r\n")
+  }
+
+  test("serialize bulk strings") {
+    compare(RespBytes("foobar"), "$6\r\nfoobar\r\n")
+    compare(RespBytes("foo\r\nbar"), "$8\r\nfoo\r\nbar\r\n")
+  }
+
+  test("serialize an empty string") {
+    compare(RespBytes(""), "$0\r\n\r\n")
+  }
+
+  test("serialize the null string") {
+    compare(NullString, "$-1\r\n")
+  }
+
+  test("serialize arrays") {
+    compare(RespArray(Array(RespBytes("foo"), RespBytes("bar"))), "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n")
+  }
+
+  test("serialize integer arrays") {
+    compare(RespArray(Array(RespInteger(1), RespInteger(2), RespInteger(3))), "*3\r\n:1\r\n:2\r\n:3\r\n")
+  }
+
+  test("serialize mixed arrays") {
+    compare(
+      RespArray(Array(
+        RespInteger(1),
+        RespInteger(2),
+        RespInteger(3),
+        RespInteger(4),
+        RespBytes("foobar")
+      )),
+      "*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nfoobar\r\n"
+    )
+  }
+
+  test("serialize an empty array") {
+    compare(RespArray(Array()), "*0\r\n")
+  }
+
+  test("serialize the null array") {
+    compare(NullArray, "*-1\r\n")
+  }
+
+  test("serialize nested arrays") {
+    compare(
+      RespArray(Array(
+        RespArray(Array(
+          RespInteger(1),
+          RespInteger(2),
+          RespInteger(3)
+        )),
+        RespArray(Array(
+          RespString("Foo"),
+          RespError("Bar")
+        ))
+      )),
+      "*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n"
+    )
+  }
+
+
+  // TODO: resp datatype tests
+//  test("disallow newlines in strings") {
+//    val ex = intercept[IllegalArgumentException] {
+//      RespString("foo\r\nbar")
+//    }
+//    assert(ex.getMessage == "'\\r\\n' is not allowed in a String")
+//  }
 }

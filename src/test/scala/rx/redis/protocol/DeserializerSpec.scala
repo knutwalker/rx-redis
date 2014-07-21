@@ -7,7 +7,7 @@ import org.scalatest.{FunSuite, Inside}
 import rx.redis.resp._
 
 
-class ParserSpec extends FunSuite with Inside {
+class DeserializerSpec extends FunSuite with Inside {
 
   val alloc = PooledByteBufAllocator.DEFAULT
 
@@ -24,31 +24,31 @@ class ParserSpec extends FunSuite with Inside {
 
   // happy path behavior
 
-  test("parse simple strings") {
+  test("deserialize simple strings") {
     compare("+OK\r\n", RespString("OK"))
   }
 
-  test("parse errors") {
+  test("deserialize errors") {
     compare("-Error\r\n", RespError("Error"))
   }
 
-  test("parse errors as simple strings") {
+  test("deserialize errors as simple strings") {
     compare(
       "-WRONGTYPE Operation against a key holding the wrong kind of value\r\n",
       RespError("WRONGTYPE Operation against a key holding the wrong kind of value"))
   }
 
-  test("parse integers") {
+  test("deserialize integers") {
     compare(":0\r\n", RespInteger(0))
     compare(":9223372036854775807\r\n", RespInteger(Long.MaxValue))
   }
 
-  test("parse integers with negative sign") {
+  test("deserialize integers with negative sign") {
     compare(":-1\r\n", RespInteger(-1))
     compare(":-9223372036854775808\r\n", RespInteger(Long.MinValue))
   }
 
-  test("parse bulk strings") {
+  test("deserialize bulk strings") {
     compare("$6\r\nfoobar\r\n", RespBytes("foobar"))
   }
 
@@ -56,27 +56,27 @@ class ParserSpec extends FunSuite with Inside {
     compare("$8\r\nfoo\r\nbar\r\n", RespBytes("foo\r\nbar"))
   }
 
-  test("parse multiple bulk strings") {
+  test("deserialize multiple bulk strings") {
     compare("$6\r\nfoobar\r\n$4\r\n1337\r\n", RespBytes("foobar"), RespBytes("1337"))
   }
 
-  test("parse an empty string") {
+  test("deserialize an empty string") {
     compare("$0\r\n\r\n", RespBytes(""))
   }
 
-  test("parse the null string") {
+  test("deserialize the null string") {
     compare("$-1\r\n", NullString)
   }
 
-  test("parse arrays") {
+  test("deserialize arrays") {
     compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(Array(RespBytes("foo"), RespBytes("bar"))))
   }
 
-  test("parse integer arrays") {
+  test("deserialize integer arrays") {
     compare("*3\r\n:1\r\n:2\r\n:3\r\n", RespArray(Array(RespInteger(1), RespInteger(2), RespInteger(3))))
   }
 
-  test("parse mixed arrays") {
+  test("deserialize mixed arrays") {
     compare("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nfoobar\r\n",
       RespArray(Array(
         RespInteger(1),
@@ -87,15 +87,15 @@ class ParserSpec extends FunSuite with Inside {
       )))
   }
 
-  test("parse an empty array") {
+  test("deserialize an empty array") {
     compare("*0\r\n", RespArray(Array()))
   }
 
-  test("parse the null array") {
+  test("deserialize the null array") {
     compare("*-1\r\n", NullArray)
   }
 
-  test("parse nested arrays") {
+  test("deserialize nested arrays") {
     compare("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n",
       RespArray(Array(
         RespArray(Array(

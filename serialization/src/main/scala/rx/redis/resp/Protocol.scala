@@ -14,5 +14,5 @@ private[redis] object Protocol {
   final val Lf = '\n'.toByte
 
   final val CrLf = Array(Cr, Lf)
-  final val Nullary = Array(Minus, '1'.toByte, Cr, Lf)
+  final val Nullary = Array(Minus, '1'.toByte)
 }

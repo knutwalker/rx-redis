@@ -24,16 +24,21 @@ case class RespInteger(value: Long) extends DataType {
 
 case class RespArray(elements: Array[DataType]) extends DataType {
   override def toString: String = elements.map(_.toString).mkString("[", ", ", "]")
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case RespArray(other) =>
+      // Maybe JMH this stuff
+      // 1. java.util.Arrays.equals(elements.asInstanceOf[Array[AnyRef]], other.asInstanceOf[Array[AnyRef]])
+      // 2. elements.deep == other.deep
+      // 3. elements.corresponds(other)(_ == _)
+      util.Arrays.equals(elements.asInstanceOf[Array[AnyRef]], other.asInstanceOf[Array[AnyRef]])
+    case _ => super.equals(obj)
+  }
 }
 
 case class RespBytes(bytes: Array[Byte]) extends DataType {
   override def equals(obj: scala.Any): Boolean = obj match {
-    case RespBytes(bs) =>
-      // TODO: JMH this stuff
-      // 1. java.util.Arrays.equals(bytes, bs)
-      // 2. bytes.deep == bs.deep
-      // 3. bytes.corresponds(bs)(_ == _)
-      util.Arrays.equals(bytes, bs)
+    case RespBytes(bs) => util.Arrays.equals(bytes, bs)
     case _ => super.equals(obj)
   }
 

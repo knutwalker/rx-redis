@@ -2,8 +2,7 @@ package rx.redis.serialization
 
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
-import scala.annotation.{implicitNotFound, tailrec}
-import scala.collection.mutable.ArrayBuffer
+import scala.annotation.implicitNotFound
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 
 
@@ -17,17 +16,8 @@ object Bytes {
 
   @inline def apply[T](implicit T: Bytes[T]): Bytes[T] = T
 
-  private final val long2bytes: (Long => Array[Byte]) = (n) => {
-    @tailrec
-    def loop(l: Long, b: ArrayBuffer[Byte]): Array[Byte] = {
-      if (l == 0) b.reverse.toArray
-      else {
-        b += (l % 10 + '0').toByte
-        loop(l / 10, b)
-      }
-    }
-    if (n == 0) Array((0 + '0').toByte)
-    else loop(n, new ArrayBuffer[Byte](10))
+  private final val long2bytes: (Long => Array[Byte]) = (l) => {
+    l.toString.getBytes
   }
 
   abstract class CompositeBytes[A, B: Bytes] extends Bytes[A] {

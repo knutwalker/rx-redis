@@ -6,13 +6,13 @@ class ConnectionCommandsSpec extends CommandsSuite {
 
   test("PING") {
     val ping = Ping
-    cmds(ping, "*1", "$4", "PING")
+    cmds(ping, "PING")
     cmd(ping, resp"PING")
   }
 
   test("ECHO") {
     val echo = Echo("foobar")
-    cmds(echo, "*2", "$4", "ECHO", "$6", "foobar")
+    cmds(echo, "ECHO", "foobar")
     cmd(echo, resp"ECHO foobar")
   }
 }

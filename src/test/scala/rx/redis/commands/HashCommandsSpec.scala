@@ -6,13 +6,13 @@ class HashCommandsSpec extends CommandsSuite {
 
   test("HGET") {
     val hget = HGet("foo", "bar")
-    cmds(hget, "*3", "$4", "HGET", "$3", "foo", "$3", "bar")
+    cmds(hget, "HGET", "foo", "bar")
     cmd(hget, resp"HGET foo bar")
   }
 
   test("HGETALL") {
     val hgetAll = HGetAll("foo")
-    cmds(hgetAll, "*2", "$7", "HGETALL", "$3", "foo")
+    cmds(hgetAll, "HGETALL", "foo")
     cmd(hgetAll, resp"HGETALL foo")
   }
 
