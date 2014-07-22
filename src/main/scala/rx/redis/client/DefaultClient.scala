@@ -36,8 +36,7 @@ private[redis] object DefaultClient {
   }
 }
 private[redis] final class DefaultClient (client: RxClient[DataType, RespType])
-  extends api.Client
-  with Commands {
+    extends api.Client {
   import rx.redis.client.DefaultClient._
 
   private val connect = client.connect()

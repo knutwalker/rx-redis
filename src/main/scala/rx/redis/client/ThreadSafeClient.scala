@@ -8,9 +8,7 @@ import rx.redis.serialization.Writes
 
 
 private[redis] final class ThreadSafeClient(underlying: api.Client)
-  extends api.Client
-  with Commands {
-
+    extends api.Client {
 
   def command(cmd: DataType): Observable[RespType] = synchronized {
     underlying.command(cmd)
