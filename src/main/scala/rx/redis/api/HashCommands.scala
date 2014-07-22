@@ -2,14 +2,14 @@ package rx.redis.api
 
 import rx.Observable
 
-import rx.redis.commands.{HGetAll, HGet}
-import rx.redis.resp.RespType
+import rx.redis.commands.{HGet, HGetAll}
+import rx.redis.serialization.{Bytes, Reads}
 
 
 trait HashCommands { this: Client =>
-  def hget(key: String, field: String): Observable[RespType] =
-    command(HGet(key, field))
+  def hget[A: Bytes](key: String, field: String): Observable[Option[A]] =
+    command(HGet(key, field)).flatMap(Reads.bytes.obsOptT[A])
 
-  def hgetAll(key: String): Observable[RespType] =
-    command(HGetAll(key))
+  def hgetAll[A: Bytes](key: String): Observable[(String, A)] =
+    command(HGetAll(key)).flatMap(Reads.unzip.obsAB[String, A])
 }

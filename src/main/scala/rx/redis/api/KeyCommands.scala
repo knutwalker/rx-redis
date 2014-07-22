@@ -2,34 +2,37 @@ package rx.redis.api
 
 import rx.Observable
 
-import rx.redis.commands.{Ttl, RandomKey, Keys, ExpireAt, Expire, Exists, Del}
-import rx.redis.resp.RespType
+import rx.redis.commands.{Del, Exists, Expire, ExpireAt, Keys, RandomKey, Ttl}
+import rx.redis.serialization.{Bytes, Reads}
 
-import scala.annotation.varargs
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 
 
 trait KeyCommands { this: Client =>
-  @varargs
-  def del(keys: String*): Observable[RespType] =
-    command(Del(keys: _*))
+  // varargs is really really buggy... SI-1459 ?
+  // @varargs
+  def del(keys: String*): Observable[Long] =
+    command(Del(keys: _*)).flatMap(Reads.int.obs)
 
-  def exists(key: String): Observable[RespType] =
-    command(Exists(key))
+  def del(keys: Array[String]): Observable[Long] =
+    del(keys: _*)
 
-  def expire(key: String, expires: FiniteDuration): Observable[RespType] =
-    command(Expire(key, expires))
+  def exists(key: String): Observable[Boolean] =
+    command(Exists(key)).flatMap(Reads.bool.obs)
 
-  def expireAt(key: String, deadline: Deadline): Observable[RespType] =
-    command(ExpireAt(key, deadline))
+  def expire(key: String, expires: FiniteDuration): Observable[Boolean] =
+    command(Expire(key, expires)).flatMap(Reads.bool.obs)
 
-  def keys(pattern: String): Observable[RespType] =
-    command(Keys(pattern))
+  def expireAt(key: String, deadline: Deadline): Observable[Boolean] =
+    command(ExpireAt(key, deadline)).flatMap(Reads.bool.obs)
 
-  def randomKey(): Observable[RespType] =
-    command(RandomKey)
+  def keys[A: Bytes](pattern: String): Observable[A] =
+    command(Keys(pattern)).flatMap(Reads.list.obsMT[A])
 
-  def ttl(key: String): Observable[RespType] =
-    command(Ttl(key))
+  def randomKey(): Observable[Option[String]] =
+    command(RandomKey).flatMap(Reads.bytes.obsOptT[String])
+
+  def ttl(key: String): Observable[Long] =
+    command(Ttl(key)).flatMap(Reads.int.obs)
 
 }

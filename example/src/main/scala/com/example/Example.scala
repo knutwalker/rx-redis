@@ -1,6 +1,7 @@
 package com.example
 
 import rx.lang.scala.JavaConversions._
+import rx.lang.scala.Observable
 import rx.lang.scala.XJavaConversions._
 
 import rx.redis._
@@ -17,13 +18,13 @@ object Example extends App {
   val SERVER_INFO = cmd"INFO $infoPart"
 
   client.ping().toBlocking.foreach { r =>
-    println(s"first PING : ${preview(r)}")
+    println(s"first PING : $r")
   }
 
   println("after first PING")
 
   client.ping().toBlocking.foreach { r =>
-    println(s"second PING : ${preview(r)}")
+    println(s"second PING : $r")
   }
 
   println("after second PING")
@@ -35,7 +36,7 @@ object Example extends App {
   println("after INFO")
 
   client.ping().foreach { r =>
-    println(s"third PING : ${preview(r)}")
+    println(s"third PING : $r")
   }
 
   println("after third PING")
@@ -52,11 +53,19 @@ object Example extends App {
 
   println("after SERVER INFO")
 
-  val set = client.set("foo", "bar")
-  val get = client.get("foo")
+  client.set("bar", "foo")
+  client.set("bazz", "oh noes")
 
-  set.merge(get).doOnCompleted(client.shutdown()) foreach { r =>
-    println(s"GET foo: ${preview(r)}")
+  client.set("foo", "bar").foreach(println)
+
+
+  client.mget[String]("foo", "bar", "baz").foreach { r =>
+    println(s"MGET: $r")
+  }
+
+
+  (client.get[String]("foo"): Observable[Option[String]]).doOnCompleted(client.shutdown()) foreach { getResult =>
+    println(s"GET foo: $getResult")
   }
 
   println("before await")

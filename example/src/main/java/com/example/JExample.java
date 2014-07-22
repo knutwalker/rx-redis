@@ -1,51 +1,43 @@
 package com.example;
 
-import rx.Observer;
+import rx.Observable;
 import rx.redis.RxRedis;
 import rx.redis.api.Client;
 import rx.redis.japi.DefaultBytes;
-import rx.redis.resp.RespType;
 import rx.redis.serialization.Bytes;
-
-import java.util.Random;
+import scala.Option;
 
 public final class JExample {
 
-  static final Random random = new Random();
-
-  static String msg(final String s) {
-    return String.format("Hello from %s, it is %d and %s", s, System.currentTimeMillis(), String.valueOf(random.nextInt(60)));
-  }
-
   public static void main(final String[] args) {
 
-    final Client client = RxRedis.connect("localhost", 6379);
     final Bytes<String> stringBytes = DefaultBytes.String();
+    final Client client = RxRedis.connect("localhost", 6379, false);
 
-    client.set("foo1", msg("foo1"), stringBytes);
-    client.set("foo2", msg("foo2"), stringBytes);
-    client.set("foo3", msg("foo3"), stringBytes);
+    client.del(new String[]{"foo", "foo1", "foo2", "foo3", "foo4", "foo5", "what?"})
+        .toBlocking().forEach(System.out::println);
+
+    client.set("foo1", "foo1", stringBytes);
+    client.set("foo2", "foo2", stringBytes);
+    client.set("foo3", "foo3", stringBytes);
+
+    final Observable<Option<String>> gets =
+        client.get("foo", stringBytes)
+            .mergeWith(client.get("foo1", stringBytes));
+
+    final Observable<Option<String>> mget =
+        client.mget(new String[]{"foo1", "foo2", "foo4", "foo3", "foo5"}, stringBytes);
+
+    gets.mergeWith(mget)
+        .forEach(response -> System.out.println("GET or MGET = " + response));
 
     client.ping()
-        .concatWith(client.get("foo1"))
-        .concatWith(client.get("foo2"))
-        .concatWith(client.get("foo3"))
-        .subscribe(new Observer<RespType>() {
-          @Override
-          public void onCompleted() {
-            client.shutdown();
-          }
-
-          @Override
-          public void onError(final Throwable e) {
-            e.printStackTrace();
-          }
-
-          @Override
-          public void onNext(final RespType respType) {
-            System.out.println("response = " + respType);
-          }
-        });
+        .concatWith(client.echo("42", stringBytes))
+        .concatWith(client.incr("what?").map(String::valueOf))
+        .subscribe(
+            r -> System.out.println("mixed = " + r),
+            Throwable::printStackTrace,
+            client::shutdown);
 
     RxRedis.await(client);
   }
