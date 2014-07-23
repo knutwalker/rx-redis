@@ -6,7 +6,7 @@ import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
 
 
-@implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.api.Write[${A}] in order to send ${A} directly.")
+@implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.serialization.Writes[${A}] in order to send ${A} directly.")
 trait Writes[A] {
 
   def write(value: A): DataType

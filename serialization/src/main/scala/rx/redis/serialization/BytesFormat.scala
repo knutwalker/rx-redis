@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 
 
-@implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.serialization.Bytes[${A}] in order to use ${A} as custom value.")
+@implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.serialization.BytesFormat[${A}] in order to use ${A} as custom value.")
 trait BytesFormat[A] {
 
   def bytes(value: A): Array[Byte]
@@ -55,7 +55,7 @@ object BytesFormat {
         (buf(0) & 0xff) << 24 |
         (buf(1) & 0xff) << 16 |
         (buf(2) & 0xff) << 8 |
-        buf(3) & 0xff
+        (buf(3) & 0xff)
       } else {
         0
       }

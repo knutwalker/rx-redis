@@ -19,31 +19,31 @@ class Macros(val c: Context) {
   private val rb = q"rx.redis.resp.RespBytes"
 
   private class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
-    val proper: Type = field.infoIn(tpe).resultType
-    val access = q"value.${field.name}"
+    private val proper: Type = field.infoIn(tpe).resultType
+    private val access = q"value.${field.name}"
 
-    val isRepeated =
+    private val isRepeated =
       proper.resultType.typeSymbol == definitions.RepeatedParamClass
 
-    val neededTypeClassType: Type =
+    private val neededTypeClassType: Type =
       if (!isRepeated) proper
       else proper.typeArgs.head
 
-    val isTupleType =
+    private val isTupleType =
       neededTypeClassType.typeArgs.nonEmpty &&
         definitions.TupleClass.seq.exists(t => neededTypeClassType.baseType(t) != NoType)
 
-    val tupleSize =
+    private val tupleSize =
       if (!isTupleType) q"1"
       else q"${neededTypeClassType.typeArgs.size}"
 
-    val neededTypeClasses: List[Type] =
+    private val neededTypeClasses: List[Type] =
       if (!isTupleType)
         List(appliedType(tc.typeConstructor, neededTypeClassType :: Nil))
       else
         neededTypeClassType.typeArgs.map(t => appliedType(tc.typeConstructor, t :: Nil))
 
-    def resolvedOneTypeClass(tc: Type): c.Tree = {
+    private def resolvedOneTypeClass(tc: Type): c.Tree = {
       val paramWrites = c.inferImplicitValue(tc)
       if (paramWrites == EmptyTree) {
         fail(
@@ -53,7 +53,7 @@ class Macros(val c: Context) {
       paramWrites
     }
 
-    val resolvedTypeClasses: List[c.Tree] = {
+    private val resolvedTypeClasses: List[c.Tree] = {
       neededTypeClasses.map(resolvedOneTypeClass)
     }
 
