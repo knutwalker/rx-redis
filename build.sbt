@@ -1,15 +1,10 @@
-name := """rx-redis"""
+name := """rx-redis-parent"""
 
 organization in ThisBuild := """de.knutwalker"""
 
 version in ThisBuild := "0.1-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.1"
-
-libraryDependencies ++= List(
-  "com.netflix.rxnetty"   %  "rx-netty"         % "0.3.9",
-  "org.scalatest"        %%  "scalatest"        % "2.2.0" % "test"
-)
 
 scalacOptions in ThisBuild ++= List(
   "-deprecation",
@@ -28,6 +23,12 @@ val client = RxRedis("localhost", 6379)"""
 
 lazy val serialization = project
 
-lazy val rxRedis = project.in(file(".")).dependsOn(serialization)
+lazy val core = project.dependsOn(serialization)
 
-lazy val example = project.dependsOn(rxRedis)
+lazy val japi = project.in(file("language-bindings") / "java").dependsOn(core)
+
+lazy val example = project.in(file("examples") / "scala").dependsOn(core)
+
+lazy val `java-example` = project.in(file("examples") / "java").dependsOn(japi)
+
+lazy val rxRedis = project.in(file(".")).dependsOn(`java-example`).aggregate(`java-example`, example, japi, core, serialization)

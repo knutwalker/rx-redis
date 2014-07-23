@@ -10,7 +10,7 @@ import scala.reflect.macros.blackbox.Context
 class Macros(val c: Context) {
   import c.universe._
 
-  def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, Bytes, Writes]
+  def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, BytesFormat, Writes]
 
   private def fail(msg: String) =
     c.abort(c.enclosingPosition, "\n" + msg)
