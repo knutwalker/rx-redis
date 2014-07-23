@@ -20,22 +20,18 @@ class Macros(val c: Context) {
 
   private class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
     val proper: Type = field.infoIn(tpe).resultType
-
-    val x = q"x"
     val access = q"value.${field.name}"
 
-    val isVarArgs =
-      proper.typeArgs.size == 1 &&
-      !proper.typeSymbol.isAbstract &&
-      proper.getClass.getSimpleName.endsWith("ClassArgsTypeRef")
+    val isRepeated =
+      proper.resultType.typeSymbol == definitions.RepeatedParamClass
 
     val neededTypeClassType: Type =
-      if (!isVarArgs) proper
+      if (!isRepeated) proper
       else proper.typeArgs.head
 
     val isTupleType =
-      neededTypeClassType.typeArgs.nonEmpty
-      neededTypeClassType.baseClasses.exists(_.asType.toType =:= typeOf[Product])
+      neededTypeClassType.typeArgs.nonEmpty &&
+        definitions.TupleClass.seq.exists(t => neededTypeClassType.baseType(t) != NoType)
 
     val tupleSize =
       if (!isTupleType) q"1"
@@ -77,9 +73,9 @@ class Macros(val c: Context) {
       q"..$tuples"
     }
 
-    private def generateVariadicArgs(): c.Tree = {
+    private def generateRepeatedArgs(): c.Tree = {
       val items = fq"x <- $access"
-      val singleArg = generateSimpleArg(x)
+      val singleArg = generateSimpleArg(q"x")
       q"""
       for ($items) {
         $singleArg
@@ -87,9 +83,9 @@ class Macros(val c: Context) {
       """
     }
 
-    private def generateVariadicTupleArgs(): c.Tree = {
+    private def generateRepeatedTupleArgs(): c.Tree = {
       val items = fq"x <- $access"
-      val tupleArgs = generateTupleArg(x)
+      val tupleArgs = generateTupleArg(q"x")
       q"""
       for ($items) {
         $tupleArgs
@@ -97,18 +93,18 @@ class Macros(val c: Context) {
       """
     }
 
-    def generateArg(): c.Tree =
-      if (!isVarArgs && !isTupleType)
+    val tree: c.Tree =
+      if (!isRepeated && !isTupleType)
         generateSimpleArg(access)
-      else if (!isVarArgs)
+      else if (!isRepeated)
         generateTupleArg(access)
       else if (!isTupleType)
-        generateVariadicArgs()
+        generateRepeatedArgs()
       else
-        generateVariadicTupleArgs()
+        generateRepeatedTupleArgs()
 
-    def generateSize(): Option[c.Tree] =
-      if (!isVarArgs)
+    val sizeHint: Option[c.Tree] =
+      if (!isRepeated)
         if (!isTupleType) None
         else Some(tupleSize)
       else
@@ -118,7 +114,7 @@ class Macros(val c: Context) {
 
   private def sizeHeader(args: List[ArgType]): c.Tree = {
     val argsSize = args.size
-    val argSizeTrees = args flatMap (_.generateSize())
+    val argSizeTrees = args flatMap (_.sizeHint)
     val definiteSize = q"${1 + (argsSize - argSizeTrees.size)}"
     argSizeTrees.foldLeft(definiteSize) { (tree, sizeHint) =>
       q"$tree + $sizeHint"
@@ -141,7 +137,7 @@ class Macros(val c: Context) {
     val arguments = tpe.decls.toList.collect {
       case method: MethodSymbol if method.isCaseAccessor => new ArgType(tpe, tcaTag.tpe, method)
     }
-    val argumentTrees = arguments map (_.generateArg())
+    val argumentTrees = arguments map (_.tree)
 
     val dt = tq"rx.redis.resp.DataType"
     val generated = q"""
