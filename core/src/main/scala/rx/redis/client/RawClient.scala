@@ -37,7 +37,7 @@ private[redis] abstract class RawClient {
   def shutdown(): Observable[Unit]
   def closedObservable: Observable[Unit]
 
-  private def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] =
+  def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] =
     command(A.write(cmd))
 
   // ==============

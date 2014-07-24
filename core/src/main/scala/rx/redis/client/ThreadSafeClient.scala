@@ -27,10 +27,6 @@ private[redis] final class ThreadSafeClient(underlying: RawClient)
     underlying.command(cmd)
   }
 
-//  def command[A: Writes](cmd: A): Observable[RespType] = synchronized {
-//    underlying.command(cmd)
-//  }
-
   def closedObservable: Observable[Unit] =
     underlying.closedObservable
 

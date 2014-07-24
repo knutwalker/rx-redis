@@ -23,7 +23,6 @@ import rx.redis.resp.{RespArray, RespBytes, RespInteger, RespString, RespType}
 import scala.collection.JavaConverters._
 
 
-
 trait Reads[A] { self =>
 
   def pf: PartialFunction[RespType, A]

@@ -48,7 +48,7 @@ private[redis] object DefaultClient {
     def onCompleted(): Unit = target.onCompleted()
   }
 }
-private[redis] final class DefaultClient (client: RxClient[DataType, RespType])
+private[redis] final class DefaultClient(client: RxClient[DataType, RespType])
     extends RawClient {
   import rx.redis.client.DefaultClient._
 
@@ -57,7 +57,7 @@ private[redis] final class DefaultClient (client: RxClient[DataType, RespType])
   private val connection = connect.toBlocking.first()
 
   private val requestStream = PublishSubject.create[Observer[RespType]]()
-  private val responseStream =  connection.getInput
+  private val responseStream = connection.getInput
   private val requestResponseStream =
     requestStream.zip[RespType, Unit](responseStream, JoinFun)
 
@@ -71,10 +71,6 @@ private[redis] final class DefaultClient (client: RxClient[DataType, RespType])
     connection.writeAndFlush(cmd)
     createResponse()
   }
-
-//  def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = {
-//    command(A.write(cmd))
-//  }
 
   def shutdown(): Observable[Unit] = {
     requestStream.onCompleted()
