@@ -1,6 +1,7 @@
 package com.example
 
 import rx.redis._
+import rx.redis.api.RxRedis
 
 
 object AnotherExample extends App {

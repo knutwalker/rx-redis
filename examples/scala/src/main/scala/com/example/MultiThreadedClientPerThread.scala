@@ -1,6 +1,6 @@
 package com.example
 
-import rx.redis._
+import rx.redis.api.RxRedis
 import rx.redis.resp.{DataType, RespType}
 
 

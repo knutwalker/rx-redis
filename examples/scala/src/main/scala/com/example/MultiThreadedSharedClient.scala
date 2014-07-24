@@ -1,6 +1,6 @@
 package com.example
 
-import rx.redis.RxRedis
+import rx.redis.api.RxRedis
 import rx.redis.resp.{DataType, RespType}
 
 object MultiThreadedSharedClient extends App {
