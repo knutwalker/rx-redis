@@ -1,1 +1,0 @@
-name := "rx-redis-java"
