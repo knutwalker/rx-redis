@@ -2,8 +2,6 @@ name := """rx-redis-parent"""
 
 organization in ThisBuild := """de.knutwalker"""
 
-version in ThisBuild := "0.1-SNAPSHOT"
-
 scalaVersion in ThisBuild := "2.11.1"
 
 scalacOptions in ThisBuild ++= List(
