@@ -1,5 +1,7 @@
 name := """rx-redis-parent"""
 
+description in ThisBuild := """Reactive Extensions for Redis"""
+
 organization in ThisBuild := """de.knutwalker"""
 
 scalaVersion in ThisBuild := "2.11.2"

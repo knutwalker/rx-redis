@@ -1,5 +1,7 @@
 startYear in ThisBuild := Some(2014)
 
+homepage in ThisBuild := Some(url("https://github.com/knutwalker/rx-redis"))
+
 licenses in ThisBuild += "Apache License, Verison 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
 
 scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/knutwalker/rx-redis"), "scm:git:https://github.com/knutwalker/rx-redis.git", Some("scm:git:ssh://git@github.com:knutwalker/rx-redis.git")))
