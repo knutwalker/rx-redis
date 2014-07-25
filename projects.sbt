@@ -11,7 +11,9 @@ lazy val serialization = project.settings(
 lazy val core = project.dependsOn(serialization).configs(
   IntegrationTest).settings(Defaults.itSettings: _*).settings(
     name := "rx-redis-core",
-    libraryDependencies ++= coreDeps)
+    libraryDependencies ++= coreDeps,
+    logBuffered in IntegrationTest := false,
+    fork in IntegrationTest := true)
 
 lazy val api = project.in(file("language-bindings") / "scala").dependsOn(core).settings(
   name := "rx-redis-scala",
