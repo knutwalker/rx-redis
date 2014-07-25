@@ -15,17 +15,15 @@
  */
 package rx.redis.protocol
 
-import io.netty.buffer.ByteBuf
-import io.netty.channel.ChannelHandler.Sharable
-import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.ByteToMessageCodec
-
-import rx.redis.resp.DataType
-
 import java.util
 
-@Sharable
-class RespCodec extends ByteToMessageCodec[DataType] {
+import io.netty.buffer.ByteBuf
+import io.netty.channel.ChannelHandlerContext
+import rx.redis.resp.DataType
+
+
+private[redis] class RespCodec extends StrictByteToMessageCodec[ByteBuf, DataType] {
+
   def encode(ctx: ChannelHandlerContext, msg: DataType, out: ByteBuf): Unit = {
     Serializer(msg, out)
   }
