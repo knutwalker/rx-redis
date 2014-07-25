@@ -1,6 +1,4 @@
 import sbt._
-import Keys._
-import Defaults._
 import sbtrelease._
 import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
