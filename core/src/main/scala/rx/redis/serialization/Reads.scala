@@ -23,13 +23,13 @@ import rx.redis.resp.{RespArray, RespBytes, RespInteger, RespString, RespType}
 import scala.collection.JavaConverters._
 
 
-trait Reads[A] { self =>
+trait Reads[T] { self =>
 
-  def pf: PartialFunction[RespType, A]
+  def pf: PartialFunction[RespType, T]
 
-  val obs: Func1[_ >: RespType, _ <: Observable[A]] =
-    new Func1[RespType, Observable[A]] {
-      def call(t1: RespType): Observable[A] = {
+  val asObservable: Func1[_ >: RespType, _ <: Observable[T]] =
+    new Func1[RespType, Observable[T]] {
+      def call(t1: RespType): Observable[T] = {
         if (self.pf.isDefinedAt(t1))
           Observable.just(self.pf(t1))
         else
@@ -37,53 +37,53 @@ trait Reads[A] { self =>
       }
     }
 
-  def obsT[B](implicit B: BytesFormat[B], ev: A =:= Array[Byte]): Func1[_ >: RespType, _ <: Observable[B]] =
-    new Func1[RespType, Observable[B]] {
-      def call(t1: RespType): Observable[B] = {
+  def asObservableOfA[A](implicit A: BytesFormat[A], ev: T =:= Array[Byte]): Func1[_ >: RespType, _ <: Observable[A]] =
+    new Func1[RespType, Observable[A]] {
+      def call(t1: RespType): Observable[A] = {
         if (self.pf.isDefinedAt(t1))
-          Observable.just(B.value(self.pf(t1)))
+          Observable.just(A.value(self.pf(t1)))
         else
           Observable.empty()
       }
     }
 
-  def obsOptT[B](implicit B: BytesFormat[B], ev: A =:= Array[Byte]): Func1[_ >: RespType, _ <: Observable[Option[B]]] =
-    new Func1[RespType, Observable[Option[B]]] {
-      def call(t1: RespType): Observable[Option[B]] = {
+  def asOptionObservableOfA[A](implicit A: BytesFormat[A], ev: T =:= Array[Byte]): Func1[_ >: RespType, _ <: Observable[Option[A]]] =
+    new Func1[RespType, Observable[Option[A]]] {
+      def call(t1: RespType): Observable[Option[A]] = {
         if (self.pf.isDefinedAt(t1))
-          Observable.just(Some(B.value(self.pf(t1))))
+          Observable.just(Some(A.value(self.pf(t1))))
         else
           Observable.just(None)
       }
     }
 
-  def obsMT[B](implicit B: BytesFormat[B], ev: A <:< List[RespType]): Func1[_ >: RespType, _ <: Observable[B]] =
-    new Func1[RespType, Observable[B]] {
-      def call(t1: RespType): Observable[B] = {
+  def asManyObservableOfA[A](implicit A: BytesFormat[A], ev: T <:< List[RespType]): Func1[_ >: RespType, _ <: Observable[A]] =
+    new Func1[RespType, Observable[A]] {
+      def call(t1: RespType): Observable[A] = {
         if (self.pf.isDefinedAt(t1))
-          Observable.from(self.pf(t1).collect(Reads.bytes.pf).map(B.value).asJava)
+          Observable.from(self.pf(t1).collect(Reads.bytes.pf).map(A.value).asJava)
         else
           Observable.empty()
       }
     }
 
-  def obsMTOpt[B](implicit B: BytesFormat[B], ev: A <:< List[RespType]): Func1[_ >: RespType, _ <: Observable[Option[B]]] =
-    new Func1[RespType, Observable[Option[B]]] {
-      def call(t1: RespType): Observable[Option[B]] = {
+  def asManyOptionObservableOfA[A](implicit A: BytesFormat[A], ev: T <:< List[RespType]): Func1[_ >: RespType, _ <: Observable[Option[A]]] =
+    new Func1[RespType, Observable[Option[A]]] {
+      def call(t1: RespType): Observable[Option[A]] = {
         if (self.pf.isDefinedAt(t1))
-          Observable.from(self.pf(t1).map(Reads.bytes.pf.andThen(B.value).lift).asJava)
+          Observable.from(self.pf(t1).map(Reads.bytes.pf.andThen(A.value).lift).asJava)
         else
           Observable.empty()
       }
     }
 
-  def obsAB[B, C](implicit B: BytesFormat[B], C: BytesFormat[C], ev: A <:< List[(RespType, RespType)]): Func1[_ >: RespType, _ <: Observable[(B, C)]] =
-    new Func1[RespType, Observable[(B, C)]] {
-      def call(t1: RespType): Observable[(B, C)] = {
+  def asObservableOfAAndB[A, B](implicit A: BytesFormat[A], B: BytesFormat[B], ev: T <:< List[(RespType, RespType)]): Func1[_ >: RespType, _ <: Observable[(A, B)]] =
+    new Func1[RespType, Observable[(A, B)]] {
+      def call(t1: RespType): Observable[(A, B)] = {
         if (self.pf.isDefinedAt(t1))
           Observable.from(self.pf(t1).collect{
             case (x, y) if Reads.bytes.pf.isDefinedAt(x) && Reads.bytes.pf.isDefinedAt(y) =>
-              (B.value(Reads.bytes.pf(x)), C.value(Reads.bytes.pf(y)))
+              (A.value(Reads.bytes.pf(x)), B.value(Reads.bytes.pf(y)))
           }.asJava)
         else
           Observable.empty()

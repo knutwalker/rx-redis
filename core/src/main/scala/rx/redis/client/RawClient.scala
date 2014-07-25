@@ -20,7 +20,7 @@ import rx.Observable
 import rx.redis.commands._
 import rx.redis.protocol.Configurator
 import rx.redis.resp.{DataType, RespType}
-import rx.redis.serialization.{BytesFormat, Reads, Writes}
+import rx.redis.serialization.{BytesFormat, Writes}
 
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 
@@ -45,81 +45,81 @@ private[redis] abstract class RawClient {
   // ==============
 
   def del(keys: String*): Observable[Long] =
-    command(Del(keys: _*)).flatMap(Reads.int.obs)
+    command(Del(keys: _*)).flatMap(Del.reads)
 
   def exists(key: String): Observable[Boolean] =
-    command(Exists(key)).flatMap(Reads.bool.obs)
+    command(Exists(key)).flatMap(Exists.reads)
 
   def expire(key: String, expires: FiniteDuration): Observable[Boolean] =
-    command(Expire(key, expires)).flatMap(Reads.bool.obs)
+    command(Expire(key, expires)).flatMap(Expire.reads)
 
   def expireAt(key: String, deadline: Deadline): Observable[Boolean] =
-    command(ExpireAt(key, deadline)).flatMap(Reads.bool.obs)
+    command(ExpireAt(key, deadline)).flatMap(ExpireAt.reads)
 
-  def keys[A: BytesFormat](pattern: String): Observable[A] =
-    command(Keys(pattern)).flatMap(Reads.list.obsMT[A])
+  def keys(pattern: String): Observable[String] =
+    command(Keys(pattern)).flatMap(Keys.reads)
 
   def randomKey(): Observable[Option[String]] =
-    command(RandomKey).flatMap(Reads.bytes.obsOptT[String])
+    command(RandomKey).flatMap(RandomKey.reads)
 
   def ttl(key: String): Observable[Long] =
-    command(Ttl(key)).flatMap(Reads.int.obs)
+    command(Ttl(key)).flatMap(Ttl.reads)
 
   // =================
   //  String Commands
   // =================
 
   def decr(key: String): Observable[Long] =
-    command(Decr(key)).flatMap(Reads.int.obs)
+    command(Decr(key)).flatMap(Decr.reads)
 
   def decrBy(key: String, amount: Long): Observable[Long] =
-    command(DecrBy(key, amount)).flatMap(Reads.int.obs)
+    command(DecrBy(key, amount)).flatMap(Decr.reads)
 
-  def get[A](key: String)(implicit A: BytesFormat[A]): Observable[Option[A]] =
-    command(Get(key)).flatMap(Reads.bytes.obsOptT[A])
+  def get[A: BytesFormat](key: String): Observable[Option[A]] =
+    command(Get(key)).flatMap(Get.reads)
 
   def incr(key: String): Observable[Long] =
-    command(Incr(key)).flatMap(Reads.int.obs)
+    command(Incr(key)).flatMap(Incr.reads)
 
   def incrBy(key: String, amount: Long): Observable[Long] =
-    command(IncrBy(key, amount)).flatMap(Reads.int.obs)
+    command(IncrBy(key, amount)).flatMap(Incr.reads)
 
-  def mget[A](keys: String*)(implicit A: BytesFormat[A]): Observable[Option[A]] =
-    command(MGet(keys: _*)).flatMap(Reads.list.obsMTOpt[A])
+  def mget[A: BytesFormat](keys: String*): Observable[Option[A]] =
+    command(MGet(keys: _*)).flatMap(MGet.reads)
 
-  def mset[A](items: (String, A)*)(implicit A: BytesFormat[A]): Observable[Boolean] =
-    command(MSet(items: _*)).flatMap(Reads.bool.obs)
+  def mset[A: BytesFormat](items: (String, A)*): Observable[Boolean] =
+    command(MSet(items: _*)).flatMap(MSet.reads)
 
-  def set[A](key: String, value: A)(implicit A: BytesFormat[A]): Observable[Boolean] =
-    command(Set(key, value)).flatMap(Reads.bool.obs)
+  def set[A: BytesFormat](key: String, value: A): Observable[Boolean] =
+    command(Set(key, value)).flatMap(Set.reads)
 
-  def setEx[A](key: String, value: A, expires: FiniteDuration)(implicit A: BytesFormat[A]): Observable[Boolean] =
-    command(SetEx(key, expires, value)).flatMap(Reads.bool.obs)
+  def setEx[A: BytesFormat](key: String, value: A, expires: FiniteDuration): Observable[Boolean] =
+    command(SetEx(key, expires, value)).flatMap(SetEx.reads)
 
-  def setNx[A](key: String, value: A)(implicit A: BytesFormat[A]): Observable[Boolean] =
-    command(SetNx(key, value)).flatMap(Reads.bool.obs)
+  def setNx[A: BytesFormat](key: String, value: A): Observable[Boolean] =
+    command(SetNx(key, value)).flatMap(SetNx.reads)
 
   def strLen(key: String): Observable[Long] =
-    command(StrLen(key)).flatMap(Reads.int.obs)
+    command(StrLen(key)).flatMap(StrLen.reads)
 
 
   // =====================
   //  Connection Commands
   // =====================
 
-  def echo[A](msg: A)(implicit A: BytesFormat[A]): Observable[A] =
-    command(Echo(msg)).flatMap(Reads.bytes.obsT[A])
+  def echo[A: BytesFormat](msg: A): Observable[A] =
+    command(Echo(msg)).flatMap(Echo.reads)
 
   def ping(): Observable[String] =
-    command(Ping).flatMap(Reads.bytes.obsT[String])
+    command(Ping).flatMap(Ping.reads)
 
   // ===============
   //  Hash Commands
   // ===============
 
   def hget[A: BytesFormat](key: String, field: String): Observable[Option[A]] =
-    command(HGet(key, field)).flatMap(Reads.bytes.obsOptT[A])
+    command(HGet(key, field)).flatMap(HGet.reads)
 
   def hgetAll[A: BytesFormat](key: String): Observable[(String, A)] =
-    command(HGetAll(key)).flatMap(Reads.unzip.obsAB[String, A])
+    command(HGetAll(key)).flatMap(HGetAll.reads)
 }

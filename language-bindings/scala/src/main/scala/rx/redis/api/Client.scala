@@ -51,7 +51,7 @@ final class Client(raw: RawClient) {
     raw.expireAt(key, deadline)
 
   def keys(pattern: String): Observable[String] =
-    raw.keys[String](pattern)
+    raw.keys(pattern)
 
   def randomKey(): Observable[Option[String]] =
     raw.randomKey()

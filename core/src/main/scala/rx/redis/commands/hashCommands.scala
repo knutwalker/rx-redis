@@ -15,15 +15,17 @@
  */
 package rx.redis.commands
 
-import rx.redis.serialization.Writes
+import rx.redis.serialization.{Reads, BytesFormat, Writes}
 
 
 case class HGet(key: String, field: String)
 object HGet {
-  implicit val HGetWrites = Writes.writes[HGet]
+  implicit val writes = Writes.writes[HGet]
+  def reads[A: BytesFormat] = Reads.bytes.asOptionObservableOfA[A]
 }
 
 case class HGetAll(key: String)
 object HGetAll {
-  implicit val HGetAllWrites = Writes.writes[HGetAll]
+  implicit val writes = Writes.writes[HGetAll]
+  def reads[A: BytesFormat] = Reads.unzip.asObservableOfAAndB[String, A]
 }

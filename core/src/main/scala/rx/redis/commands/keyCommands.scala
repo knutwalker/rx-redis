@@ -15,47 +15,54 @@
  */
 package rx.redis.commands
 
-import rx.redis.serialization.Writes
+import rx.redis.serialization.{Reads, Writes}
 
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 
 
 case class Del(keys: String*)
 object Del {
-  implicit val DelWrites = Writes.writes[Del]
+  implicit val writes = Writes.writes[Del]
+  val reads = Reads.int.asObservable
 }
 
 
 case class Exists(key: String)
 object Exists {
-  implicit val ExistsWrites = Writes.writes[Exists]
+  implicit val writes = Writes.writes[Exists]
+  val reads = Reads.bool.asObservable
 }
 
 
 case class Expire(key: String, expires: FiniteDuration)
 object Expire {
-  implicit val ExpireWrites = Writes.writes[Expire]
+  implicit val writes = Writes.writes[Expire]
+  val reads = Reads.bool.asObservable
 }
 
 
 // TODO: Deadline is not a good choice, more something like Joda time
 case class ExpireAt(key: String, deadline: Deadline)
 object ExpireAt {
-  implicit val ExpireAtWrites = Writes.writes[ExpireAt]
+  implicit val writes = Writes.writes[ExpireAt]
+  val reads = Reads.bool.asObservable
 }
 
 
 case class Keys(pattern: String)
 object Keys {
-  implicit val KeysWrites = Writes.writes[Keys]
+  implicit val writes = Writes.writes[Keys]
+  val reads = Reads.list.asManyObservableOfA[String]
 }
 
 
 case object RandomKey {
-  implicit val RandomKeyWrites = Writes.writes[RandomKey.type]
+  implicit val writes = Writes.writes[RandomKey.type]
+  val reads = Reads.bytes.asOptionObservableOfA[String]
 }
 
 case class Ttl(key: String)
 object Ttl {
-  implicit val TtlWrites = Writes.writes[Ttl]
+  implicit val writes = Writes.writes[Ttl]
+  val reads = Reads.int.asObservable
 }
