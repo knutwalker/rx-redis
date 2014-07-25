@@ -43,10 +43,9 @@ class ThroughputSpec extends FunSuite with BeforeAndAfter {
     val maxSecs = 10.0
     val total = (reqPerSec * maxSecs).toInt
     val (took, shutdown) = measure(total)(f(total))
-    assert(took <= maxSecs)
-
     note(f"$label, ${total} times took $took%.2f s | ${total / took}%.2f Req/s")
     note(f"Waiting for shutdown took $shutdown%.2f s >>> ${total / (took + shutdown)}%.2f Req/s")
+    assert(took <= maxSecs)
   }
 
   test("async sending should be >100k/s") {
