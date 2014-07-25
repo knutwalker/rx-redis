@@ -22,12 +22,15 @@ import rx.redis.client.RawClient;
 import rx.redis.resp.DataType;
 import rx.redis.resp.RespType;
 import rx.redis.serialization.BytesFormat;
+import rx.redis.serialization.Writes;
 import scala.Option;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
+import scala.concurrent.duration.Deadline;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -59,6 +62,10 @@ public final class Client {
     return raw.command(dataType);
   }
 
+  public <A> Observable<RespType> command(final A cmd, final Writes<A> A) {
+    return raw.command(cmd, A);
+  }
+
   // ==============
   //  Key Commands
   // ==============
@@ -66,6 +73,30 @@ public final class Client {
 
   public Observable<Long> del(final String... keys) {
     return raw.del(tsToSeq(keys)).map(toJLong);
+  }
+
+  public Observable<Boolean> exists(final String key) {
+    return raw.exists(key).map(toJBool);
+  }
+
+  public Observable<Boolean> expire(final String key, final FiniteDuration expires) {
+    return raw.expire(key, expires).map(toJBool);
+  }
+
+  public Observable<Boolean> expireAt(final String key, final Deadline deadline) {
+    return raw.expireAt(key, deadline).map(toJBool);
+  }
+
+  public Observable<String> keys(final String pattern) {
+    return raw.keys(pattern);
+  }
+
+  public Observable<Optional<String>> randomKey() {
+    return raw.randomKey().map(optionFunc());
+  }
+
+  public Observable<Long> ttl(final String key) {
+    return raw.ttl(key).map(toJLong);
   }
 
   // ================
@@ -170,6 +201,29 @@ public final class Client {
   //  Hash Commands
   // ===============
 
+  public <A> Observable<Optional<A>> hgetAs(final String key, final String field, final BytesFormat<A> bytesFormat) {
+    return raw.hget(key, field, bytesFormat).map(optionFunc());
+  }
+
+  public Observable<Optional<String>> hget(final String key, final String field) {
+    return hgetAs(key, field, DefaultBytes.STRING_BYTES_FORMAT);
+  }
+
+  public Observable<Optional<byte[]>> hgetBytes(final String key, final String field) {
+    return hgetAs(key, field, DefaultBytes.BYTES_BYTES_FORMAT);
+  }
+
+  public <A> Observable<Tuple2<String, A>> hgetAllAs(final String key, final BytesFormat<A> bytesFormat) {
+    return raw.hgetAll(key, bytesFormat);
+  }
+
+  public Observable<Map.Entry<String, String>> hgetAll(final String key) {
+    return raw.hgetAll(key, DefaultBytes.STRING_BYTES_FORMAT).map(entryFunc());
+  }
+
+  public Observable<Map.Entry<String, byte[]>> hgetAllBytes(final String key) {
+    return raw.hgetAll(key, DefaultBytes.BYTES_BYTES_FORMAT).map(entryFunc());
+  }
 
 
   // =====================
@@ -215,5 +269,9 @@ public final class Client {
         return Optional.empty();
       }
     };
+  }
+
+  private static <T, U> Func1<Tuple2<T, U>, Map.Entry<T, U>> entryFunc() {
+    return tuple -> new AbstractMap.SimpleImmutableEntry<>(tuple._1(), tuple._2());
   }
 }

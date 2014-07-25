@@ -17,6 +17,8 @@
 package rx.redis.japi;
 
 import rx.redis.client.RawClient;
+import rx.redis.resp.DataType;
+import rx.redis.serialization.Writes;
 
 @SuppressWarnings("UnusedDeclaration")
 public final class RxRedis {
@@ -37,6 +39,10 @@ public final class RxRedis {
 
   public static Client connect(final int port) {
     return connect("127.0.0.1", port);
+  }
+
+  public static DataType command(final String cmd) {
+    return Writes.DirectStringWrites$.MODULE$.write(cmd);
   }
 
   public static void await(final Client client) {
