@@ -20,6 +20,6 @@ object Dependencies {
   import Library._
 
   val serializationDeps = List(scalaReflect % "compile")
-  val coreDeps = List(rxNetty, scalaTest % "test")
+  val coreDeps = List(rxNetty, scalaTest % "it,test")
   val scalaApiDeps = List(rxScala)
 }

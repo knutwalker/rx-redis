@@ -1,4 +1,5 @@
 import sbt._
+import Keys._
 import Common._
 import Dependencies._
 import com.typesafe.sbt.pgp.PgpKeys._
@@ -7,9 +8,10 @@ lazy val serialization = project.settings(
   name := "rx-redis-serialization",
   libraryDependencies ++= serializationDeps)
 
-lazy val core = project.dependsOn(serialization).settings(
-  name := "rx-redis-core",
-  libraryDependencies ++= coreDeps)
+lazy val core = project.dependsOn(serialization).configs(
+  IntegrationTest).settings(Defaults.itSettings: _*).settings(
+    name := "rx-redis-core",
+    libraryDependencies ++= coreDeps)
 
 lazy val api = project.in(file("language-bindings") / "scala").dependsOn(core).settings(
   name := "rx-redis-scala",
