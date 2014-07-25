@@ -1,10 +1,11 @@
 package rx.redis.protocol
 
-import io.netty.buffer.PooledByteBufAllocator
+import io.netty.buffer.{Unpooled, PooledByteBufAllocator}
 
 import org.scalatest.{FunSuite, Inside}
 
 import rx.redis.resp._
+import rx.redis.util.Utf8
 
 
 class DeserializerSpec extends FunSuite with Inside {
@@ -150,6 +151,20 @@ class DeserializerSpec extends FunSuite with Inside {
         assert(expected == List('+'.toByte, '-'.toByte, ':'.toByte, '$'.toByte, '*'.toByte))
         assert(pos == 0)
         assert(found == '?'.toByte)
+    }
+  }
+
+  test("buffer under capacity") {
+    val resp = "*2\r\n*3\r\n:1\r\n$3\r\nBaz\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n"
+    val bytes = resp.getBytes(Utf8)
+    val buf = Unpooled.wrappedBuffer(bytes)
+
+    for (i <- bytes.indices) {
+      val bb = buf.duplicate()
+      bb.writerIndex(i)
+      Deserializer.parseAll(bb) foreach { actual =>
+        assert(actual == NotEnoughData)
+      }
     }
   }
 

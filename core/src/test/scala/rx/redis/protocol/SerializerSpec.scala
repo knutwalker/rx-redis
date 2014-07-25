@@ -1,9 +1,7 @@
 package rx.redis.protocol
 
 import io.netty.buffer.UnpooledByteBufAllocator
-
 import org.scalatest.{FunSuite, Inside}
-
 import rx.redis.resp._
 import rx.redis.util.Utf8
 
@@ -95,12 +93,21 @@ class SerializerSpec extends FunSuite with Inside {
     )
   }
 
+  // sad path behavior
 
-  // TODO: resp datatype tests
-//  test("disallow newlines in strings") {
-//    val ex = intercept[IllegalArgumentException] {
-//      RespString("foo\r\nbar")
-//    }
-//    assert(ex.getMessage == "'\\r\\n' is not allowed in a String")
-//  }
+  test("buffer under capacity") {
+    val buf = alloc.buffer(4, 4)
+    val ex = intercept[IndexOutOfBoundsException] {
+      Serializer(NullString, buf)
+    }
+    assert(ex.getMessage.contains("exceeds maxCapacity(4)"))
+    buf.release()
+  }
+
+  test("disallow newlines in strings") {
+    val ex = intercept[IllegalArgumentException] {
+      RespString("foo\r\nbar")
+    }
+    assert(ex.getMessage == "requirement failed: A RESP String must not contain [\\r\\n].")
+  }
 }

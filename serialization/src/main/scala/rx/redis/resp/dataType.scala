@@ -26,6 +26,7 @@ sealed abstract class RespType
 sealed abstract class DataType extends RespType
 
 case class RespString(data: String) extends DataType {
+  require(!data.contains("\r\n"), "A RESP String must not contain [\\r\\n].")
   override def toString: String = data
 }
 
@@ -42,10 +43,6 @@ case class RespArray(elements: Array[DataType]) extends DataType {
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case RespArray(other) =>
-      // Maybe JMH this stuff
-      // 1. java.util.Arrays.equals(elements.asInstanceOf[Array[AnyRef]], other.asInstanceOf[Array[AnyRef]])
-      // 2. elements.deep == other.deep
-      // 3. elements.corresponds(other)(_ == _)
       util.Arrays.equals(elements.asInstanceOf[Array[AnyRef]], other.asInstanceOf[Array[AnyRef]])
     case _ => super.equals(obj)
   }

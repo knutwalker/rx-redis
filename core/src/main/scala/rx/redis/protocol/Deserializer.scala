@@ -75,6 +75,10 @@ object Deserializer {
       if (!bb.isReadable) None
       else INSTANCE(bb) match {
         case NotEnoughData => Some(NotEnoughData)
+        case e: ErrorType => {
+          f(e)
+          None
+        }
         case x => {
           f(x)
           loop()
