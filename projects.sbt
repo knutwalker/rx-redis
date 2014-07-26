@@ -30,5 +30,5 @@ lazy val `java-example` = project.in(file("examples") / "java").dependsOn(japi).
 
 lazy val rxRedis = project.in(file(".")).
   settings(signedReleaseSettings: _*).settings(publishSigned := {}).
-  dependsOn(example, `java-example`).
-  aggregate(example, `java-example`, api, japi, core, serialization)
+  dependsOn(api, japi, core, serialization).
+  aggregate(api, japi, core, serialization)
