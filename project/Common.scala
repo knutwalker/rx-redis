@@ -81,7 +81,7 @@ object Common {
     }
   )
 
-  lazy val coreBuildInfoSettings = buildInfoSettings ++List(
+  lazy val mainBuildInfoSettings = buildInfoSettings ++List(
     sourceGenerators in Compile <+= buildInfo,
     buildInfoKeys := buildKeys,
     buildInfoPackage := "rx.redis"

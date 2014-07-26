@@ -4,18 +4,18 @@ import Common._
 import Dependencies._
 import com.typesafe.sbt.pgp.PgpKeys._
 
-lazy val serialization = {
-  project.in(file("modules") / "serialization").
+lazy val core = {
+  project.in(file("modules") / "core").
     settings(formatterSettings: _*).
     settings(
-      name := "rx-redis-serialization",
-      libraryDependencies ++= serializationDeps
+      name := "rx-redis-core",
+      libraryDependencies ++= coreDeps
   )
 }
 
 lazy val pipeline = {
   project.in(file("modules") / "pipeline").
-    dependsOn(serialization).
+    dependsOn(core).
     settings(formatterSettings: _*).
     settings(
       name := "rx-redis-pipeline",
@@ -29,7 +29,7 @@ lazy val client = {
     configs(IntegrationTest).
     settings(IntegrationTests.integrationTestsSettings: _*).
     settings(formatterSettings: _*).
-    settings(coreBuildInfoSettings: _*).
+    settings(mainBuildInfoSettings: _*).
     settings(
       name := "rx-redis-client",
       libraryDependencies ++= clientDeps
@@ -73,8 +73,8 @@ lazy val `java-example` = {
 
 lazy val rxRedis = {
   project.in(file(".")).
-    dependsOn(api, japi, client, pipeline, serialization).
-    aggregate(api, japi, client, pipeline, serialization).
+    dependsOn(api, japi, client, pipeline, core).
+    aggregate(api, japi, client, pipeline, core).
     settings(signedReleaseSettings: _*).
     settings(sonatypeSettings: _*).
     settings(
