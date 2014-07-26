@@ -18,7 +18,7 @@ package rx.redis
 
 import org.scalatest.FunSuite
 import rx.functions.Action1
-import rx.redis.client.RawClient
+import rx.redis.clients.RawClient
 import rx.redis.resp.{DataType, RespBytes, RespType}
 
 

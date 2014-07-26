@@ -18,7 +18,7 @@ package rx.redis.commands.it
 
 import rx.functions.Func2
 
-class StringCommandsSpec extends CommandsSuite {
+class StringCommandsSpec extends ItCommandsSuite {
 
 
   test("GET and SET") {

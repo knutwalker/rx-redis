@@ -16,7 +16,7 @@
 
 package rx.redis.japi;
 
-import rx.redis.client.RawClient;
+import rx.redis.clients.RawClient;
 import rx.redis.resp.DataType;
 import rx.redis.serialization.Writes;
 
@@ -39,6 +39,10 @@ public final class RxRedis {
 
   public static Client connect(final int port) {
     return connect("127.0.0.1", port);
+  }
+
+  public static Client connect() {
+    return connect(6379);
   }
 
   public static DataType command(final String cmd) {

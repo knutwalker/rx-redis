@@ -16,7 +16,7 @@
 
 package rx.redis.api
 
-import rx.redis.client.RawClient
+import rx.redis.clients.RawClient
 
 object RxRedis {
   def apply(host: String, port: Int, shareable: Boolean = true): Client = {

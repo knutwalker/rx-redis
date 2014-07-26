@@ -19,7 +19,7 @@ package rx.redis.commands.it
 import rx.redis._
 
 
-class HashCommandsSpec extends CommandsSuite {
+class HashCommandsSpec extends ItCommandsSuite {
 
   test("HGET") {
     client.command(cmd"HSET foo bar baz")

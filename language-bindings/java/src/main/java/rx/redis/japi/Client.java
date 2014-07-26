@@ -18,7 +18,7 @@ package rx.redis.japi;
 
 import rx.Observable;
 import rx.functions.Func1;
-import rx.redis.client.RawClient;
+import rx.redis.clients.RawClient;
 import rx.redis.resp.DataType;
 import rx.redis.resp.RespType;
 import rx.redis.serialization.BytesFormat;
@@ -42,7 +42,7 @@ public final class Client {
 
   private final RawClient raw;
 
-  public Client(final RawClient raw) {
+  Client(final RawClient raw) {
     this.raw = raw;
   }
 

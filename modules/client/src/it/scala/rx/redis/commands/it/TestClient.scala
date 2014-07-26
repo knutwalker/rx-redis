@@ -18,7 +18,7 @@ package rx.redis.commands.it
 
 import org.scalatest.{BeforeAndAfter, Suite}
 import rx.redis._
-import rx.redis.client.RawClient
+import rx.redis.clients.RawClient
 
 
 trait TestClient extends BeforeAndAfter { this: Suite =>

@@ -21,7 +21,7 @@ import scala.concurrent.duration.{ Deadline, FiniteDuration }
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
-import rx.redis.client.RawClient
+import rx.redis.clients.RawClient
 import rx.redis.resp.{ RespType, DataType }
 import rx.redis.serialization.BytesFormat
 

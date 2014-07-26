@@ -15,9 +15,10 @@
  */
 
 package rx.redis.commands.it
+
 import scala.concurrent.duration._
 
-class KeyCommandsSpec extends CommandsSuite {
+class KeyCommandsSpec extends ItCommandsSuite {
 
   test("DEL") {
     client.mset("foo1" -> "bar", "foo2" -> "baz").synch

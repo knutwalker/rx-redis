@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.client
+package rx.redis.clients
 
 import io.reactivex.netty.RxNetty
 import rx.Observable

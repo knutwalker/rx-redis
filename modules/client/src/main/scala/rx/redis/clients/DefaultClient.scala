@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.client
+package rx.redis.clients
 
 import io.reactivex.netty.client.RxClient
 import rx.functions.{ Func1, Func2 }
@@ -50,7 +50,7 @@ private[redis] object DefaultClient {
 }
 private[redis] final class DefaultClient(client: RxClient[DataType, RespType])
     extends RawClient {
-  import rx.redis.client.DefaultClient._
+  import rx.redis.clients.DefaultClient._
 
   private val connect = client.connect()
   // TODO: cache() and flatMap all the time?

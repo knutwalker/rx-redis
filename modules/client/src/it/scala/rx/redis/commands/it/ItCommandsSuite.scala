@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package rx.redis.client
+package rx.redis.commands.it
 
-import io.netty.channel.ChannelPipeline
-import io.reactivex.netty.pipeline.PipelineConfigurator
-import rx.redis.pipeline.RespCodec
-import rx.redis.resp.{ DataType, RespType }
+import org.scalatest.FunSuiteLike
+import rx.Observable
 
-private[redis] final class RedisPipelineConfigurator extends PipelineConfigurator[RespType, DataType] {
-  def configureNewPipeline(pipeline: ChannelPipeline): Unit = {
-    pipeline.addLast(new RespCodec)
+import scala.collection.convert.DecorateAsScala
+
+
+trait ItCommandsSuite extends FunSuiteLike with TestClient with PersonType with DecorateAsScala {
+
+  implicit class SynchableObservable[T](val underlying: Observable[T]) {
+    def synch: T =
+      underlying.toBlocking.single()
+
+    def synchAll: List[T] =
+      underlying.toList.toBlocking.single().asScala.toList
   }
 }
