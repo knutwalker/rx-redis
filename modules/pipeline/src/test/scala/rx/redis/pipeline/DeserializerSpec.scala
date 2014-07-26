@@ -28,14 +28,14 @@ class DeserializerSpec extends FunSuite with Inside {
   val alloc = PooledByteBufAllocator.DEFAULT
 
   def compare(resp: String, expecteds: DataType*): Unit = {
-    Deserializer.parseAll(resp, alloc).zip(expecteds) foreach {
+    ByteBufDeserializer.parseAll(resp, alloc).zip(expecteds) foreach {
       case (actual, expected) ⇒
         assert(actual == expected)
     }
   }
 
   def compare(resp: String)(insidePf: PartialFunction[RespType, Unit]): Unit = {
-    inside(Deserializer(resp, alloc))(insidePf)
+    inside(ByteBufDeserializer(resp, alloc))(insidePf)
   }
 
   // happy path behavior
@@ -177,7 +177,7 @@ class DeserializerSpec extends FunSuite with Inside {
     for (i ← bytes.indices) {
       val bb = buf.duplicate()
       bb.writerIndex(i)
-      Deserializer.parseAll(bb) foreach { actual ⇒
+      ByteBufDeserializer.parseAll(bb) foreach { actual ⇒
         assert(actual == NotEnoughData)
       }
     }

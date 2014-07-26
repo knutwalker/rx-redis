@@ -27,10 +27,10 @@ class SerializerSpec extends FunSuite with Inside {
 
   private def compare(dt: DataType, resp: String) = {
     val buf = alloc.buffer()
-    Serializer(dt, buf)
+    ByteBufSerializer(dt, buf)
     val result = buf.toString(Utf8)
     assert(result == resp)
-    assert(Deserializer(buf) == dt)
+    assert(ByteBufDeserializer(buf) == dt)
     buf.release()
   }
 
@@ -114,7 +114,7 @@ class SerializerSpec extends FunSuite with Inside {
   test("buffer under capacity") {
     val buf = alloc.buffer(4, 4)
     val ex = intercept[IndexOutOfBoundsException] {
-      Serializer(NullString, buf)
+      ByteBufSerializer(NullString, buf)
     }
     assert(ex.getMessage.contains("exceeds maxCapacity(4)"))
     buf.release()

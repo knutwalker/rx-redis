@@ -16,19 +16,21 @@
 
 package rx.redis.pipeline
 
-import java.util
+import java.nio.charset.Charset
 
-import io.netty.buffer.ByteBuf
-import io.netty.channel.ChannelHandlerContext
-import rx.redis.resp.DataType
+import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
+import rx.redis.resp._
+import rx.redis.serialization.Serializer
 
-private[redis] class RespCodec extends StrictByteToMessageCodec[ByteBuf, DataType] {
+object ByteBufSerializer {
+  private final val INSTANCE = new Serializer[ByteBuf]()(ByteBufAccess)
 
-  def encode(ctx: ChannelHandlerContext, msg: DataType, out: ByteBuf): Unit = {
-    ByteBufSerializer(msg, out)
+  def apply(dt: DataType, bb: ByteBuf): ByteBuf = INSTANCE(dt, bb)
+
+  def apply(dt: DataType, alloc: ByteBufAllocator): ByteBuf = {
+    INSTANCE(dt, alloc.buffer())
   }
-
-  def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
-    ByteBufDeserializer.foreach(in)(out.add(_))
+  def apply(dt: DataType, charset: Charset, alloc: ByteBufAllocator): String = {
+    apply(dt, alloc).toString(charset)
   }
 }
