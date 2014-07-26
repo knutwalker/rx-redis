@@ -25,6 +25,6 @@ object Dependencies {
 
   val serializationDeps = List(scalaReflect % "compile")
   val pipelineDeps = List(nettyBuffer, nettyCodec, nettyTransport, scalaTest % "test")
-  val coreDeps = List(rxNetty, scalaTest % "it,test")
+  val clientDeps = List(rxNetty, scalaTest % "it,test")
   val scalaApiDeps = List(rxScala)
 }

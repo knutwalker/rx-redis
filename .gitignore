@@ -16,4 +16,4 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 
-/modules/core/buildinfo.properties
+/modules/client/buildinfo.properties

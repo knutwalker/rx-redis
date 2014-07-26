@@ -20,7 +20,7 @@ import rx.redis.resp.{ DataType, RespArray, RespBytes }
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
 
-@implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.serialization.Writes[${A}] in order to send ${A} directly.")
+@implicitNotFound("Cannot find a Writes of ${A}. You have to implement an rx.redis.serialization.Writes[${A}] in order to send ${A} as a command.")
 trait Writes[A] {
 
   def write(value: A): DataType

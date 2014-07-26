@@ -23,22 +23,22 @@ lazy val pipeline = {
     )
 }
 
-lazy val core = {
-  project.in(file("modules") / "core").
+lazy val client = {
+  project.in(file("modules") / "client").
     dependsOn(pipeline).
     configs(IntegrationTest).
     settings(IntegrationTests.integrationTestsSettings: _*).
     settings(formatterSettings: _*).
     settings(coreBuildInfoSettings: _*).
     settings(
-      name := "rx-redis-core",
-      libraryDependencies ++= coreDeps
+      name := "rx-redis-client",
+      libraryDependencies ++= clientDeps
     )
 }
 
 lazy val api = {
   project.in(file("language-bindings") / "scala").
-    dependsOn(core).
+    dependsOn(client).
     settings(formatterSettings: _*).
     settings(
       name := "rx-redis-scala",
@@ -48,7 +48,7 @@ lazy val api = {
 
 lazy val japi = {
   project.in(file("language-bindings") / "java").
-    dependsOn(core).
+    dependsOn(client).
     settings(
       name := "rx-redis-java"
     )
@@ -73,8 +73,8 @@ lazy val `java-example` = {
 
 lazy val rxRedis = {
   project.in(file(".")).
-    dependsOn(api, japi, core, pipeline, serialization).
-    aggregate(api, japi, core, pipeline, serialization).
+    dependsOn(api, japi, client, pipeline, serialization).
+    aggregate(api, japi, client, pipeline, serialization).
     settings(signedReleaseSettings: _*).
     settings(sonatypeSettings: _*).
     settings(

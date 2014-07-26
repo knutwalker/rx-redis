@@ -23,7 +23,7 @@ import scala.annotation.{ implicitNotFound, tailrec }
 import scala.collection.mutable
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
-@implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.serialization.BytesFormat[${A}] in order to use ${A} as custom value.")
+@implicitNotFound("Cannot find a BytesFormat of ${A}. You have to implement an rx.redis.serialization.BytesFormat[${A}] in order to use ${A} as custom value.")
 trait BytesFormat[A] {
 
   def bytes(value: A): Array[Byte]
