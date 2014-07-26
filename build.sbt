@@ -17,5 +17,7 @@ scalacOptions in ThisBuild ++= List(
   "-Ywarn-dead-code"
 )
 
+shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
+
 initialCommands := """|import rx.redis.api.RxRedis
                       |val client = RxRedis("localhost", 6379)""".stripMargin

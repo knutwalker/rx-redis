@@ -1,6 +1,7 @@
 import com.typesafe.sbt.SbtPgp.PgpKeys._
 import sbt.Keys._
 import sbt._
+import sbtbuildinfo.Plugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
 import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleaseStateTransformations._
@@ -54,5 +55,33 @@ object Common {
     commitMessage <<= (Keys.version in ThisBuild) map (v => s"Set version to $v"),
     versionBump := sbtrelease.Version.Bump.Bugfix
   )
+
+  private lazy val buildKeys = List[BuildInfoKey](
+    BuildInfoKey.map(organization) { case (k, v) => "groupId" -> v},
+    BuildInfoKey.map(name) { case (k, v) => "artifactId" -> v },
+    version,
+    scalaVersion,
+    sbtVersion,
+    buildInfoBuildNumber,
+    BuildInfoKey.action("buildTimeMillis") {
+      System.currentTimeMillis
+    },
+    BuildInfoKey.action("buildTime") {
+      val format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+      format.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+      format.format(new java.util.Date())
+    },
+    BuildInfoKey.action("gitCommit") {
+      "git describe --always".!!.trim
+    },
+    BuildInfoKey.action("gitCommitSha1") {
+      "git rev-parse HEAD".!!.trim
+    }
+  )
+
+  lazy val coreBuildInfoSettings = buildInfoSettings ++List(
+    sourceGenerators in Compile <+= buildInfo,
+    buildInfoKeys := buildKeys,
+    buildInfoPackage := "rx.redis"
   )
 }
