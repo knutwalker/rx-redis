@@ -45,10 +45,10 @@ object Common {
       commitReleaseVersion,
       tagRelease,
       publishSignedArtifacts,
+      releaseToCentral,
       setNextVersion,
       commitNextVersion,
       pushChanges,
-      releaseToCentral,
       publishArtifacts
     ).map(_.copy(enableCrossBuild = false)),
     tagComment <<= (Keys.version in ThisBuild) map (v => s"Release version $v"),
