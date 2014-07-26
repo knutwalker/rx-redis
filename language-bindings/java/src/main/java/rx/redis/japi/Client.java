@@ -173,6 +173,12 @@ public final class Client {
     return raw.mset(tsToSeq(items), bytesFormat).map(toJBool);
   }
 
+  public final <T> Observable<Boolean> msetAs(final BytesFormat<T> bytesFormat, final Map<String, T> items) {
+    @SuppressWarnings("unchecked")
+    final Map.Entry<String, T>[] entries = (Map.Entry<String, T>[]) items.entrySet().toArray();
+    return msetAs(bytesFormat, entries);
+  }
+
   @SafeVarargs
   public final Observable<Boolean> mset(final Map.Entry<String, String>... items) {
     return msetAs(DefaultBytes.STRING_BYTES_FORMAT, items);
@@ -183,6 +189,12 @@ public final class Client {
     return msetAs(DefaultBytes.STRING_BYTES_FORMAT, items);
   }
 
+  public final Observable<Boolean> mset(final Map<String, String> items) {
+    //noinspection unchecked
+    final Map.Entry<String, String>[] entries = (Map.Entry<String, String>[]) items.entrySet().toArray();
+    return msetAs(DefaultBytes.STRING_BYTES_FORMAT, entries);
+  }
+
   @SafeVarargs
   public final Observable<Boolean> msetBytes(final Map.Entry<String, byte[]>... items) {
     return msetAs(DefaultBytes.BYTES_BYTES_FORMAT, items);
@@ -191,6 +203,12 @@ public final class Client {
   @SafeVarargs
   public final Observable<Boolean> msetBytes(final Tuple2<String, byte[]>... items) {
     return msetAs(DefaultBytes.BYTES_BYTES_FORMAT, items);
+  }
+
+  public final Observable<Boolean> msetBytes(final Map<String, byte[]> items) {
+    //noinspection unchecked
+    final Map.Entry<String, byte[]>[] entries = (Map.Entry<String, byte[]>[]) items.entrySet().toArray();
+    return msetAs(DefaultBytes.BYTES_BYTES_FORMAT, entries);
   }
 
   public Observable<Long> strLen(final String key) {
