@@ -24,7 +24,7 @@ import rx.redis.resp.{DataType, RespBytes, RespType}
 
 class ThreadSafetySpec extends FunSuite {
 
-  val total = 4000
+  val total = 20000
   val threadCount = 25
 
   private class TestThread(
