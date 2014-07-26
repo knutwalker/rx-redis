@@ -167,7 +167,7 @@ class Macros(val c: Context) {
     $objectName
     """
 
-    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
+//    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
 
     generated
   }
