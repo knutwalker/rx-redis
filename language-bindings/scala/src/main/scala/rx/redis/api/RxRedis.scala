@@ -19,7 +19,7 @@ package rx.redis.api
 import rx.redis.clients.RawClient
 
 object RxRedis {
-  def apply(host: String, port: Int, shareable: Boolean = true): Client = {
+  def apply(host: String = "127.0.0.1", port: Int = 6379, shareable: Boolean = true): Client = {
     new Client(RawClient(host, port, shareable))
   }
 
