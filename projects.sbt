@@ -8,12 +8,16 @@ lazy val serialization = project.settings(
   name := "rx-redis-serialization",
   libraryDependencies ++= serializationDeps)
 
-lazy val core = project.dependsOn(serialization).configs(
-  IntegrationTest).settings(Defaults.itSettings: _*).settings(
-    name := "rx-redis-core",
-    libraryDependencies ++= coreDeps,
-    logBuffered in IntegrationTest := false,
-    fork in IntegrationTest := true)
+lazy val core = {
+  project.
+    dependsOn(serialization).
+    configs(IntegrationTest).
+    settings(IntegrationTests.integrationTestsSettings: _*).
+    settings(
+      name := "rx-redis-core",
+      libraryDependencies ++= coreDeps
+    )
+}
 
 lazy val api = project.in(file("language-bindings") / "scala").dependsOn(core).settings(
   name := "rx-redis-scala",
@@ -28,7 +32,13 @@ lazy val example = project.in(file("examples") / "scala").dependsOn(api).
 lazy val `java-example` = project.in(file("examples") / "java").dependsOn(japi).settings(
   name := "rx-redis-java-example")
 
-lazy val rxRedis = project.in(file(".")).
-  settings(signedReleaseSettings: _*).settings(publishSigned := {}).
-  dependsOn(api, japi, core, serialization).
-  aggregate(api, japi, core, serialization)
+lazy val rxRedis = {
+  project.in(file(".")).
+    dependsOn(api, japi, core, serialization).
+    aggregate(api, japi, core, serialization).
+    settings(signedReleaseSettings: _*).
+    settings(sonatypeSettings: _*).
+    settings(
+      publishSigned := {}
+    )
+}

@@ -17,5 +17,5 @@ scalacOptions in ThisBuild ++= List(
   "-Ywarn-dead-code"
 )
 
-initialCommands := """|import rx.redis.RxRedis
+initialCommands := """|import rx.redis.api.RxRedis
                       |val client = RxRedis("localhost", 6379)""".stripMargin

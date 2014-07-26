@@ -27,4 +27,4 @@ publishTo in ThisBuild := {
     Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 
-
+SonatypeKeys.profileName in ThisBuild := "knutwalker"
