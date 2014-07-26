@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package rx.redis.protocol
+package rx.redis.pipeline
 
 import io.netty.buffer.Unpooled
 import io.netty.channel.embedded.EmbeddedChannel
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.{ BeforeAndAfter, FunSuite }
 import rx.redis.resp._
 import rx.redis.util.Utf8
 
@@ -32,13 +32,13 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
     assert(channel.writeInbound(byteData))
     assert(channel.readInbound() == in)
   }
-  
+
   private var channel: EmbeddedChannel = _
-  
+
   before {
     channel = new EmbeddedChannel(new RespCodec)
   }
-  
+
   after {
     channel.close().sync()
   }
@@ -80,7 +80,7 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("should accumulate chunked inbound messages") {
-    val chunks = List("+", "An", " Ove", "rly", " Lo", "ng Res", "ponse", "\r\n") map { c =>
+    val chunks = List("+", "An", " Ove", "rly", " Lo", "ng Res", "ponse", "\r\n") map { c ⇒
       Unpooled.copiedBuffer(c, Utf8)
     }
     assert(channel.writeInbound(chunks: _*))

@@ -1,7 +1,7 @@
-package rx.redis.protocol
+package rx.redis.pipeline
 
 import io.netty.buffer.UnpooledByteBufAllocator
-import org.scalatest.{FunSuite, Inside}
+import org.scalatest.{ FunSuite, Inside }
 import rx.redis.resp._
 import rx.redis.util.Utf8
 

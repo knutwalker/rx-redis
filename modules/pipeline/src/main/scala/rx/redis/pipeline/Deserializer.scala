@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package rx.redis.protocol
+package rx.redis.pipeline
 
 import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
 
@@ -117,7 +117,7 @@ object Deserializer {
 
 final class Deserializer private () {
   import rx.redis.resp.Protocol._
-  import rx.redis.protocol.Deserializer._
+  import rx.redis.pipeline.Deserializer._
 
   private def notEnoughData(bb: ByteBuf) = {
     bb.resetReaderIndex()

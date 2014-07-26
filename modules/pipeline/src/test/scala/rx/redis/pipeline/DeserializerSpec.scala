@@ -1,12 +1,11 @@
-package rx.redis.protocol
+package rx.redis.pipeline
 
-import io.netty.buffer.{Unpooled, PooledByteBufAllocator}
+import io.netty.buffer.{ Unpooled, PooledByteBufAllocator }
 
-import org.scalatest.{FunSuite, Inside}
+import org.scalatest.{ FunSuite, Inside }
 
 import rx.redis.resp._
 import rx.redis.util.Utf8
-
 
 class DeserializerSpec extends FunSuite with Inside {
 
@@ -14,7 +13,7 @@ class DeserializerSpec extends FunSuite with Inside {
 
   def compare(resp: String, expecteds: DataType*): Unit = {
     Deserializer.parseAll(resp, alloc).zip(expecteds) foreach {
-      case (actual, expected) =>
+      case (actual, expected) ⇒
         assert(actual == expected)
     }
   }
@@ -116,19 +115,19 @@ class DeserializerSpec extends FunSuite with Inside {
 
   test("missing CrLf for simple strings") {
     compare("+OK") {
-      case NotEnoughData =>
+      case NotEnoughData ⇒
     }
   }
 
   test("length overflow in bulk strings") {
     compare("$9\r\nfoobar\r\n") {
-      case NotEnoughData =>
+      case NotEnoughData ⇒
     }
   }
 
   test("length underflow in bulk strings") {
     compare("$3\r\nfoobar\r\n") {
-      case ProtocolError(pos, found, expected) =>
+      case ProtocolError(pos, found, expected) ⇒
         assert(expected === List('\r'.toByte))
         assert(pos == 7)
         assert(found == 'b'.toByte)
@@ -137,7 +136,7 @@ class DeserializerSpec extends FunSuite with Inside {
 
   test("size overflow in arrays") {
     compare("*3\r\n:1\r\n:2\r\n") {
-      case NotEnoughData =>
+      case NotEnoughData ⇒
     }
   }
 
@@ -147,7 +146,7 @@ class DeserializerSpec extends FunSuite with Inside {
 
   test("missing type marker") {
     compare("?MISSING") {
-      case ProtocolError(pos, found,expected) =>
+      case ProtocolError(pos, found, expected) ⇒
         assert(expected == List('+'.toByte, '-'.toByte, ':'.toByte, '$'.toByte, '*'.toByte))
         assert(pos == 0)
         assert(found == '?'.toByte)
@@ -159,10 +158,10 @@ class DeserializerSpec extends FunSuite with Inside {
     val bytes = resp.getBytes(Utf8)
     val buf = Unpooled.wrappedBuffer(bytes)
 
-    for (i <- bytes.indices) {
+    for (i ← bytes.indices) {
       val bb = buf.duplicate()
       bb.writerIndex(i)
-      Deserializer.parseAll(bb) foreach { actual =>
+      Deserializer.parseAll(bb) foreach { actual ⇒
         assert(actual == NotEnoughData)
       }
     }

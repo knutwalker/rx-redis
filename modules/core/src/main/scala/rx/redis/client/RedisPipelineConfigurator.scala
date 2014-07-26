@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package rx.redis.protocol
+package rx.redis.client
 
 import io.netty.channel.ChannelPipeline
 import io.reactivex.netty.pipeline.PipelineConfigurator
-
+import rx.redis.pipeline.RespCodec
 import rx.redis.resp.{ DataType, RespType }
 
-private[redis] final class Configurator extends PipelineConfigurator[RespType, DataType] {
+private[redis] final class RedisPipelineConfigurator extends PipelineConfigurator[RespType, DataType] {
   def configureNewPipeline(pipeline: ChannelPipeline): Unit = {
     pipeline.addLast(new RespCodec)
   }

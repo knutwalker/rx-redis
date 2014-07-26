@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package rx.redis.protocol
+package rx.redis.pipeline
 
 import io.netty.buffer.ByteBuf
-import io.netty.channel.{ ChannelPromise, ChannelHandlerContext }
+import io.netty.channel.{ ChannelHandlerContext, ChannelPromise }
 import io.netty.handler.codec.ByteToMessageCodec
 
 import scala.reflect.ClassTag
-import scala.reflect.classTag
 
 abstract class StrictByteToMessageCodec[I <: ByteBuf: ClassTag, O: ClassTag] extends ByteToMessageCodec[O] {
 
-  private final val iClass = classTag[I].runtimeClass
-  private final val oClass = classTag[O].runtimeClass
+  private final val iClass = implicitly[ClassTag[I]].runtimeClass
+  private final val oClass = implicitly[ClassTag[O]].runtimeClass
 
   override def acceptOutboundMessage(msg: Any): Boolean = {
     oClass.isInstance(msg)
