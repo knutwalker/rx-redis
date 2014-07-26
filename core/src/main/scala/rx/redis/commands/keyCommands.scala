@@ -15,10 +15,9 @@
  */
 package rx.redis.commands
 
-import rx.redis.serialization.{Reads, Writes}
+import rx.redis.serialization.{ Reads, Writes }
 
-import scala.concurrent.duration.{Deadline, FiniteDuration}
-
+import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 case class Del(keys: String*)
 object Del {
@@ -26,20 +25,17 @@ object Del {
   val reads = Reads.int.asObservable
 }
 
-
 case class Exists(key: String)
 object Exists {
   implicit val writes = Writes.writes[Exists]
   val reads = Reads.bool.asObservable
 }
 
-
 case class Expire(key: String, expires: FiniteDuration)
 object Expire {
   implicit val writes = Writes.writes[Expire]
   val reads = Reads.bool.asObservable
 }
-
 
 // TODO: Deadline is not a good choice, more something like Joda time
 case class ExpireAt(key: String, deadline: Deadline)
@@ -48,13 +44,11 @@ object ExpireAt {
   val reads = Reads.bool.asObservable
 }
 
-
 case class Keys(pattern: String)
 object Keys {
   implicit val writes = Writes.writes[Keys]
   val reads = Reads.list.asManyObservableOfA[String]
 }
-
 
 case object RandomKey {
   implicit val writes = Writes.writes[RandomKey.type]

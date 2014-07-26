@@ -15,8 +15,7 @@
  */
 package rx.redis.commands
 
-import rx.redis.serialization.{Reads, BytesFormat, Writes}
-
+import rx.redis.serialization.{ Reads, BytesFormat, Writes }
 
 case object Ping {
   implicit val writes: Writes[Ping.type] = Writes.writes[Ping.type]

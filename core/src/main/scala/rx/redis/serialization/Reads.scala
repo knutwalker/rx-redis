@@ -18,12 +18,11 @@ package rx.redis.serialization
 import rx.Observable
 import rx.functions.Func1
 
-import rx.redis.resp.{RespArray, RespBytes, RespInteger, RespString, RespType}
+import rx.redis.resp.{ RespArray, RespBytes, RespInteger, RespString, RespType }
 
 import scala.collection.JavaConverters._
 
-
-trait Reads[T] { self =>
+trait Reads[T] { self ⇒
 
   def pf: PartialFunction[RespType, T]
 
@@ -81,8 +80,8 @@ trait Reads[T] { self =>
     new Func1[RespType, Observable[(A, B)]] {
       def call(t1: RespType): Observable[(A, B)] = {
         if (self.pf.isDefinedAt(t1))
-          Observable.from(self.pf(t1).collect{
-            case (x, y) if Reads.bytes.pf.isDefinedAt(x) && Reads.bytes.pf.isDefinedAt(y) =>
+          Observable.from(self.pf(t1).collect {
+            case (x, y) if Reads.bytes.pf.isDefinedAt(x) && Reads.bytes.pf.isDefinedAt(y) ⇒
               (A.value(Reads.bytes.pf(x)), B.value(Reads.bytes.pf(y)))
           }.asJava)
         else
@@ -96,34 +95,34 @@ object Reads {
 
   implicit val bool: Reads[Boolean] = new Reads[Boolean] {
     val pf: PartialFunction[RespType, Boolean] = {
-      case RespString(s) if s == "OK" => true
-      case RespInteger(i) => i > 0
+      case RespString(s) if s == "OK" ⇒ true
+      case RespInteger(i)             ⇒ i > 0
     }
   }
 
   implicit val bytes: Reads[Array[Byte]] = new Reads[Array[Byte]] {
     val pf: PartialFunction[RespType, Array[Byte]] = {
-      case RespBytes(b) => b
-      case RespString(s) => BytesFormat[String].bytes(s)
+      case RespBytes(b)  ⇒ b
+      case RespString(s) ⇒ BytesFormat[String].bytes(s)
     }
   }
 
   implicit val int: Reads[Long] = new Reads[Long] {
     val pf: PartialFunction[RespType, Long] = {
-      case RespInteger(l) => l
+      case RespInteger(l) ⇒ l
     }
   }
 
   implicit val list: Reads[List[RespType]] = new Reads[List[RespType]] {
     val pf: PartialFunction[RespType, List[RespType]] = {
-      case RespArray(items) => items.toList
+      case RespArray(items) ⇒ items.toList
     }
   }
 
   implicit val unzip: Reads[List[(RespType, RespType)]] = new Reads[List[(RespType, RespType)]] {
     val pf: PartialFunction[RespType, List[(RespType, RespType)]] = {
-      case RespArray(items) =>
-        items.grouped(2).map(xs => (xs(0), xs(1))).toList
+      case RespArray(items) ⇒
+        items.grouped(2).map(xs ⇒ (xs(0), xs(1))).toList
     }
   }
 }

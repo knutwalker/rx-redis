@@ -17,8 +17,7 @@ package rx.redis.client
 
 import rx.Observable
 
-import rx.redis.resp.{DataType, RespType}
-
+import rx.redis.resp.{ DataType, RespType }
 
 private[redis] final class ThreadSafeClient(underlying: RawClient)
     extends RawClient {

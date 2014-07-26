@@ -21,7 +21,6 @@ import java.util.Locale
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox.Context
 
-
 class Macros(val c: Context) {
   import c.universe._
 
@@ -46,7 +45,7 @@ class Macros(val c: Context) {
 
     private val isTupleType =
       neededTypeClassType.typeArgs.nonEmpty &&
-        definitions.TupleClass.seq.exists(t => neededTypeClassType.baseType(t) != NoType)
+        definitions.TupleClass.seq.exists(t ⇒ neededTypeClassType.baseType(t) != NoType)
 
     private val tupleSize =
       if (!isTupleType) q"1"
@@ -56,14 +55,14 @@ class Macros(val c: Context) {
       if (!isTupleType)
         List(appliedType(tc.typeConstructor, neededTypeClassType :: Nil))
       else
-        neededTypeClassType.typeArgs.map(t => appliedType(tc.typeConstructor, t :: Nil))
+        neededTypeClassType.typeArgs.map(t ⇒ appliedType(tc.typeConstructor, t :: Nil))
 
     private def resolvedOneTypeClass(tc: Type): c.Tree = {
       val paramWrites = c.inferImplicitValue(tc)
       if (paramWrites == EmptyTree) {
         fail(
           "Missing implicit instance of " + tc + "\n" +
-          "This is required to serialize instances of " + tc.typeArgs.head)
+            "This is required to serialize instances of " + tc.typeArgs.head)
       }
       paramWrites
     }
@@ -81,9 +80,10 @@ class Macros(val c: Context) {
 
     private def generateTupleArg(value: c.Tree): c.Tree = {
       val tuples =
-        resolvedTypeClasses.zipWithIndex map { case (tcls, i) =>
-          val tupleAccess = TermName(s"_${i + 1}")
-          generateSingleArg(Select(value, tupleAccess), tcls)
+        resolvedTypeClasses.zipWithIndex map {
+          case (tcls, i) ⇒
+            val tupleAccess = TermName(s"_${i + 1}")
+            generateSingleArg(Select(value, tupleAccess), tcls)
         }
       q"..$tuples"
     }
@@ -122,16 +122,15 @@ class Macros(val c: Context) {
       if (!isRepeated)
         if (!isTupleType) None
         else Some(tupleSize)
-      else
-        if (!isTupleType) Some(q"$access.size")
-        else Some(q"$tupleSize * $access.size")
+      else if (!isTupleType) Some(q"$access.size")
+      else Some(q"$tupleSize * $access.size")
   }
 
   private def sizeHeader(args: List[ArgType]): c.Tree = {
     val argsSize = args.size
     val argSizeTrees = args flatMap (_.sizeHint)
     val definiteSize = q"${1 + (argsSize - argSizeTrees.size)}"
-    argSizeTrees.foldLeft(definiteSize) { (tree, sizeHint) =>
+    argSizeTrees.foldLeft(definiteSize) { (tree, sizeHint) ⇒
       q"$tree + $sizeHint"
     }
   }
@@ -150,7 +149,7 @@ class Macros(val c: Context) {
     val objectName = c.freshName(TermName(typeName + "Writes"))
 
     val arguments = tpe.decls.toList.collect {
-      case method: MethodSymbol if method.isCaseAccessor => new ArgType(tpe, tcaTag.tpe, method)
+      case method: MethodSymbol if method.isCaseAccessor ⇒ new ArgType(tpe, tcaTag.tpe, method)
     }
     val argumentTrees = arguments map (_.tree)
 
@@ -167,7 +166,7 @@ class Macros(val c: Context) {
     $objectName
     """
 
-//    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
+    //    c.info(c.enclosingPosition, "Generated code: \n\n" + showCode(generated), force = false)
 
     generated
   }

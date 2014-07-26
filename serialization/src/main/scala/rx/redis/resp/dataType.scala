@@ -20,7 +20,6 @@ import rx.redis.util.Utf8
 import java.nio.charset.Charset
 import java.util
 
-
 sealed abstract class RespType
 
 sealed abstract class DataType extends RespType
@@ -42,16 +41,16 @@ case class RespArray(elements: Array[DataType]) extends DataType {
   override def toString: String = elements.map(_.toString).mkString("[", ", ", "]")
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case RespArray(other) =>
+    case RespArray(other) ⇒
       util.Arrays.equals(elements.asInstanceOf[Array[AnyRef]], other.asInstanceOf[Array[AnyRef]])
-    case _ => super.equals(obj)
+    case _ ⇒ super.equals(obj)
   }
 }
 
 case class RespBytes(bytes: Array[Byte]) extends DataType {
   override def equals(obj: scala.Any): Boolean = obj match {
-    case RespBytes(bs) => util.Arrays.equals(bytes, bs)
-    case _ => super.equals(obj)
+    case RespBytes(bs) ⇒ util.Arrays.equals(bytes, bs)
+    case _             ⇒ super.equals(obj)
   }
 
   override def toString: String = new String(bytes, Utf8)
@@ -73,7 +72,6 @@ case object NullString extends DataType {
 case object NullArray extends DataType {
   override def toString: String = "NULL"
 }
-
 
 sealed abstract class ErrorType extends RespType
 

@@ -6,6 +6,7 @@ import com.typesafe.sbt.pgp.PgpKeys._
 
 lazy val serialization = {
   project.
+    settings(formatterSettings: _*).
     settings(
       name := "rx-redis-serialization",
       libraryDependencies ++= serializationDeps
@@ -17,6 +18,7 @@ lazy val core = {
     dependsOn(serialization).
     configs(IntegrationTest).
     settings(IntegrationTests.integrationTestsSettings: _*).
+    settings(formatterSettings: _*).
     settings(coreBuildInfoSettings: _*).
     settings(
       name := "rx-redis-core",
@@ -27,6 +29,7 @@ lazy val core = {
 lazy val api = {
   project.in(file("language-bindings") / "scala").
     dependsOn(core).
+    settings(formatterSettings: _*).
     settings(
       name := "rx-redis-scala",
       libraryDependencies ++= scalaApiDeps

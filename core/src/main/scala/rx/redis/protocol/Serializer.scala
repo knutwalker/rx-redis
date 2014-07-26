@@ -15,13 +15,12 @@
  */
 package rx.redis.protocol
 
-import io.netty.buffer.{ByteBuf, ByteBufAllocator}
+import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
 
 import rx.redis.resp._
 import rx.redis.serialization.BytesFormat
 
 import java.nio.charset.Charset
-
 
 object Serializer {
   private final val INSTANCE = new Serializer()
@@ -59,7 +58,7 @@ final class Serializer private () {
     bb.writeByte(Asterisk).
       writeBytes(size).
       writeBytes(CrLf)
-    items.foreach(item => quickApply(item, bb))
+    items.foreach(item ⇒ quickApply(item, bb))
   }
 
   private def writeBytes(bb: ByteBuf, bytes: Array[Byte]): Unit = {
@@ -78,13 +77,13 @@ final class Serializer private () {
     bb.writeByte(Asterisk).writeBytes(Nullary).writeBytes(CrLf)
   }
   private def quickApply(data: DataType, bb: ByteBuf): Unit = data match {
-    case RespString(s) => writeSimpleString(bb, s)
-    case RespError(e) => writeError(bb, e)
-    case RespInteger(l) => writeInteger(bb, l)
-    case RespArray(ds) => writeArray(bb, ds)
-    case RespBytes(bs) => writeBytes(bb, bs)
-    case NullString => writeNullString(bb)
-    case NullArray => writeNullArray(bb)
+    case RespString(s)  ⇒ writeSimpleString(bb, s)
+    case RespError(e)   ⇒ writeError(bb, e)
+    case RespInteger(l) ⇒ writeInteger(bb, l)
+    case RespArray(ds)  ⇒ writeArray(bb, ds)
+    case RespBytes(bs)  ⇒ writeBytes(bb, bs)
+    case NullString     ⇒ writeNullString(bb)
+    case NullArray      ⇒ writeNullArray(bb)
   }
 
   def apply(data: DataType, bb: ByteBuf): ByteBuf = {

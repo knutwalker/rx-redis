@@ -19,10 +19,10 @@ import io.reactivex.netty.RxNetty
 import rx.Observable
 import rx.redis.commands._
 import rx.redis.protocol.Configurator
-import rx.redis.resp.{DataType, RespType}
-import rx.redis.serialization.{BytesFormat, Writes}
+import rx.redis.resp.{ DataType, RespType }
+import rx.redis.serialization.{ BytesFormat, Writes }
 
-import scala.concurrent.duration.{Deadline, FiniteDuration}
+import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 private[redis] object RawClient {
   def apply(host: String, port: Int, shareable: Boolean): RawClient = {
@@ -101,7 +101,6 @@ private[redis] abstract class RawClient {
 
   def strLen(key: String): Observable[Long] =
     command(StrLen(key)).flatMap(StrLen.reads)
-
 
   // =====================
   //  Connection Commands

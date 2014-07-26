@@ -16,12 +16,11 @@
 package rx.redis.client
 
 import io.reactivex.netty.client.RxClient
-import rx.functions.{Func1, Func2}
-import rx.subjects.{AsyncSubject, PublishSubject}
-import rx.{Observable, Observer}
+import rx.functions.{ Func1, Func2 }
+import rx.subjects.{ AsyncSubject, PublishSubject }
+import rx.{ Observable, Observer }
 
-import rx.redis.resp.{DataType, RespType}
-
+import rx.redis.resp.{ DataType, RespType }
 
 private[redis] object DefaultClient {
   private object JoinFun extends Func2[Observer[RespType], RespType, Unit] {

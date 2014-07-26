@@ -15,13 +15,13 @@
  */
 package rx.redis.api
 
-import scala.concurrent.duration.{Deadline, FiniteDuration}
+import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
 import rx.redis.client.RawClient
-import rx.redis.resp.{RespType, DataType}
+import rx.redis.resp.{ RespType, DataType }
 import rx.redis.serialization.BytesFormat
 
 final class Client(raw: RawClient) {
@@ -33,7 +33,7 @@ final class Client(raw: RawClient) {
 
   def command(dt: DataType): Observable[RespType] =
     raw.command(dt)
-  
+
   // ==============
   //  Key Commands
   // ==============
@@ -58,7 +58,7 @@ final class Client(raw: RawClient) {
 
   def ttl(key: String): Observable[Long] =
     raw.ttl(key)
-  
+
   // ================
   // String Commands
   // ================
@@ -119,7 +119,7 @@ final class Client(raw: RawClient) {
 
   def strLen(key: String): Observable[Long] =
     raw.strLen(key)
-  
+
   // ===============
   //  Hash Commands
   // ===============
@@ -141,7 +141,7 @@ final class Client(raw: RawClient) {
 
   def hgetAllBytes(key: String): Observable[(String, Array[Byte])] =
     raw.hgetAll[Array[Byte]](key)
-  
+
   // =====================
   //  Connection Commands
   // =====================

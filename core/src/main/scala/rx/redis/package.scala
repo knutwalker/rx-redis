@@ -26,7 +26,7 @@ package object redis {
       val expressions = args.iterator
       val result = strings.
         zipAll(expressions, "", "").
-        map { case (a, b) => a + b }.
+        map { case (a, b) ⇒ a + b }.
         foldLeft("")(_ + _).
         replaceAllLiterally("\\r\\n", "\r\n")
 

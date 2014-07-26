@@ -15,15 +15,13 @@
  */
 package rx.redis.serialization
 
-
 import rx.redis.util.Utf8
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import java.util.concurrent.TimeUnit
-import scala.annotation.{implicitNotFound, tailrec}
+import scala.annotation.{ implicitNotFound, tailrec }
 import scala.collection.mutable
-import scala.concurrent.duration.{Deadline, FiniteDuration}
-
+import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 @implicitNotFound("No type class found for ${A}. You have to implement an rx.redis.serialization.BytesFormat[${A}] in order to use ${A} as custom value.")
 trait BytesFormat[A] {
@@ -37,7 +35,7 @@ object BytesFormat {
 
   @inline def apply[T](implicit T: BytesFormat[T]): BytesFormat[T] = T
 
-  def from[A: BytesFormat, B](f: B => A)(g: A => B): BytesFormat[B] =
+  def from[A: BytesFormat, B](f: B ⇒ A)(g: A ⇒ B): BytesFormat[B] =
     new BytesFormat[B] {
       def bytes(value: B): Array[Byte] =
         BytesFormat[A].bytes(f(value))
@@ -68,9 +66,9 @@ object BytesFormat {
       val bytesRead = b.read(buf)
       if (bytesRead == 4) {
         (buf(0) & 0xff) << 24 |
-        (buf(1) & 0xff) << 16 |
-        (buf(2) & 0xff) << 8 |
-        (buf(3) & 0xff)
+          (buf(1) & 0xff) << 16 |
+          (buf(2) & 0xff) << 8 |
+          (buf(3) & 0xff)
       } else {
         0
       }
@@ -90,7 +88,7 @@ object BytesFormat {
         val baos = new ByteArrayOutputStream()
         writeInt(baos, value.size)
         val tci = BytesFormat[A]
-        while(it.hasNext) {
+        while (it.hasNext) {
           val item = tci.bytes(it.next())
           writeInt(baos, item.length)
           baos.write(item)
@@ -121,15 +119,15 @@ object BytesFormat {
     }
   }
 
-  implicit val StringBytes = from((_: String).getBytes(Utf8))(b => new String(b, Utf8))
+  implicit val StringBytes = from((_: String).getBytes(Utf8))(b ⇒ new String(b, Utf8))
 
-  implicit val LongBytes = from((_: Long).toString)(a => a.toLong)
+  implicit val LongBytes = from((_: Long).toString)(a ⇒ a.toLong)
 
-  val JLongBytes = from((l: java.lang.Long) => l.longValue())(sl => sl)
+  val JLongBytes = from((l: java.lang.Long) ⇒ l.longValue())(sl ⇒ sl)
 
   implicit val DurationBytes = from((_: FiniteDuration).toSeconds)(FiniteDuration(_, TimeUnit.SECONDS))
 
-  implicit val DeadlineBytes = from((d: Deadline) =>
-    (d.timeLeft.toMillis + System.currentTimeMillis()) / 1000)(t =>
+  implicit val DeadlineBytes = from((d: Deadline) ⇒
+    (d.timeLeft.toMillis + System.currentTimeMillis()) / 1000)(t ⇒
     FiniteDuration(t * 1000 - System.currentTimeMillis(), TimeUnit.MILLISECONDS).fromNow)
 }

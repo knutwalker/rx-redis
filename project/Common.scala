@@ -7,6 +7,8 @@ import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease._
 import xerial.sbt.Sonatype.SonatypeKeys._
+import com.typesafe.sbt.SbtScalariform._
+import scalariform.formatter.preferences._
 
 
 object Common {
@@ -83,5 +85,13 @@ object Common {
     sourceGenerators in Compile <+= buildInfo,
     buildInfoKeys := buildKeys,
     buildInfoPackage := "rx.redis"
+  )
+
+  lazy val formatterSettings = scalariformSettings ++ List(
+    ScalariformKeys.preferences := ScalariformKeys.preferences.value.
+      setPreference(AlignSingleLineCaseStatements, true).
+      setPreference(DoubleIndentClassDeclaration, true).
+      setPreference(PreserveDanglingCloseParenthesis, true).
+      setPreference(RewriteArrowSymbols, true)
   )
 }

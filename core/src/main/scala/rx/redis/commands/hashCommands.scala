@@ -15,8 +15,7 @@
  */
 package rx.redis.commands
 
-import rx.redis.serialization.{Reads, BytesFormat, Writes}
-
+import rx.redis.serialization.{ Reads, BytesFormat, Writes }
 
 case class HGet(key: String, field: String)
 object HGet {

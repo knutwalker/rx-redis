@@ -15,7 +15,7 @@
  */
 package rx.redis.protocol
 
-import io.netty.buffer.{ByteBuf, ByteBufAllocator}
+import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
 
 import rx.redis.resp._
 import rx.redis.util.Utf8
@@ -23,8 +23,7 @@ import rx.redis.util.Utf8
 import java.nio.charset.Charset
 import scala.annotation.tailrec
 import scala.collection.immutable
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-
+import scala.collection.mutable.{ ArrayBuffer, ListBuffer }
 
 object Deserializer {
   private final val INSTANCE = new Deserializer()
@@ -53,7 +52,7 @@ object Deserializer {
     val zero: Long = 0
   }
 
-  private def releaseAfterUse[A](bb: ByteBuf)(f: => A): A =
+  private def releaseAfterUse[A](bb: ByteBuf)(f: ⇒ A): A =
     try f finally bb.release()
 
   def apply(bb: ByteBuf): RespType = INSTANCE(bb)
@@ -70,31 +69,31 @@ object Deserializer {
     apply(string, Utf8, alloc)
   }
 
-  def foreach(bb: ByteBuf)(f: RespType => Unit): Option[NotEnoughData.type] = {
+  def foreach(bb: ByteBuf)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
     @tailrec def loop(): Option[NotEnoughData.type] =
       if (!bb.isReadable) None
       else INSTANCE(bb) match {
-        case NotEnoughData => Some(NotEnoughData)
-        case e: ErrorType => {
+        case NotEnoughData ⇒ Some(NotEnoughData)
+        case e: ErrorType ⇒ {
           f(e)
           None
         }
-        case x => {
+        case x ⇒ {
           f(x)
           loop()
         }
       }
     loop()
   }
-  def foreach(bytes: Array[Byte], alloc: ByteBufAllocator)(f: RespType => Unit): Option[NotEnoughData.type] = {
+  def foreach(bytes: Array[Byte], alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
     val bb = alloc.buffer(bytes.length, bytes.length)
     bb.writeBytes(bytes)
     releaseAfterUse(bb)(foreach(bb)(f))
   }
-  def foreach(string: String, charset: Charset, alloc: ByteBufAllocator)(f: RespType => Unit): Option[NotEnoughData.type] = {
+  def foreach(string: String, charset: Charset, alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
     foreach(string.getBytes(charset), alloc)(f)
   }
-  def foreach(string: String, alloc: ByteBufAllocator)(f: RespType => Unit): Option[NotEnoughData.type] = {
+  def foreach(string: String, alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
     foreach(string, Utf8, alloc)(f)
   }
 
@@ -163,8 +162,8 @@ final class Deserializer private () {
     parseNum[Int](bb)
 
   private def parseInteger(bb: ByteBuf) = parseNum[Long](bb) match {
-    case Left(e) => e
-    case Right(l) => RespInteger(l)
+    case Left(e)  ⇒ e
+    case Right(l) ⇒ RespInteger(l)
   }
 
   @tailrec
@@ -174,16 +173,16 @@ final class Deserializer private () {
     } else {
       val current = read(bb)
       current match {
-        case Cr => read(bb, Lf).toLeft(A.times(n, neg))
-        case Minus => parseNum(bb, n, A.minusOne)
-        case b => parseNum(bb, A.decShiftLeft(n, b - '0'), neg)
+        case Cr    ⇒ read(bb, Lf).toLeft(A.times(n, neg))
+        case Minus ⇒ parseNum(bb, n, A.minusOne)
+        case b     ⇒ parseNum(bb, A.decShiftLeft(n, b - '0'), neg)
       }
     }
   }
   private def parseNum[@specialized(Int, Long) A](bb: ByteBuf)(implicit A: Num[A]): Either[ErrorType, A] =
     parseNum(bb, A.zero, A.one)
 
-  private def readStringOfLen(bb: ByteBuf, len: Int)(ct: ByteBuf => DataType) = {
+  private def readStringOfLen(bb: ByteBuf, len: Int)(ct: ByteBuf ⇒ DataType) = {
     if (!requireLen(bb, len)) notEnoughData(bb)
     else andRequireCrLf(bb, ct(bb.readBytes(len)))
   }
@@ -191,20 +190,20 @@ final class Deserializer private () {
   private def parseSimpleString(bb: ByteBuf) = {
     val len = bb.bytesBefore(Cr)
     if (len == -1) notEnoughData(bb)
-    else readStringOfLen(bb, len)(b => RespString(b.toString(Utf8)))
+    else readStringOfLen(bb, len)(b ⇒ RespString(b.toString(Utf8)))
   }
 
   private def parseError(bb: ByteBuf) = {
     val len = bb.bytesBefore(Cr)
     if (len == -1) notEnoughData(bb)
-    else readStringOfLen(bb, len)(b => RespError(b.toString(Utf8)))
+    else readStringOfLen(bb, len)(b ⇒ RespError(b.toString(Utf8)))
   }
 
   private def parseBulkString(bb: ByteBuf) = parseLen(bb) match {
-    case Left(ned) => ned
-    case Right(len) => {
+    case Left(ned) ⇒ ned
+    case Right(len) ⇒ {
       if (len == -1) NullString
-      else readStringOfLen(bb, len)(b => {
+      else readStringOfLen(bb, len)(b ⇒ {
         if (b.hasArray)
           RespBytes(b.array())
         else {
@@ -218,18 +217,18 @@ final class Deserializer private () {
   }
 
   private def parseArray(bb: ByteBuf) = parseLen(bb) match {
-    case Left(ned) => ned
-    case Right(size) => {
+    case Left(ned) ⇒ ned
+    case Right(size) ⇒ {
       if (size == -1) NullArray
       else {
         val lb = new ArrayBuffer[DataType](size)
         @tailrec def loop(n: Int): RespType = {
           if (n == 0) RespArray(lb.toArray)
           else quickApply(bb) match {
-            case dt: DataType =>
+            case dt: DataType ⇒
               lb += dt
               loop(n - 1)
-            case et: ErrorType => et
+            case et: ErrorType ⇒ et
           }
         }
         loop(size)
@@ -242,22 +241,22 @@ final class Deserializer private () {
     else {
       val firstByte = peek(bb)
       firstByte match {
-        case Plus =>
+        case Plus ⇒
           bb.skipBytes(1)
           parseSimpleString(bb)
-        case Minus =>
+        case Minus ⇒
           bb.skipBytes(1)
           parseError(bb)
-        case Colon =>
+        case Colon ⇒
           bb.skipBytes(1)
           parseInteger(bb)
-        case Dollar =>
+        case Dollar ⇒
           bb.skipBytes(1)
           parseBulkString(bb)
-        case Asterisk =>
+        case Asterisk ⇒
           bb.skipBytes(1)
           parseArray(bb)
-        case _ =>
+        case _ ⇒
           unknownType(bb)
       }
     }
