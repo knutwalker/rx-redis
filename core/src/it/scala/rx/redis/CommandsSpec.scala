@@ -16,12 +16,33 @@
 
 package rx.redis
 
+import collection.JavaConverters._
+
 import org.scalatest.{BeforeAndAfter, FunSuite}
+import rx.functions.Func2
 import rx.redis.client.RawClient
 import rx.redis.serialization.BytesFormat
 import rx.redis.util.Utf8
 
+
 class CommandsSpec extends FunSuite with BeforeAndAfter {
+
+  case class Person(name: String, age: Int) {
+    def redisString = s"${age}|${name}"
+  }
+  object Person {
+    def apply(redisString: String): Person = {
+      val Array(age, name) = redisString.split("\\|", 2)
+      apply(name, age.toInt)
+    }
+  }
+  implicit val PersonFormat = new BytesFormat[Person] {
+    def bytes(value: Person): Array[Byte] =
+      value.redisString.getBytes(Utf8)
+
+    def value(bytes: Array[Byte]): Person =
+      Person(new String(bytes, Utf8))
+  }
 
   private var client: RawClient = _
 
@@ -43,29 +64,49 @@ class CommandsSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("custom types in GET and SET") {
-    case class Person(name: String, age: Int)
-    implicit val PersonFormat = new BytesFormat[Person] {
-      def bytes(value: Person): Array[Byte] = {
-        val s = s"${value.age}|${value.name}"
-        s.getBytes(Utf8)
-      }
-
-      def value(bytes: Array[Byte]): Person = {
-        val s = new String(bytes, Utf8)
-        val Array(age, name) = s.split("\\|", 2)
-        Person(name, age.toInt)
-      }
-    }
 
     val knut = Person("knut", 27)
 
     client.set[Person]("knut", knut)
 
     val stringResult = client.get[String]("knut").toBlocking.last()
-    assert(stringResult == Some("27|knut"))
+    assert(stringResult == Some(knut.redisString))
 
     val personResult = client.get[Person]("knut").toBlocking.last()
     assert(personResult == Some(knut))
-
   }
+
+  test("GET returns None when not found") {
+    val result = client.get[String]("foo").toBlocking.last()
+    assert(result == None)
+  }
+
+  test("MGET und multiple GETs behave the same") {
+
+    val m = Map("foo" -> "bar", "bar" -> "baz", "baz" -> "qux")
+
+    client.mset(m.toSeq: _*).toBlocking.last()
+
+    val gets = client.get[String]("foo").
+      concatWith(client.get[String]("bar")).
+      concatWith(client.get[String]("baz"))
+
+    val mgets = client.mget[String]("foo", "bar", "baz")
+
+    val combined = gets.zip[Option[String], Option[(String, String)]](mgets, zipper)
+
+    val sc = combined.toBlocking.toIterable.asScala
+    sc foreach {
+      case Some((g, mg)) => assert(g == mg)
+      case _ => fail("None")
+    }
+  }
+
+
+  private val zipper: Func2[_ >: Option[String], _ >: Option[String], _ <: Option[(String, String)]] =
+    new Func2[Option[String], Option[String], Option[(String, String)]] {
+      def call(t1: Option[String], t2: Option[String]): Option[(String, String)] = {
+        t1.flatMap(r1 => t2.map(r2 => (r1, r2)))
+      }
+    }
 }
