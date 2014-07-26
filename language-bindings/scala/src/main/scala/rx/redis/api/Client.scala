@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package rx.redis.api
 
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
