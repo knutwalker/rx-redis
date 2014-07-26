@@ -5,7 +5,7 @@ import Dependencies._
 import com.typesafe.sbt.pgp.PgpKeys._
 
 lazy val serialization = {
-  project.
+  project.in(file("modules") / "serialization").
     settings(formatterSettings: _*).
     settings(
       name := "rx-redis-serialization",
@@ -14,7 +14,7 @@ lazy val serialization = {
 }
 
 lazy val core = {
-  project.
+  project.in(file("modules") / "core").
     dependsOn(serialization).
     configs(IntegrationTest).
     settings(IntegrationTests.integrationTestsSettings: _*).
