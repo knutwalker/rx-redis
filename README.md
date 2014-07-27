@@ -20,22 +20,22 @@ RxRedis comes with a small type tree for the Redis Serialization Protocol (RESP)
 
 ## Installation
 
-RxRedis can be obtained from [Maven Central](http://search.maven.org/#search|ga|1|g%3A%22de.knutwalker%22%20AND%20a%3Arx-redis-*_2.11%20AND%20v%3A%220.2.0%22).
+RxRedis can be obtained from [Maven Central](http://search.maven.org/#search|ga|1|g%3A%22de.knutwalker%22%20AND%20a%3Arx-redis-*_2.11%20AND%20v%3A%220.3.0%22).
 
-The main artifacts are `rx-redis-java_2.11` for the Java binding and `rx-redis-scala_2.11` for the Scala binding. The current version is 0.2.0.
+The main artifacts are `rx-redis-java_2.11` for the Java binding and `rx-redis-scala_2.11` for the Scala binding. The current version is 0.3.0.
 
 For maven:
 
     <dependency>
         <groupId>de.knutwalker</groupId>
         <artifactId>rx-redis-java_2.11</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.0</version>
     </dependency>
 
 
 For sbt:
 
-    libraryDependencies += "de.knutwalker" %% "rx-redis-scala" % "0.2.0"
+    libraryDependencies += "de.knutwalker" %% "rx-redis-scala" % "0.3.0"
 
 
 RxRedis has a dependency on RxNetty and transitive on Netty and RxJava. The Scala binding also depend on the Scala bindings of RxJava.

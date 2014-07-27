@@ -4,7 +4,6 @@ object Version {
   val scala = "2.11.2"
   val netty = "4.0.21.Final"
   val rxJava = "0.19.1"
-  val rxNetty = "0.3.10"
   val scalaTest = "2.2.0"
   val scalaCheck = "1.11.4"
 }
@@ -15,7 +14,6 @@ object Library {
   val nettyCodec     = "io.netty"            % "netty-codec"      % Version.netty
   val rxJava         = "com.netflix.rxjava"  % "rxjava-core"      % Version.rxJava
   val rxScala        = "com.netflix.rxjava"  % "rxjava-scala"     % Version.rxJava exclude("org.scala-lang", "scala-library")
-  val rxNetty        = "com.netflix.rxnetty" % "rx-netty"         % Version.rxNetty
   val scalaTest      = "org.scalatest"      %% "scalatest"        % Version.scalaTest
   val scalaCheck     = "org.scalacheck"     %% "scalacheck"       % Version.scalaCheck
 }
@@ -24,7 +22,7 @@ object Dependencies {
 
   import Library._
 
-  val coreDeps = List(scalaReflect % "compile", nettyBuffer % "test", scalaTest % "test", scalaCheck % "test,reg")
+  val coreDeps = scalaReflect % "compile" :: List(nettyBuffer, scalaTest, scalaCheck).map(_  % "test")
   val pipelineDeps = List(nettyCodec, scalaTest % "test")
   val clientDeps = List(rxJava, scalaTest % "it,test")
   val scalaApiDeps = List(rxScala)
