@@ -22,7 +22,7 @@ import rx.redis.clients.RawClient
 class ThroughputSpec extends FunSuite with BeforeAndAfter {
 
   private def measure(repetitions: Int)(f: RawClient => Unit) = {
-    val client = RawClient("127.0.0.1", 6379, shareable = true)
+    val client = RawClient("127.0.0.1", 6379)
     val start = System.currentTimeMillis()
 
     f(client)

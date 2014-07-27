@@ -16,70 +16,37 @@
 
 package rx.redis.clients
 
-import io.reactivex.netty.client.RxClient
-import rx.functions.{ Func1, Func2 }
-import rx.subjects.{ AsyncSubject, PublishSubject }
-import rx.{ Observable, Observer }
+import java.util.concurrent.atomic.AtomicBoolean
 
+import rx.Observable
+import rx.redis.pipeline.NettyClient
 import rx.redis.resp.{ DataType, RespType }
+import rx.subjects.AsyncSubject
 
-private[redis] object DefaultClient {
-  private object JoinFun extends Func2[Observer[RespType], RespType, Unit] {
-    def call(t1: Observer[RespType], t2: RespType): Unit = {
-      t1.onNext(t2)
-      t1.onCompleted()
-    }
-  }
-  private object VoidToUnit extends Func1[Void, Unit] {
-    def call(t1: Void): Unit = ()
-  }
+private[redis] final class DefaultClient(netty: NettyClient[DataType, RespType]) extends RawClient {
 
-  private object DiscardingObserver {
-    def apply[A](o: Observable[Unit]): Observable[Unit] = {
-      val s = AsyncSubject.create[Unit]()
-      o.subscribe(new DiscardingObserver(s))
-      s
-    }
-  }
+  private val isClosed = new AtomicBoolean(false)
+  private val alreadyClosed: Observable[Unit] =
+    Observable.error(new IllegalStateException("Client has already shutdown."))
 
-  final class DiscardingObserver(target: Observer[_]) extends Observer[Unit] {
-    def onNext(t: Unit): Unit = ()
-    def onError(error: Throwable): Unit = target.onError(error)
-    def onCompleted(): Unit = target.onCompleted()
-  }
-}
-private[redis] final class DefaultClient(client: RxClient[DataType, RespType])
-    extends RawClient {
-  import rx.redis.clients.DefaultClient._
-
-  private val connect = client.connect()
-  // TODO: cache() and flatMap all the time?
-  private val connection = connect.toBlocking.first()
-
-  private val requestStream = PublishSubject.create[Observer[RespType]]()
-  private val responseStream = connection.getInput
-  private val requestResponseStream =
-    requestStream.zip[RespType, Unit](responseStream, JoinFun)
-
-  private def createResponse() = {
+  def command(cmd: DataType): Observable[RespType] = {
     val s = AsyncSubject.create[RespType]()
-    requestStream.onNext(s)
+    netty.send(cmd, s)
     s
   }
 
-  def command(cmd: DataType): Observable[RespType] = {
-    connection.writeAndFlush(cmd)
-    createResponse()
+  def shutdown(): Observable[Unit] = {
+    if (isClosed.compareAndSet(false, true)) {
+      close()
+    } else {
+      alreadyClosed
+    }
   }
 
-  def shutdown(): Observable[Unit] = {
-    requestStream.onCompleted()
-    val closeObs = connection.close(true).map[Unit](VoidToUnit)
-    closeObs.subscribe()
-    client.shutdown()
-    closeObs
+  private def close(): Observable[Unit] = {
+    netty.close()
   }
 
   val closedObservable: Observable[Unit] =
-    DiscardingObserver(requestResponseStream)
+    netty.closed
 }

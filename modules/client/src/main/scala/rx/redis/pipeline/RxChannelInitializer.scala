@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package rx.redis.clients
+package rx.redis.pipeline
 
-import rx.Observable
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.socket.SocketChannel
+import rx.Observer
 
-import rx.redis.resp.{ DataType, RespType }
-
-private[redis] final class ThreadSafeClient(underlying: RawClient)
-    extends RawClient {
-
-  def command(cmd: DataType): Observable[RespType] = synchronized {
-    underlying.command(cmd)
+class RxChannelInitializer[Recv <: AnyRef](responses: Observer[Recv]) extends ChannelInitializer[SocketChannel] {
+  def initChannel(ch: SocketChannel): Unit = {
+    ch.pipeline().addLast(
+      "redis-resp-codec", new RespCodec)
+    ch.pipeline().addLast("netty-observable-adapter",
+      new RxObservableAdapter(responses))
   }
-
-  def closedObservable: Observable[Unit] =
-    underlying.closedObservable
-
-  def shutdown(): Observable[Unit] =
-    underlying.shutdown()
 }

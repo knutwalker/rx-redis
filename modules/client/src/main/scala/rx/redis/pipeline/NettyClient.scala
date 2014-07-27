@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package rx.redis.clients
+package rx.redis.pipeline
 
-import io.netty.channel.ChannelPipeline
-import io.reactivex.netty.pipeline.PipelineConfigurator
-import rx.redis.pipeline.RespCodec
-import rx.redis.resp.{ DataType, RespType }
+import rx.{ Observable, Observer }
 
-private[redis] final class RedisPipelineConfigurator extends PipelineConfigurator[RespType, DataType] {
-  def configureNewPipeline(pipeline: ChannelPipeline): Unit = {
-    pipeline.addLast(new RespCodec)
-  }
+trait NettyClient[Send <: AnyRef, Recv <: AnyRef] {
+
+  def send(data: Send, receiver: Observer[Recv]): Unit
+
+  def close(): Observable[Unit]
+
+  def closed: Observable[Unit]
 }

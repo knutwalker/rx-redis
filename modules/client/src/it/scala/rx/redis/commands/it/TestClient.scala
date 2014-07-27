@@ -26,7 +26,7 @@ trait TestClient extends BeforeAndAfter { this: Suite =>
   private var _client: RawClient = _
 
   before {
-    _client = RawClient("127.0.0.1", 6379, shareable = true)
+    _client = RawClient("127.0.0.1", 6379)
     _client.command(cmd"FLUSHDB").toBlocking.first()
   }
 

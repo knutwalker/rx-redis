@@ -60,9 +60,9 @@ class ThreadSafetySpec extends FunSuite {
     def correct: Int = _correct
   }
 
-  test("must not diverge when marked as shareable and shared amongst threads") {
+  test("must not diverge when hared amongst threads") {
 
-    val client = RawClient("127.0.0.1", 6379, shareable = true)
+    val client = RawClient("127.0.0.1", 6379)
 
     def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, _ => ())
 
@@ -77,9 +77,9 @@ class ThreadSafetySpec extends FunSuite {
     }
   }
 
-  test("must not diverge when not shareable, but used in isolation") {
+  test("must not diverge when used in isolation") {
 
-    def client = RawClient("127.0.0.1", 6379, shareable = false)
+    def client = RawClient("127.0.0.1", 6379)
 
     def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, { c =>
       c.shutdown()
@@ -94,24 +94,6 @@ class ThreadSafetySpec extends FunSuite {
     threads foreach { t =>
       assert(t.correct == total)
       assert(t.incorrect == 0)
-    }
-  }
-
-  test("should diverge when not marked as shareable but shared amongst threads") {
-
-    val client = RawClient("127.0.0.1", 6379, shareable = false)
-
-    def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, _ => ())
-
-    val threads = List.tabulate(threadCount)(createThread)
-
-    threads foreach (_.start())
-    threads foreach (_.join())
-
-    threads foreach { t =>
-      if (t.correct == total && t.incorrect == 0) {
-        info("Thread did not diverge, lucky you.")
-      }
     }
   }
 }

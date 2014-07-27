@@ -16,18 +16,18 @@
 
 package rx.redis.clients
 
-import io.reactivex.netty.RxNetty
 import rx.Observable
 import rx.redis.commands._
+import rx.redis.pipeline.RxOnNettyClient
 import rx.redis.resp.{ DataType, RespType }
 import rx.redis.serialization.{ BytesFormat, Writes }
 
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 private[redis] object RawClient {
-  def apply(host: String, port: Int, shareable: Boolean): RawClient = {
-    val client = new DefaultClient(RxNetty.createTcpClient(host, port, new RedisPipelineConfigurator))
-    if (shareable) new ThreadSafeClient(client) else client
+  def apply(host: String, port: Int): RawClient = {
+    val netty = new RxOnNettyClient[DataType, RespType](host, port)
+    new DefaultClient(netty)
   }
 }
 

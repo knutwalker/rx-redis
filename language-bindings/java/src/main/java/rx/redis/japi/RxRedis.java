@@ -25,12 +25,8 @@ public final class RxRedis {
 
   private RxRedis() {}
 
-  public static Client connect(final String host, final int port, final boolean shareable) {
-    return new Client(RawClient.apply(host, port, shareable));
-  }
-
   public static Client connect(final String host, final int port) {
-    return connect(host, port, true);
+    return new Client(RawClient.apply(host, port));
   }
 
   public static Client connect(final String host) {
