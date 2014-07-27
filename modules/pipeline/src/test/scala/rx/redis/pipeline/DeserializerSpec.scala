@@ -16,175 +16,48 @@
 
 package rx.redis.pipeline
 
-import io.netty.buffer.{ Unpooled, PooledByteBufAllocator }
-
+import io.netty.buffer.UnpooledByteBufAllocator
 import org.scalatest.{ FunSuite, Inside }
-
-import rx.redis.resp._
+import rx.redis.resp.{ NotEnoughData, RespBytes }
 import rx.redis.util.Utf8
 
 class DeserializerSpec extends FunSuite with Inside {
 
-  val alloc = PooledByteBufAllocator.DEFAULT
+  val alloc = UnpooledByteBufAllocator.DEFAULT
 
-  def compare(resp: String, expecteds: DataType*): Unit = {
-    ByteBufDeserializer.parseAll(resp, alloc).zip(expecteds) foreach {
-      case (actual, expected) ⇒
-        assert(actual == expected)
+  test("apply should parse only one item") {
+    val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n"
+    val result = ByteBufDeserializer(resp, Utf8, alloc)
+    assert(result == RespBytes("foo"))
+  }
+
+  test("foreach should execute an callback for each item") {
+    val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n"
+    val expected = Iterator(RespBytes("foo"), RespBytes("bar"))
+    ByteBufDeserializer.foreach(resp, Utf8, alloc) {
+      actual ⇒ assert(actual == expected.next())
     }
   }
 
-  def compare(resp: String)(insidePf: PartialFunction[RespType, Unit]): Unit = {
-    inside(ByteBufDeserializer(resp, alloc))(insidePf)
+  test("foreach should return whether there is data left") {
+    val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n$2\r"
+    val remainder = ByteBufDeserializer.foreach(resp, Utf8, alloc)(_ ⇒ ())
+    assert(remainder == Some(NotEnoughData))
+
+    val resp2 = "$3\r\nfoo\r\n$3\r\nbar\r\n"
+    val remainder2 = ByteBufDeserializer.foreach(resp2, Utf8, alloc)(_ ⇒ ())
+    assert(remainder2 == None)
   }
 
-  // happy path behavior
-
-  test("deserialize simple strings") {
-    compare("+OK\r\n", RespString("OK"))
+  test("parseAll should parse all items") {
+    val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n"
+    val result = ByteBufDeserializer.parseAll(resp, Utf8, alloc)
+    assert(result == List(RespBytes("foo"), RespBytes("bar")))
   }
 
-  test("deserialize errors") {
-    compare("-Error\r\n", RespError("Error"))
+  test("parseAll should also include whether there is data left") {
+    val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n$2\r"
+    val result = ByteBufDeserializer.parseAll(resp, Utf8, alloc)
+    assert(result == List(RespBytes("foo"), RespBytes("bar"), NotEnoughData))
   }
-
-  test("deserialize errors as simple strings") {
-    compare(
-      "-WRONGTYPE Operation against a key holding the wrong kind of value\r\n",
-      RespError("WRONGTYPE Operation against a key holding the wrong kind of value"))
-  }
-
-  test("deserialize integers") {
-    compare(":0\r\n", RespInteger(0))
-    compare(":9223372036854775807\r\n", RespInteger(Long.MaxValue))
-  }
-
-  test("deserialize integers with negative sign") {
-    compare(":-1\r\n", RespInteger(-1))
-    compare(":-9223372036854775808\r\n", RespInteger(Long.MinValue))
-  }
-
-  test("deserialize bulk strings") {
-    compare("$6\r\nfoobar\r\n", RespBytes("foobar"))
-  }
-
-  test("allow new lines in bulk strings") {
-    compare("$8\r\nfoo\r\nbar\r\n", RespBytes("foo\r\nbar"))
-  }
-
-  test("deserialize multiple bulk strings") {
-    compare("$6\r\nfoobar\r\n$4\r\n1337\r\n", RespBytes("foobar"), RespBytes("1337"))
-  }
-
-  test("deserialize an empty string") {
-    compare("$0\r\n\r\n", RespBytes(""))
-  }
-
-  test("deserialize the null string") {
-    compare("$-1\r\n", NullString)
-  }
-
-  test("deserialize arrays") {
-    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(Array(RespBytes("foo"), RespBytes("bar"))))
-  }
-
-  test("deserialize integer arrays") {
-    compare("*3\r\n:1\r\n:2\r\n:3\r\n", RespArray(Array(RespInteger(1), RespInteger(2), RespInteger(3))))
-  }
-
-  test("deserialize mixed arrays") {
-    compare("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nfoobar\r\n",
-      RespArray(Array(
-        RespInteger(1),
-        RespInteger(2),
-        RespInteger(3),
-        RespInteger(4),
-        RespBytes("foobar")
-      )))
-  }
-
-  test("deserialize an empty array") {
-    compare("*0\r\n", RespArray(Array()))
-  }
-
-  test("deserialize the null array") {
-    compare("*-1\r\n", NullArray)
-  }
-
-  test("deserialize nested arrays") {
-    compare("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n",
-      RespArray(Array(
-        RespArray(Array(
-          RespInteger(1),
-          RespInteger(2),
-          RespInteger(3)
-        )),
-        RespArray(Array(
-          RespString("Foo"),
-          RespError("Bar")
-        ))
-      ))
-    )
-  }
-
-  // sad path behavior
-
-  test("missing CrLf for simple strings") {
-    compare("+OK") {
-      case NotEnoughData ⇒
-    }
-  }
-
-  test("length overflow in bulk strings") {
-    compare("$9\r\nfoobar\r\n") {
-      case NotEnoughData ⇒
-    }
-  }
-
-  test("length underflow in bulk strings") {
-    compare("$3\r\nfoobar\r\n") {
-      case ProtocolError(pos, found, expected) ⇒
-        assert(expected === List('\r'.toByte))
-        assert(pos == 7)
-        assert(found == 'b'.toByte)
-    }
-  }
-
-  test("size overflow in arrays") {
-    compare("*3\r\n:1\r\n:2\r\n") {
-      case NotEnoughData ⇒
-    }
-  }
-
-  test("size underflow in arrays") {
-    compare("*1\r\n:1\r\n:2\r\n", RespArray(Array(RespInteger(1))))
-  }
-
-  test("missing type marker") {
-    compare("?MISSING") {
-      case ProtocolError(pos, found, expected) ⇒
-        assert(expected == List('+'.toByte, '-'.toByte, ':'.toByte, '$'.toByte, '*'.toByte))
-        assert(pos == 0)
-        assert(found == '?'.toByte)
-    }
-  }
-
-  test("buffer under capacity") {
-    val resp = "*2\r\n*3\r\n:1\r\n$3\r\nBaz\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n"
-    val bytes = resp.getBytes(Utf8)
-    val buf = Unpooled.wrappedBuffer(bytes)
-
-    for (i ← bytes.indices) {
-      val bb = buf.duplicate()
-      bb.writerIndex(i)
-      ByteBufDeserializer.parseAll(bb) foreach { actual ⇒
-        assert(actual == NotEnoughData)
-      }
-    }
-  }
-
-  /*
-    according to spec:
-     Integer RESP is guaranteed to be a valid 64 bit int, so not overflow testing
-   */
 }

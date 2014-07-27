@@ -1,4 +1,6 @@
 import com.typesafe.sbt.SbtPgp.PgpKeys._
+import com.typesafe.sbt.SbtScalariform._
+import sbt.Defaults._
 import sbt.Keys._
 import sbt._
 import sbtbuildinfo.Plugin._
@@ -7,12 +9,14 @@ import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease._
 import xerial.sbt.Sonatype.SonatypeKeys._
-import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 
 
 object Common {
-  import IntegrationTests.{skipTests => skipIts}
+  lazy val RegressionTest = config("reg").extend(Test)
+
+  def regFilter(name: String): Boolean = name endsWith "RegressionSpec"
+  def unitFilter(name: String): Boolean = (name endsWith "Spec") && !regFilter(name)
 
   private lazy val publishSignedArtifacts = publishArtifacts.copy(action = { st: State =>
     val extracted = Project.extract(st)
@@ -20,15 +24,18 @@ object Common {
     extracted.runAggregated(publishSigned in Global in ref, st)
   })
 
-  private lazy val runIntegrationTest = ReleaseStep(action = { st: State =>
-    val shouldSkipIntegrationTests =
-      st.get(skipTests).getOrElse(st.get((skipIts in IntegrationTest).key).getOrElse(false))
-    if (!shouldSkipIntegrationTests) {
+  private def runTestIn(conf: Configuration) = ReleaseStep(action = { st: State =>
+    val shouldSkipTests = st.get(skipTests).getOrElse(false)
+    if (!shouldSkipTests) {
       val extracted = Project.extract(st)
       val ref = extracted.get(Keys.thisProjectRef)
-      extracted.runAggregated(Keys.test in IntegrationTest in ref, st)
+      extracted.runAggregated(Keys.test in conf in ref, st)
     } else st
   })
+
+  private lazy val runIntegrationTest = runTestIn(IntegrationTest)
+
+  private lazy val runRegressionTest = runTestIn(RegressionTest)
 
   private lazy val releaseToCentral = ReleaseStep(action = { st: State =>
     val extracted = Project.extract(st)
@@ -43,6 +50,7 @@ object Common {
       setReleaseVersion,
       runClean,
       runTest,
+      runRegressionTest,
       runIntegrationTest,
       commitReleaseVersion,
       tagRelease,
@@ -86,6 +94,14 @@ object Common {
     buildInfoKeys := buildKeys,
     buildInfoPackage := "rx.redis"
   )
+
+  lazy val mainItSettings = itSettings ++ inConfig(IntegrationTest)(List(
+    logBuffered := false,
+    fork := true
+  ))
+
+  // Like to use testSettings, but IntelliJ doesn't get it right
+  lazy val mainRegSettings = inConfig(RegressionTest)(Defaults.testTasks)
 
   lazy val formatterSettings = scalariformSettings ++ List(
     ScalariformKeys.preferences := ScalariformKeys.preferences.value.

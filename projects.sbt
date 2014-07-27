@@ -6,10 +6,14 @@ import com.typesafe.sbt.pgp.PgpKeys._
 
 lazy val core = {
   project.in(file("modules") / "core").
+    configs(RegressionTest).
     settings(formatterSettings: _*).
+    settings(mainRegSettings: _*).
     settings(
       name := "rx-redis-core",
-      libraryDependencies ++= coreDeps
+      libraryDependencies ++= coreDeps,
+      testOptions in Test := List(Tests.Filter(unitFilter)),
+      testOptions in RegressionTest := List(Tests.Filter(regFilter))
   )
 }
 
@@ -27,7 +31,7 @@ lazy val client = {
   project.in(file("modules") / "client").
     dependsOn(pipeline).
     configs(IntegrationTest).
-    settings(IntegrationTests.integrationTestsSettings: _*).
+    settings(mainItSettings: _*).
     settings(formatterSettings: _*).
     settings(mainBuildInfoSettings: _*).
     settings(

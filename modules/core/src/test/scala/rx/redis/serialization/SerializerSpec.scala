@@ -1,36 +1,37 @@
 /*
- * Copyright 2014 Paul Horn
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2014 Paul Horn
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
-package rx.redis.pipeline
+package rx.redis.serialization
 
-import io.netty.buffer.UnpooledByteBufAllocator
+import io.netty.buffer.{ ByteBuf, UnpooledByteBufAllocator }
 import org.scalatest.{ FunSuite, Inside }
 import rx.redis.resp._
 import rx.redis.util.Utf8
 
-class SerializerSpec extends FunSuite with Inside {
+class SerializerSpec extends FunSuite with Inside with ByteBufAccess {
 
   val alloc = UnpooledByteBufAllocator.DEFAULT
 
   private def compare(dt: DataType, resp: String) = {
+    val serializer = new Serializer[ByteBuf]
+
     val buf = alloc.buffer()
-    ByteBufSerializer(dt, buf)
+    serializer(dt, buf)
     val result = buf.toString(Utf8)
     assert(result == resp)
-    assert(ByteBufDeserializer(buf) == dt)
     buf.release()
   }
 
@@ -114,7 +115,8 @@ class SerializerSpec extends FunSuite with Inside {
   test("buffer under capacity") {
     val buf = alloc.buffer(4, 4)
     val ex = intercept[IndexOutOfBoundsException] {
-      ByteBufSerializer(NullString, buf)
+      val serializer = new Serializer[ByteBuf]
+      serializer(NullString, buf)
     }
     assert(ex.getMessage.contains("exceeds maxCapacity(4)"))
     buf.release()
