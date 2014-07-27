@@ -38,7 +38,7 @@ For sbt:
     libraryDependencies += "de.knutwalker" %% "rx-redis-scala" % "0.3.0"
 
 
-RxRedis has a dependency on RxNetty and transitive on Netty and RxJava. The Scala binding also depend on the Scala bindings of RxJava.
+RxRedis has a dependency on Netty and RxJava. The Scala binding also depend on the Scala bindings of RxJava.
 As it is written in Scala, RxRedis also depends on scala-library and the scala-reflect module, though I'm trying to get the last one out of the runtime classpath. Here's the full graph (except for scala-library):
 
 <a href="https://raw.githubusercontent.com/knutwalker/rx-redis/master/dependency-graph.png"><img src="https://raw.githubusercontent.com/knutwalker/rx-redis/master/dependency-graph.png" alt="dependency-graph" width="640" height="171"></a>
@@ -108,7 +108,7 @@ Two things to point out:
     Since the call to any command is asynchronous, you can't just close the client at the end of your script, since the commands might be fliying around the network. `RxRedis.await` is a helper, that blocks until the last response from the server was delivered to the client. This requires, that you call `client.shutdown()` at some point, otherwise `await` would block forever.
 
 
-The constructors take a third, boolean argument — shareable, which defaults to `true`. This makes the returned client thread-safe. If you don't share the client amongst different threads, you can set this to `false` and maybe get a few milliseconds back.
+An instance of this Client is thread-safe, almost all operations are executed on nettys event loop.
 
 
 ### Custom types
@@ -182,6 +182,17 @@ The client APIs then just send a new instance of some case class to the netty pi
 You can also send any `A` for which you can provide an instance of `Writes[A]`.
 
 
+## Working with the Source
+
+RxRedis is built with sbt and comes with a launch script, you only need a JDK installed. After downloading/cloning, run `./sbt` to drop into the sbt shell. Some things to can do there, besides `compile` and `test`:
+
+- `example/run` to run the Scala examples
+- `java-example/run` to run the Java examples
+- `it:test` to tun integration tests, need a Redis instance running **DB 0 will be deleted!**
+- `reg:test` to run regression tests (codec tests)
+- `publishM2` to install the snapshot version locally
+
+
 ## Future
 
 Plans for future versions (in no particular order or timeline):
@@ -195,6 +206,5 @@ Plans for future versions (in no particular order or timeline):
 - Cross compile for Scala 2.10, maybe also for Java 7
 - BytesFormat implementation for typical data formats, such as Json (e.g. Jackson, Gson, various Scala ones), Protobuf, etc...
 - Language binding for Clojure (Groovy, Kotlin, ...? Basically, anything that is supported by RxJava)
-- Maybe removal of RxNetty and using Netty directly, to reduce the transitive dependencies
 - Abstract backend implementation, build on reactive-streams am make backend pluggable (e.g. RxNetty, Akka streams, ...)
 - ...
