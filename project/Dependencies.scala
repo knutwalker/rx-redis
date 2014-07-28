@@ -2,8 +2,8 @@ import sbt._
 
 object Version {
   val scala = "2.11.2"
-  val netty = "4.0.21.Final"
-  val rxJava = "0.19.1"
+  val netty = "4.1.0.Beta1" // "4.0.21.Final"  "5.0.0.Alpha1"
+  val rxJava = "0.19.6"  // "0.20.0-RC3"
   val scalaTest = "2.2.0"
   val scalaCheck = "1.11.4"
 }
