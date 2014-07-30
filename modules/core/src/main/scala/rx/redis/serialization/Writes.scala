@@ -30,7 +30,7 @@ trait Writes[A] {
 object Writes {
   @inline def apply[A](implicit A: Writes[A]): Writes[A] = A
 
-  def writes[A]: Writes[A] = macro Macros.writes[A]
+  def writes[A]: Writes[A] = macro WritesMacro.writes[A]
 
   implicit object DirectStringWrites extends Writes[String] {
     def write(value: String): DataType = {

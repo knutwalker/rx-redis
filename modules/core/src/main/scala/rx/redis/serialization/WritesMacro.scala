@@ -22,7 +22,7 @@ import java.util.Locale
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox.Context
 
-class Macros(val c: Context) {
+class WritesMacro(val c: Context) {
   import c.universe._
 
   def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, BytesFormat, Writes]
