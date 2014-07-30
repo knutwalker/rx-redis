@@ -17,48 +17,101 @@
 package rx.redis.serialization
 
 import rx.redis.resp._
-
 import scala.annotation.implicitNotFound
+import scala.language.experimental.macros
+import scala.language.higherKinds
 
-@implicitNotFound("Cannot find a Reads of ${A}. You have to implement an rx.redis.serialization.Reads[${A}] in order to read a ${A}.")
-trait Reads[A] {
+@implicitNotFound("Cannot find a Reads of ${A}.")
+trait Reads[-A] {
+  type R
+  def read: PartialFunction[RespType, R]
+}
 
-  def read: PartialFunction[RespType, A]
+@implicitNotFound("Cannot find a ReadsM of ${A}.")
+trait ReadsM[-A, M[_]] {
+  type R
+  def read: PartialFunction[RespType, M[R]]
 }
 
 object Reads {
   @inline def apply[A](implicit A: Reads[A]): Reads[A] = A
+  @inline def apply[A, M[_]](implicit A: ReadsM[A, M]): ReadsM[A, M] = A
 
-  implicit val bool: Reads[Boolean] = new Reads[Boolean] {
-    val read: PartialFunction[RespType, Boolean] = {
-      case RespString(s) if s == "OK" ⇒ true
-      case RespInteger(i)             ⇒ i > 0
-    }
+  private val boolPf: PartialFunction[RespType, Boolean] = {
+    case RespString(s) if s == "OK" ⇒ true
+    case RespInteger(i)             ⇒ i > 0
   }
 
-  implicit val bytes: Reads[Array[Byte]] = new Reads[Array[Byte]] {
-    val read: PartialFunction[RespType, Array[Byte]] = {
-      case RespBytes(b)  ⇒ b
-      case RespString(s) ⇒ BytesFormat[String].bytes(s)
-    }
+  private val intPf: PartialFunction[RespType, Long] = {
+    case RespInteger(l) ⇒ l
   }
 
-  implicit val int: Reads[Long] = new Reads[Long] {
-    val read: PartialFunction[RespType, Long] = {
-      case RespInteger(l) ⇒ l
-    }
+  private def optPf[T](implicit T: BytesFormat[T]): PartialFunction[RespType, Option[T]] = {
+    case RespBytes(b) ⇒ Some(T.value(b))
+    case NullString   ⇒ None
   }
 
-  implicit val list: Reads[List[RespType]] = new Reads[List[RespType]] {
-    val read: PartialFunction[RespType, List[RespType]] = {
-      case RespArray(items) ⇒ items.toList
-    }
+  private def valuePf[T](implicit T: BytesFormat[T]): PartialFunction[RespType, T] = {
+    case RespBytes(b)  ⇒ T.value(b)
+    case RespString(s) ⇒ T.value(BytesFormat[String].bytes(s))
   }
 
-  implicit val unzip: Reads[List[(RespType, RespType)]] = new Reads[List[(RespType, RespType)]] {
-    val read: PartialFunction[RespType, List[(RespType, RespType)]] = {
-      case RespArray(items) ⇒
-        items.grouped(2).map(xs ⇒ (xs(0), xs(1))).toList
-    }
+  private def listPf[T: BytesFormat]: PartialFunction[RespType, List[T]] = {
+    case RespArray(items) ⇒
+      items.collect(valuePf[T])(collection.breakOut)
+  }
+
+  private def listOptPf[T: BytesFormat]: PartialFunction[RespType, List[Option[T]]] = {
+    case RespArray(items) ⇒
+      items.collect(optPf[T])(collection.breakOut)
+  }
+
+  private def pairPf[T, U](T: PartialFunction[RespType, T], U: PartialFunction[RespType, U]): PartialFunction[RespType, List[(T, U)]] = {
+    case RespArray(items) ⇒
+      items.grouped(2).collect {
+        case Array(t, u) if T.isDefinedAt(t) && U.isDefinedAt(u) ⇒
+          T(t) -> U(u)
+      }.toList
+  }
+
+  private def pairPf[T: BytesFormat, U: BytesFormat]: PartialFunction[RespType, List[(T, U)]] = {
+    val tPf = valuePf[T]
+    val uPf = valuePf[U]
+    pairPf(tPf, uPf)
+  }
+
+  def bool[A]: Reads[A] { type R = Boolean } = new Reads[A] {
+    type R = Boolean
+    val read = boolPf
+  }
+
+  def int[A]: Reads[A] { type R = Long } = new Reads[A] {
+    type R = Long
+    val read = intPf
+  }
+
+  def value[A, T: BytesFormat]: Reads[A] { type R = T } = new Reads[A] {
+    type R = T
+    val read = valuePf[T]
+  }
+
+  def opt[A, T: BytesFormat]: Reads[A] { type R = Option[T] } = new Reads[A] {
+    type R = Option[T]
+    val read = optPf[T]
+  }
+
+  def list[A, T: BytesFormat]: ReadsM[A, List] { type R = T } = new ReadsM[A, List] {
+    type R = T
+    val read = listPf[T]
+  }
+
+  def listOpt[A, T](implicit T: BytesFormat[T]): ReadsM[A, List] { type R = Option[T] } = new ReadsM[A, List] {
+    type R = Option[T]
+    val read = listOptPf[T]
+  }
+
+  def listPair[A, T: BytesFormat, U: BytesFormat]: ReadsM[A, List] { type R = (T, U) } = new ReadsM[A, List] {
+    type R = (T, U)
+    val read = pairPf[T, U]
   }
 }

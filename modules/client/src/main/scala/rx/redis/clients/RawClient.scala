@@ -17,21 +17,24 @@
 package rx.redis.clients
 
 import rx.Observable
+import rx.exceptions.OnErrorThrowable
+import rx.functions.Func1
 import rx.redis.commands._
 import rx.redis.pipeline.RxOnNettyClient
 import rx.redis.resp.{ DataType, RespType }
-import rx.redis.serialization.{ BytesFormat, Writes }
+import rx.redis.serialization.{ BytesFormat, ReadsM, Reads, Writes }
 
+import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
-private[redis] object RawClient {
+object RawClient {
   def apply(host: String, port: Int): RawClient = {
     val netty = new RxOnNettyClient[DataType, RespType](host, port)
     new DefaultClient(netty)
   }
 }
 
-private[redis] abstract class RawClient {
+abstract class RawClient {
 
   def command(cmd: DataType): Observable[RespType]
   def shutdown(): Observable[Unit]
@@ -40,85 +43,106 @@ private[redis] abstract class RawClient {
   def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] =
     command(A.write(cmd))
 
+  private def withError[A](o: Observable[A]): Observable[A] = {
+    o.onErrorFlatMap(new Func1[OnErrorThrowable, Observable[A]] {
+      def call(t1: OnErrorThrowable): Observable[A] = {
+        Observable.error(
+          new IllegalArgumentException(s"Cannot interpret ${t1.getValue}", t1.getCause))
+      }
+    })
+  }
+
+  private def single[A](cmd: A)(implicit A: Writes[A], R: Reads[A]): Observable[R.R] = withError {
+    command(A.write(cmd)).map[R.R](new Func1[RespType, R.R] {
+      def call(t1: RespType): R.R = R.read(t1)
+    })
+  }
+
+  private def multiple[A](cmd: A)(implicit A: Writes[A], R: ReadsM[A, List]): Observable[R.R] = withError {
+    command(A.write(cmd)).flatMap[R.R](new Func1[RespType, Observable[R.R]] {
+      def call(t1: RespType): Observable[R.R] = Observable.from(R.read(t1).asJava)
+    })
+  }
+
   // ==============
   //  Key Commands
   // ==============
 
   def del(keys: String*): Observable[Long] =
-    command(Del(keys: _*)).flatMap(Del.reads)
+    single(Del(keys: _*))
 
   def exists(key: String): Observable[Boolean] =
-    command(Exists(key)).flatMap(Exists.reads)
+    single(Exists(key))
 
   def expire(key: String, expires: FiniteDuration): Observable[Boolean] =
-    command(Expire(key, expires)).flatMap(Expire.reads)
+    single(Expire(key, expires))
 
   def expireAt(key: String, deadline: Deadline): Observable[Boolean] =
-    command(ExpireAt(key, deadline)).flatMap(ExpireAt.reads)
+    single(ExpireAt(key, deadline))
 
   def keys(pattern: String): Observable[String] =
-    command(Keys(pattern)).flatMap(Keys.reads)
+    multiple(Keys(pattern))
 
   def randomKey(): Observable[Option[String]] =
-    command(RandomKey).flatMap(RandomKey.reads)
+    single(RandomKey)
 
   def ttl(key: String): Observable[Long] =
-    command(Ttl(key)).flatMap(Ttl.reads)
+    single(Ttl(key))
 
   // =================
   //  String Commands
   // =================
 
   def decr(key: String): Observable[Long] =
-    command(Decr(key)).flatMap(Decr.reads)
+    single(Decr(key))
 
   def decrBy(key: String, amount: Long): Observable[Long] =
-    command(DecrBy(key, amount)).flatMap(Decr.reads)
+    single(DecrBy(key, amount))
 
   def get[A: BytesFormat](key: String): Observable[Option[A]] =
-    command(Get(key)).flatMap(Get.reads)
+    single(Get(key))
 
   def incr(key: String): Observable[Long] =
-    command(Incr(key)).flatMap(Incr.reads)
+    single(Incr(key))
 
   def incrBy(key: String, amount: Long): Observable[Long] =
-    command(IncrBy(key, amount)).flatMap(Incr.reads)
+    single(IncrBy(key, amount))
 
   def mget[A: BytesFormat](keys: String*): Observable[Option[A]] =
-    command(MGet(keys: _*)).flatMap(MGet.reads)
+    multiple(MGet(keys: _*))
 
   def mset[A: BytesFormat](items: (String, A)*): Observable[Boolean] =
-    command(MSet(items: _*)).flatMap(MSet.reads)
+    single(MSet(items: _*))
 
   def set[A: BytesFormat](key: String, value: A): Observable[Boolean] =
-    command(Set(key, value)).flatMap(Set.reads)
+    single(Set(key, value))
 
   def setEx[A: BytesFormat](key: String, value: A, expires: FiniteDuration): Observable[Boolean] =
-    command(SetEx(key, expires, value)).flatMap(SetEx.reads)
+    single(SetEx(key, expires, value))
 
   def setNx[A: BytesFormat](key: String, value: A): Observable[Boolean] =
-    command(SetNx(key, value)).flatMap(SetNx.reads)
+    single(SetNx(key, value))
 
   def strLen(key: String): Observable[Long] =
-    command(StrLen(key)).flatMap(StrLen.reads)
+    single(StrLen(key))
 
   // =====================
   //  Connection Commands
   // =====================
 
   def echo[A: BytesFormat](msg: A): Observable[A] =
-    command(Echo(msg)).flatMap(Echo.reads)
+    single(Echo(msg))
 
   def ping(): Observable[String] =
-    command(Ping).flatMap(Ping.reads)
+    single(Ping)
 
   // ===============
   //  Hash Commands
   // ===============
 
   def hget[A: BytesFormat](key: String, field: String): Observable[Option[A]] =
-    command(HGet(key, field)).flatMap(HGet.reads)
+    single(HGet(key, field))
 
   def hgetAll[A: BytesFormat](key: String): Observable[(String, A)] =
-    command(HGetAll(key)).flatMap(HGetAll.reads)
+    multiple(HGetAll(key))
 }

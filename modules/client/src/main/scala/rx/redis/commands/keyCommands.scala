@@ -16,49 +16,48 @@
 
 package rx.redis.commands
 
-import rx.redis.resp.RespType
-import rx.redis.serialization.Writes
+import rx.redis.serialization.{ Reads, Writes }
 
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 case class Del(keys: String*)
 object Del {
   implicit val writes = Writes.writes[Del]
-  val reads = ReadsTransformers.asObservable[Long] // Reads.int.asObservable
+  implicit val readsFormat = Reads.int[Del]
 }
 
 case class Exists(key: String)
 object Exists {
   implicit val writes = Writes.writes[Exists]
-  val reads = ReadsTransformers.asObservable[Boolean] // Reads.bool.asObservable
+  implicit val readsFormat = Reads.bool[Exists]
 }
 
 case class Expire(key: String, expires: FiniteDuration)
 object Expire {
   implicit val writes = Writes.writes[Expire]
-  val reads = ReadsTransformers.asObservable[Boolean] // Reads.bool.asObservable
+  implicit val readsFormat = Reads.bool[Expire]
 }
 
 // TODO: Deadline is not a good choice, more something like Joda time
 case class ExpireAt(key: String, deadline: Deadline)
 object ExpireAt {
   implicit val writes = Writes.writes[ExpireAt]
-  val reads = ReadsTransformers.asObservable[Boolean] // Reads.bool.asObservable
+  implicit val readsFormat = Reads.bool[ExpireAt]
 }
 
 case class Keys(pattern: String)
 object Keys {
   implicit val writes = Writes.writes[Keys]
-  val reads = ReadsTransformers.manyAsObservableOf[List[RespType], String] // Reads.list.asManyObservableOfA[String]
+  implicit val readsFormat = Reads.list[Keys, String]
 }
 
 case object RandomKey {
   implicit val writes = Writes.writes[RandomKey.type]
-  val reads = ReadsTransformers.asObservableOfOptionOf[Array[Byte], String] // Reads.bytes.asOptionObservableOfA[String]
+  implicit val readsFormat = Reads.opt[RandomKey.type, String]
 }
 
 case class Ttl(key: String)
 object Ttl {
   implicit val writes = Writes.writes[Ttl]
-  val reads = ReadsTransformers.asObservable[Long] // Reads.int.asObservable
+  implicit val readsFormat = Reads.int[Ttl]
 }
