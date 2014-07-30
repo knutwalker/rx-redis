@@ -19,6 +19,7 @@ package rx.redis.pipeline
 import java.nio.charset.Charset
 
 import io.netty.buffer.ByteBuf
+
 import rx.redis.serialization.BytesAccess
 
 object ByteBufAccess extends BytesAccess[ByteBuf] {

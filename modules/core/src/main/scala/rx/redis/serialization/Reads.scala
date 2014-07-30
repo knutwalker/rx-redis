@@ -16,10 +16,11 @@
 
 package rx.redis.serialization
 
-import rx.redis.resp._
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
 import scala.language.higherKinds
+
+import rx.redis.resp._
 
 @implicitNotFound("Cannot find a Reads of ${A}.")
 trait Reads[-A] {

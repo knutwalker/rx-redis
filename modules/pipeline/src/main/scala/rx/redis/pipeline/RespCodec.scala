@@ -20,6 +20,7 @@ import java.util
 
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
+
 import rx.redis.resp.DataType
 
 private[redis] class RespCodec extends StrictByteToMessageCodec[ByteBuf, DataType] {

@@ -16,11 +16,13 @@
 
 package rx.redis.pipeline
 
-import io.netty.buffer.{ ByteBuf, Unpooled }
+import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.embedded.EmbeddedChannel
-import org.scalatest.{ BeforeAndAfter, FunSuite }
+
 import rx.redis.resp._
 import rx.redis.util.Utf8
+
+import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class RespCodecSpec extends FunSuite with BeforeAndAfter {
 

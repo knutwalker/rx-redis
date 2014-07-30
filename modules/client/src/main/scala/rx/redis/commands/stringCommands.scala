@@ -16,9 +16,9 @@
 
 package rx.redis.commands
 
-import rx.redis.serialization.{ BytesFormat, Reads, Writes }
-
 import scala.concurrent.duration.FiniteDuration
+
+import rx.redis.serialization.{ BytesFormat, Reads, Writes }
 
 case class Get(key: String)
 object Get {

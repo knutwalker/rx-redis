@@ -16,11 +16,13 @@
 
 package rx.redis.serialization
 
-import io.netty.buffer.{ ByteBuf, Unpooled }
+import io.netty.buffer.{ByteBuf, Unpooled}
+
+import rx.redis.resp._
+
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.PropertyChecks
-import rx.redis.resp._
 
 class CodecRegressionSpec extends FunSuite with PropertyChecks with ByteBufAccess {
   import org.scalacheck.Arbitrary.arbitrary

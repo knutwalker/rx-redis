@@ -16,12 +16,12 @@
 
 package rx.redis.commands
 
-import org.scalatest.FunSuite
+import java.nio.charset.StandardCharsets
 
-import rx.redis.resp.{ RespArray, RespBytes, DataType }
+import rx.redis.resp.{DataType, RespArray, RespBytes}
 import rx.redis.serialization.Writes
 
-import java.nio.charset.StandardCharsets
+import org.scalatest.FunSuite
 
 class CommandsSuite extends FunSuite {
 

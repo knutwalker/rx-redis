@@ -16,13 +16,13 @@
 
 package rx.redis.serialization
 
-import rx.redis.util.Utf8
-
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import java.util.concurrent.TimeUnit
 import scala.annotation.{ implicitNotFound, tailrec }
 import scala.collection.mutable
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
+
+import rx.redis.util.Utf8
 
 @implicitNotFound("Cannot find a BytesFormat of ${A}. You have to implement an rx.redis.serialization.BytesFormat[${A}] in order to use ${A} as custom value.")
 trait BytesFormat[A] {

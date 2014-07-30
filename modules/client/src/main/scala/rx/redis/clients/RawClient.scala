@@ -16,16 +16,17 @@
 
 package rx.redis.clients
 
+import scala.collection.JavaConverters.seqAsJavaListConverter
+import scala.concurrent.duration.{ Deadline, FiniteDuration }
+
 import rx.Observable
 import rx.exceptions.OnErrorThrowable
 import rx.functions.Func1
+
 import rx.redis.commands._
 import rx.redis.pipeline.RxOnNettyClient
 import rx.redis.resp.{ DataType, RespType }
-import rx.redis.serialization.{ BytesFormat, ReadsM, Reads, Writes }
-
-import scala.collection.JavaConverters.seqAsJavaListConverter
-import scala.concurrent.duration.{ Deadline, FiniteDuration }
+import rx.redis.serialization.{ BytesFormat, Reads, ReadsM, Writes }
 
 object RawClient {
   def apply(host: String, port: Int): RawClient = {

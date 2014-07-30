@@ -16,9 +16,9 @@
 
 package rx.redis.pipeline
 
+import rx.Observer
 import io.netty.channel.{ ChannelHandlerContext, ChannelInboundHandlerAdapter }
 import io.netty.util.ReferenceCountUtil
-import rx.Observer
 
 class RxObservableAdapter[Recv <: AnyRef](responses: Observer[Recv]) extends ChannelInboundHandlerAdapter {
 

@@ -16,11 +16,11 @@
 
 package rx.redis.serialization
 
-import rx.redis.util.Utf8
-
 import java.util.Locale
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox.Context
+
+import rx.redis.util.Utf8
 
 class WritesMacro(val c: Context) {
   import c.universe._

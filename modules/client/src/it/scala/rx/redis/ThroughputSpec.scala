@@ -16,8 +16,9 @@
 
 package rx.redis
 
-import org.scalatest.{BeforeAndAfter, FunSuite}
 import rx.redis.clients.RawClient
+
+import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class ThroughputSpec extends FunSuite with BeforeAndAfter {
 

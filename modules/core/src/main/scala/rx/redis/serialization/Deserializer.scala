@@ -16,11 +16,11 @@
 
 package rx.redis.serialization
 
-import rx.redis.resp._
-import rx.redis.util._
-
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
+
+import rx.redis.resp._
+import rx.redis.util._
 
 final class Deserializer[A](implicit A: BytesAccess[A]) {
   import rx.redis.resp.Protocol._

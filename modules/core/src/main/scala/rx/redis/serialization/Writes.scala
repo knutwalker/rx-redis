@@ -16,10 +16,10 @@
 
 package rx.redis.serialization
 
-import rx.redis.resp.{ DataType, RespArray, RespBytes }
-
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
+
+import rx.redis.resp.{ DataType, RespArray, RespBytes }
 
 @implicitNotFound("Cannot find a Writes of ${A}. You have to implement an rx.redis.serialization.Writes[${A}] in order to send ${A} as a command.")
 trait Writes[A] {

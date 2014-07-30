@@ -16,9 +16,9 @@
 
 package rx.redis.commands
 
-import rx.redis.serialization.{ Reads, Writes }
-
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
+
+import rx.redis.serialization.{ Reads, Writes }
 
 case class Del(keys: String*)
 object Del {

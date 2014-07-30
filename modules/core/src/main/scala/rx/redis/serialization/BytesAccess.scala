@@ -17,7 +17,6 @@
 package rx.redis.serialization
 
 import java.nio.charset.Charset
-
 import scala.annotation.implicitNotFound
 
 @implicitNotFound("Need an implicit BytesAccess[${A}] to be able to parse ${A}s.")

@@ -16,10 +16,10 @@
 
 package rx.redis.resp
 
-import rx.redis.util.Utf8
-
 import java.nio.charset.Charset
 import java.util
+
+import rx.redis.util.Utf8
 
 sealed abstract class RespType
 

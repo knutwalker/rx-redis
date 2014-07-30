@@ -16,9 +16,9 @@
 
 package rx.redis.pipeline
 
+import rx.Observer
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
-import rx.Observer
 
 class RxChannelInitializer[Recv <: AnyRef](responses: Observer[Recv]) extends ChannelInitializer[SocketChannel] {
   def initChannel(ch: SocketChannel): Unit = {

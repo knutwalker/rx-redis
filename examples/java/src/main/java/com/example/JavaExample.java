@@ -17,8 +17,8 @@
 package com.example;
 
 import rx.Observable;
-import rx.redis.japi.RxRedis;
 import rx.redis.japi.Client;
+import rx.redis.japi.RxRedis;
 
 import java.util.Optional;
 

@@ -16,10 +16,11 @@
 
 package rx.redis.commands.it
 
-import org.scalatest.FunSuiteLike
+import scala.collection.convert.DecorateAsScala
+
 import rx.Observable
 
-import scala.collection.convert.DecorateAsScala
+import org.scalatest.FunSuiteLike
 
 
 trait ItCommandsSuite extends FunSuiteLike with TestClient with PersonType with DecorateAsScala {

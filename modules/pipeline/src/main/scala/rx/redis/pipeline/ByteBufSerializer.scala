@@ -19,6 +19,7 @@ package rx.redis.pipeline
 import java.nio.charset.Charset
 
 import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
+
 import rx.redis.resp._
 import rx.redis.serialization.Serializer
 

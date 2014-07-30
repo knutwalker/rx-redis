@@ -16,10 +16,12 @@
 
 package rx.redis.serialization
 
-import io.netty.buffer.{ ByteBuf, UnpooledByteBufAllocator }
-import org.scalatest.{ FunSuite, Inside }
+import io.netty.buffer.{ByteBuf, UnpooledByteBufAllocator}
+
 import rx.redis.resp._
 import rx.redis.util.Utf8
+
+import org.scalatest.{FunSuite, Inside}
 
 class SerializerSpec extends FunSuite with Inside with ByteBufAccess {
 

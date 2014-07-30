@@ -22,7 +22,7 @@ import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
 import rx.redis.clients.RawClient
-import rx.redis.resp.{ RespType, DataType }
+import rx.redis.resp.{ DataType, RespType }
 import rx.redis.serialization.BytesFormat
 
 final class Client(raw: RawClient) {

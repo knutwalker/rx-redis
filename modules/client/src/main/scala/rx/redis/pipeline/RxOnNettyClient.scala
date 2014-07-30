@@ -16,16 +16,16 @@
 
 package rx.redis.pipeline
 
+import rx.functions.{ Func1, Func2 }
+import rx.schedulers.Schedulers
+import rx.subjects.{ AsyncSubject, PublishSubject }
+import rx.{ Observable, Observer }
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.channel.{ ChannelFuture, ChannelFutureListener, ChannelHandlerContext, ChannelOption }
 import io.netty.util.concurrent.DefaultThreadFactory
-import rx.functions.{ Func2, Func1 }
-import rx.schedulers.Schedulers
-import rx.subjects.{ AsyncSubject, PublishSubject }
-import rx.{ Observable, Observer }
 
 object RxOnNettyClient {
   private final class WriteOnChannel[Send <: AnyRef, Recv <: AnyRef](ctx: ChannelHandlerContext)
@@ -58,7 +58,7 @@ object RxOnNettyClient {
 }
 
 private[redis] final class RxOnNettyClient[Send <: AnyRef, Recv <: AnyRef](host: String, port: Int) extends NettyClient[Send, Recv] {
-  import rx.redis.pipeline.RxOnNettyClient.{ WriteOnChannel, ReturnToSender, DiscardingObserver }
+  import rx.redis.pipeline.RxOnNettyClient.{ DiscardingObserver, ReturnToSender, WriteOnChannel }
 
   private val inputSubject =
     PublishSubject.create[(Send, Observer[Recv])]()

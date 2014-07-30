@@ -16,8 +16,9 @@
 
 package rx.redis.commands
 
-import rx.redis._
 import scala.concurrent.duration._
+
+import rx.redis._
 
 class KeyCommandsSpec extends CommandsSuite {
 

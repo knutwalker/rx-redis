@@ -16,11 +16,11 @@
 
 package rx.redis.pipeline
 
+import scala.reflect.ClassTag
+
 import io.netty.buffer.ByteBuf
 import io.netty.channel.{ ChannelHandlerContext, ChannelPromise }
 import io.netty.handler.codec.ByteToMessageCodec
-
-import scala.reflect.ClassTag
 
 abstract class StrictByteToMessageCodec[I <: ByteBuf: ClassTag, O: ClassTag] extends ByteToMessageCodec[O] {
 
