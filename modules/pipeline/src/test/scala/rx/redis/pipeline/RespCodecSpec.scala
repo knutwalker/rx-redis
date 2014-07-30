@@ -16,7 +16,7 @@
 
 package rx.redis.pipeline
 
-import io.netty.buffer.Unpooled
+import io.netty.buffer.{ ByteBuf, Unpooled }
 import io.netty.channel.embedded.EmbeddedChannel
 import org.scalatest.{ BeforeAndAfter, FunSuite }
 import rx.redis.resp._
@@ -27,10 +27,10 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
   private def compare(in: DataType, out: String) = {
     val byteData = Unpooled.copiedBuffer(out, Utf8)
     assert(channel.writeOutbound(in))
-    assert(channel.readOutbound() == byteData)
+    assert(channel.readOutbound[ByteBuf]() == byteData)
 
     assert(channel.writeInbound(byteData))
-    assert(channel.readInbound() == in)
+    assert(channel.readInbound[DataType]() == in)
   }
 
   private var channel: EmbeddedChannel = _
@@ -67,7 +67,7 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
     val ex = intercept[IllegalArgumentException] {
       channel.writeOutbound(NotEnoughData)
     }
-    assert(channel.readOutbound() == null)
+    assert(channel.readOutbound[ByteBuf]() == null)
     assert(ex.getMessage == "msg is not a [rx.redis.resp.DataType].")
   }
 
@@ -75,7 +75,7 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
     val ex = intercept[IllegalArgumentException] {
       channel.writeInbound("foo")
     }
-    assert(channel.readInbound() == null)
+    assert(channel.readInbound[ByteBuf]() == null)
     assert(ex.getMessage == "msg is not a [io.netty.buffer.ByteBuf].")
   }
 
@@ -84,17 +84,17 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
       Unpooled.copiedBuffer(c, Utf8)
     }
     assert(channel.writeInbound(chunks: _*))
-    assert(channel.readInbound() == RespString("An Overly Long Response"))
-    assert(channel.readInbound() == null)
+    assert(channel.readInbound[DataType]() == RespString("An Overly Long Response"))
+    assert(channel.readInbound[DataType]() == null)
   }
 
   test("should parse multiple answers") {
     val resp = "+Foo\r\n+Bar\r\n$3\r\nbaz\r\n$3\r\nqux\r\n"
     assert(channel.writeInbound(Unpooled.copiedBuffer(resp, Utf8)))
-    assert(channel.readInbound() == RespString("Foo"))
-    assert(channel.readInbound() == RespString("Bar"))
-    assert(channel.readInbound() == RespBytes("baz"))
-    assert(channel.readInbound() == RespBytes("qux"))
-    assert(channel.readInbound() == null)
+    assert(channel.readInbound[DataType]() == RespString("Foo"))
+    assert(channel.readInbound[DataType]() == RespString("Bar"))
+    assert(channel.readInbound[DataType]() == RespBytes("baz"))
+    assert(channel.readInbound[DataType]() == RespBytes("qux"))
+    assert(channel.readInbound[DataType]() == null)
   }
 }
