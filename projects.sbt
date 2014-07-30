@@ -17,19 +17,9 @@ lazy val core = {
   )
 }
 
-lazy val pipeline = {
-  project.in(file("modules") / "pipeline").
-    dependsOn(core).
-    settings(formatterSettings: _*).
-    settings(
-      name := "rx-redis-pipeline",
-      libraryDependencies ++= pipelineDeps
-    )
-}
-
 lazy val client = {
   project.in(file("modules") / "client").
-    dependsOn(pipeline).
+    dependsOn(core).
     configs(IntegrationTest).
     settings(mainItSettings: _*).
     settings(formatterSettings: _*).
@@ -77,8 +67,8 @@ lazy val `java-example` = {
 
 lazy val rxRedis = {
   project.in(file(".")).
-    dependsOn(api, japi, client, pipeline, core).
-    aggregate(api, japi, client, pipeline, core).
+    dependsOn(api, japi, client, core).
+    aggregate(api, japi, client, core).
     settings(signedReleaseSettings: _*).
     settings(sonatypeSettings: _*).
     settings(
