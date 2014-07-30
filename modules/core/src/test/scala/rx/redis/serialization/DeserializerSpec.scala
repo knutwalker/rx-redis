@@ -18,12 +18,12 @@ package rx.redis.serialization
 
 import scala.annotation.tailrec
 
-import io.netty.buffer.{ByteBuf, Unpooled}
+import io.netty.buffer.{ ByteBuf, Unpooled }
 
 import rx.redis.resp._
 import rx.redis.util._
 
-import org.scalatest.{FunSuite, Inside}
+import org.scalatest.{ FunSuite, Inside }
 
 class DeserializerSpec extends FunSuite with Inside with ByteBufAccess {
 

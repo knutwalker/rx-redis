@@ -18,7 +18,7 @@ package rx.redis.commands
 
 import java.nio.charset.StandardCharsets
 
-import rx.redis.resp.{DataType, RespArray, RespBytes}
+import rx.redis.resp.{ DataType, RespArray, RespBytes }
 import rx.redis.serialization.Writes
 
 import org.scalatest.FunSuite

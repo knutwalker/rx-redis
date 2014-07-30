@@ -18,10 +18,10 @@ package rx.redis.pipeline
 
 import io.netty.buffer.UnpooledByteBufAllocator
 
-import rx.redis.resp.{NotEnoughData, RespBytes}
+import rx.redis.resp.{ NotEnoughData, RespBytes }
 import rx.redis.util.Utf8
 
-import org.scalatest.{FunSuite, Inside}
+import org.scalatest.{ FunSuite, Inside }
 
 class DeserializerSpec extends FunSuite with Inside {
 

@@ -16,7 +16,7 @@
 
 package rx.redis.serialization
 
-import io.netty.buffer.{ByteBuf, Unpooled}
+import io.netty.buffer.{ ByteBuf, Unpooled }
 
 import rx.redis.resp._
 

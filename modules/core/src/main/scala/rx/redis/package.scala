@@ -20,7 +20,6 @@ import rx.redis.resp.DataType
 import rx.redis.serialization.Writes
 
 package object redis {
-
   implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
     def cmd(args: String*): DataType = {
       val strings = ctx.parts.iterator
