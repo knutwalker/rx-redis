@@ -26,7 +26,7 @@ import rx.functions.Func1
 import rx.redis.commands._
 import rx.redis.pipeline.RxOnNettyClient
 import rx.redis.resp.{ DataType, RespType }
-import rx.redis.serialization.{ BytesFormat, Reads, ReadsM, Writes }
+import rx.redis.serialization.{ Id, BytesFormat, Reads, Writes }
 
 object RawClient {
   def apply(host: String, port: Int): RawClient = {
@@ -53,13 +53,13 @@ abstract class RawClient {
     })
   }
 
-  private def single[A](cmd: A)(implicit A: Writes[A], R: Reads[A]): Observable[R.R] = withError {
+  private def single[A](cmd: A)(implicit A: Writes[A], R: Reads[A, Id]): Observable[R.R] = withError {
     command(A.write(cmd)).map[R.R](new Func1[RespType, R.R] {
       def call(t1: RespType): R.R = R.read(t1)
     })
   }
 
-  private def multiple[A](cmd: A)(implicit A: Writes[A], R: ReadsM[A, List]): Observable[R.R] = withError {
+  private def multiple[A](cmd: A)(implicit A: Writes[A], R: Reads[A, List]): Observable[R.R] = withError {
     command(A.write(cmd)).flatMap[R.R](new Func1[RespType, Observable[R.R]] {
       def call(t1: RespType): Observable[R.R] = Observable.from(R.read(t1).asJava)
     })
