@@ -20,13 +20,12 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 import rx.Observable
-import rx.exceptions.OnErrorThrowable
 import rx.functions.Func1
 
 import rx.redis.commands._
 import rx.redis.pipeline.RxOnNettyClient
 import rx.redis.resp.{ DataType, RespType }
-import rx.redis.serialization.{ Id, BytesFormat, Reads, Writes }
+import rx.redis.serialization.{ BytesFormat, Id, Reads, Writes }
 
 object RawClient {
   def apply(host: String, port: Int): RawClient = {
@@ -45,10 +44,10 @@ abstract class RawClient {
     command(A.write(cmd))
 
   private def withError[A](o: Observable[A]): Observable[A] = {
-    o.onErrorFlatMap(new Func1[OnErrorThrowable, Observable[A]] {
-      def call(t1: OnErrorThrowable): Observable[A] = {
+    o.onErrorResumeNext(new Func1[Throwable, Observable[A]] {
+      def call(t1: Throwable): Observable[A] = {
         Observable.error(
-          new IllegalArgumentException(s"Cannot interpret ${t1.getValue}", t1.getCause))
+          new IllegalArgumentException(s"Cannot interpret value", t1))
       }
     })
   }

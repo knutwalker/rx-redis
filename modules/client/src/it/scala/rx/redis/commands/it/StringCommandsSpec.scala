@@ -86,7 +86,7 @@ class StringCommandsSpec extends ItCommandsSuite {
 
     val mgets = client.mget[String]("foo", "bar", "baz")
 
-    val combined = gets.zip[Option[String], Option[(String, String)]](mgets, zipper)
+    val combined = gets.zipWith[Option[String], Option[(String, String)]](mgets, zipper)
 
     val sc = combined.synchAll
     sc foreach {
