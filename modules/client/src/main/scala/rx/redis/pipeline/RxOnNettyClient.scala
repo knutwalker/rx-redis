@@ -73,7 +73,7 @@ private[redis] final class RxOnNettyClient[Send <: AnyRef, Recv <: AnyRef](host:
     new DefaultThreadFactory("rx-redis", true)
 
   private val eventLoopGroup =
-    new NioEventLoopGroup(0, threadFactory)
+    new NioEventLoopGroup(1, threadFactory)
 
   private val scheduler =
     Schedulers.from(eventLoopGroup)
