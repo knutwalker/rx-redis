@@ -5,7 +5,7 @@ object Version {
   val netty = "4.1.0.Beta1" // "4.0.21.Final"  "5.0.0.Alpha1"
   val rxJava = "0.20.0-RC4" // "0.19.6"
   val scalaTest = "2.2.0"
-  val scalaCheck = "1.11.4"
+  val scalaCheck = "1.11.5"
 }
 
 object Library {
