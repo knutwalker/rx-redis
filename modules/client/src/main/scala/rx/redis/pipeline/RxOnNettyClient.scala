@@ -97,7 +97,9 @@ private[redis] final class RxOnNettyClient[Send <: AnyRef, Recv <: AnyRef](host:
       map(new WriteOnChannel[Send, Recv](channelContext))
 
   private val returnedResponses =
-    senders.zipWith[Recv, Unit](responseSubject, new ReturnToSender[Recv])
+    senders.
+      onBackpressureBuffer().
+      zipWith[Recv, Unit](responseSubject, new ReturnToSender[Recv])
 
   def send(data: Send, receiver: Observer[Recv]): Unit = {
     inputSubject.onNext(data -> receiver)
