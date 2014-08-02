@@ -49,12 +49,20 @@ object ByteBufAccess extends BytesAccess[ByteBuf] {
 
   def toByteArray(a: ByteBuf): Array[Byte] =
     if (a.hasArray) {
-      a.array()
+      val backing = a.array()
+      val offset = a.arrayOffset() + a.readerIndex()
+      val length = a.readableBytes()
+      if (offset == 0 && length == backing.length) backing
+      else {
+        val array = new Array[Byte](length)
+        System.arraycopy(backing, offset, array, 0, length)
+        array
+      }
     } else {
-      val len = a.readableBytes()
-      val ary = new Array[Byte](len)
-      a.readBytes(ary)
-      ary
+      val length = a.readableBytes()
+      val array = new Array[Byte](length)
+      a.getBytes(a.readerIndex(), array)
+      array
     }
 
   def readNextByte(a: ByteBuf): Byte =
