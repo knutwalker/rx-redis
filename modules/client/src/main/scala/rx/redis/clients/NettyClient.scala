@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.pipeline
+package rx.redis.clients
 
 import rx.{ Observable, Observer }
 

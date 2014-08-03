@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import rx.Observable
 import rx.subjects.AsyncSubject
 
-import rx.redis.pipeline.NettyClient
 import rx.redis.resp.{ DataType, RespType }
 
 private[redis] final class DefaultClient(netty: NettyClient[DataType, RespType]) extends RawClient {

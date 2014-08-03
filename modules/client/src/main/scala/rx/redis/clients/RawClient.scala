@@ -23,7 +23,6 @@ import rx.Observable
 import rx.functions.Func1
 
 import rx.redis.commands._
-import rx.redis.pipeline.RxOnNettyClient
 import rx.redis.resp.{ DataType, RespType }
 import rx.redis.serialization.{ BytesFormat, Id, Reads, Writes }
 
