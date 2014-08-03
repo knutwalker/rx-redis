@@ -17,12 +17,12 @@
 package rx.redis.pipeline
 
 import rx.Observer
-import io.netty.channel.{ ChannelHandlerContext, ChannelInboundHandlerAdapter }
+import io.netty.channel.{ ChannelHandlerAdapter, ChannelHandlerContext }
 import io.netty.util.ReferenceCountUtil
 
-class RxObservableAdapter[Recv <: AnyRef](responses: Observer[Recv]) extends ChannelInboundHandlerAdapter {
+class RxObservableAdapter[Recv <: AnyRef](responses: Observer[Recv]) extends ChannelHandlerAdapter {
 
-  override def channelRead(ctx: ChannelHandlerContext, msg: scala.Any): Unit = {
+  override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     try {
       responses.onNext(msg.asInstanceOf[Recv])
     } catch {
