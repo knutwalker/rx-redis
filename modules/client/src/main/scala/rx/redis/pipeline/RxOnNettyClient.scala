@@ -67,7 +67,7 @@ private[redis] final class RxOnNettyClient[Send <: AnyRef, Recv <: AnyRef](host:
     PublishSubject.create[Recv]()
 
   private val channelInitializer =
-    new RxChannelInitializer(responseSubject)
+    new RxChannelInitializer(responseSubject, optimizeForThroughput = true)
 
   private val threadFactory =
     new DefaultThreadFactory("rx-redis", true)
@@ -80,10 +80,12 @@ private[redis] final class RxOnNettyClient[Send <: AnyRef, Recv <: AnyRef](host:
 
   private val bootstrap = {
     val b = new Bootstrap()
-    b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-    b.option(ChannelOption.SO_KEEPALIVE, java.lang.Boolean.TRUE)
-    b.option(ChannelOption.TCP_NODELAY, java.lang.Boolean.TRUE)
-    b.channel(classOf[NioSocketChannel]).
+    b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT).
+      option(ChannelOption.SO_KEEPALIVE, java.lang.Boolean.TRUE).
+      option(ChannelOption.SO_SNDBUF, Int.box(1024 * 1024)).
+      option(ChannelOption.SO_RCVBUF, Int.box(1024 * 1024)).
+      option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, Int.box(10 * 64 * 1024)).
+      channel(classOf[NioSocketChannel]).
       group(eventLoopGroup).
       handler(channelInitializer)
   }

@@ -60,30 +60,23 @@ class ThroughputSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("async sending should be >100k/s") {
-    val total = naiveBench("Async Sending of PING", 1e5) { total => client =>
+    val total = naiveBench("Async Sending w/o waiting", 1e5) { total => client =>
       (1 to total).foreach(_ => client.incr("foo"))
     }
     assert(getFoo == total)
   }
 
-  ignore("parallel async sending should be >100k/s") {
-    val total = naiveBench("Parallel Async Sending of PING", 1e5) { total => client =>
-      (1 to total).par.foreach(_ => client.incr("foo"))
-    }
-    assert(getFoo == total)
-  }
-
-  test("sending async, but waiting for the responses should be >20k/s") {
-    val total = naiveBench("Async Sending with blocking on last", 2e4) { total => client =>
+  test("sending async, but waiting for the responses should be >100k/s") {
+    val total = naiveBench("Async Sending with blocking on last", 1e5) { total => client =>
       (1 until total).foreach(_ => client.incr("foo"))
-      client.incr("foo").toBlocking.lastOrDefault(-1)
+      client.incr("foo").toBlocking.single()
     }
     assert(getFoo == total)
   }
 
-  test("sending all sync should be >5k/s") {
-    val total = naiveBench("Async Sending with blocking on last", 5e3) { total => client =>
-      (1 to total).foreach(_ => client.incr("foo").toBlocking.lastOrDefault(-1))
+  test("sending all sync should be >10k/s") {
+    val total = naiveBench("Async Sending with blocking on last", 1e4) { total => client =>
+      (1 to total).foreach(_ => client.incr("foo").toBlocking.single())
     }
     assert(getFoo == total)
   }
