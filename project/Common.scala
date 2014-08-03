@@ -14,6 +14,7 @@ import scalariform.formatter.preferences._
 
 object Common {
   lazy val RegressionTest = config("reg").extend(Test)
+  lazy val CompileTimeOnly = config("compileonly").hide
 
   def regFilter(name: String): Boolean = name endsWith "RegressionSpec"
   def unitFilter(name: String): Boolean = (name endsWith "Spec") && !regFilter(name)
@@ -34,7 +35,6 @@ object Common {
   })
 
   private lazy val runIntegrationTest = runTestIn(IntegrationTest)
-
   private lazy val runRegressionTest = runTestIn(RegressionTest)
 
   private lazy val releaseToCentral = ReleaseStep(action = { st: State =>

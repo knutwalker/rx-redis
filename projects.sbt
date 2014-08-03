@@ -11,7 +11,9 @@ lazy val core = {
     settings(mainRegSettings: _*).
     settings(
       name := "rx-redis-core",
+      ivyConfigurations += CompileTimeOnly,
       libraryDependencies ++= coreDeps,
+      unmanagedClasspath in Compile ++= update.value.select(configurationFilter(CompileTimeOnly.name)),
       testOptions in Test := List(Tests.Filter(unitFilter)),
       testOptions in RegressionTest := List(Tests.Filter(regFilter))
   )

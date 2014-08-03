@@ -22,7 +22,7 @@ object Dependencies {
 
   import Library._
 
-  val coreDeps = scalaReflect % "compile" :: List(nettyBuffer, scalaTest, scalaCheck).map(_  % "test")
+  val coreDeps = scalaReflect % "compileonly" :: List(nettyBuffer, scalaTest, scalaCheck).map(_  % "test")
   val commandsDeps = List(scalaTest % "test")
   val clientDeps = List(nettyCodec, rxJava, scalaTest % "it,test")
   val scalaApiDeps = List(rxScala)
