@@ -21,13 +21,16 @@ import rx.redis.BuildInfo$;
 import java.util.Properties;
 
 
-public interface BuildInfo {
+@SuppressWarnings("UnusedDeclaration")
+public final class BuildInfo {
+
+  private BuildInfo() {}
 
   public static final String ARTIFACT_ID =
       BuildInfo$.MODULE$.artifactId();
 
   public static final int BUILD_NUMBER =
-      BuildInfo$.MODULE$.buildinfoBuildnumber();
+      BuildInfo$.MODULE$.buildNumber();
 
   public static final String BUILD_TIME =
       BuildInfo$.MODULE$.buildTime();

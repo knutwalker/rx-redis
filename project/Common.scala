@@ -72,7 +72,7 @@ object Common {
     version,
     scalaVersion,
     sbtVersion,
-    buildInfoBuildNumber,
+    BuildInfoKey.map(buildInfoBuildNumber) { case (k, v) => "buildNumber" -> v},
     BuildInfoKey.action("buildTimeMillis") {
       System.currentTimeMillis
     },
