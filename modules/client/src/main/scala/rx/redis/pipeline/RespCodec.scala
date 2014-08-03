@@ -16,20 +16,6 @@
 
 package rx.redis.pipeline
 
-import java.util
+import io.netty.channel.ChannelHandlerAdapter
 
-import io.netty.buffer.ByteBuf
-import io.netty.channel.ChannelHandlerContext
-
-import rx.redis.resp.DataType
-
-private[redis] class RespCodec extends StrictByteToMessageCodec[ByteBuf, DataType] {
-
-  def encode(ctx: ChannelHandlerContext, msg: DataType, out: ByteBuf): Unit = {
-    ByteBufSerializer(msg, out)
-  }
-
-  def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
-    ByteBufDeserializer.foreach(in)(out.add(_))
-  }
-}
+private[redis] class RespCodec extends ChannelHandlerAdapter with RespDecoder with RespEncoder
