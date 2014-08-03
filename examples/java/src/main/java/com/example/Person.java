@@ -18,8 +18,8 @@ package com.example;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import rx.redis.serialization.BytesFormat;
 
 import java.nio.charset.Charset;
@@ -70,7 +70,7 @@ public class Person {
   private static enum PersonBytesFormat implements BytesFormat<Person> {
     INSTANCE;
 
-    private static final ByteBufAllocator ALLOC = UnpooledByteBufAllocator.DEFAULT;
+    private static final ByteBufAllocator ALLOC = PooledByteBufAllocator.DEFAULT;
     private static final Charset charset = StandardCharsets.UTF_8;
 
     @Override
@@ -81,7 +81,9 @@ public class Person {
       buffer.writeInt(nameBytes.length);
       buffer.writeBytes(nameBytes);
       buffer.writeInt(value.getAge());
-      return buffer.array();
+      final byte[] bytes = buffer.array();
+      buffer.release();
+      return bytes;
     }
 
     @Override
@@ -91,6 +93,7 @@ public class Person {
       final byte[] nameBytes = new byte[length];
       buffer.readBytes(nameBytes);
       final int age = buffer.readInt();
+      buffer.release();
       return new Person(new String(nameBytes, charset), age);
     }
   }
