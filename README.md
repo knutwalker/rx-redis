@@ -41,7 +41,7 @@ For sbt:
 RxRedis has a dependency on Netty and RxJava. The Scala binding also depend on the Scala bindings of RxJava.
 As it is written in Scala, RxRedis also depends on scala-library and the scala-reflect module, though I'm trying to get the last one out of the runtime classpath. Here's the full graph (except for scala-library):
 
-<a href="https://raw.githubusercontent.com/knutwalker/rx-redis/master/dependency-graph.png"><img src="https://raw.githubusercontent.com/knutwalker/rx-redis/master/dependency-graph.png" alt="dependency-graph" width="640" height="171"></a>
+<a href="https://raw.githubusercontent.com/knutwalker/rx-redis/v0.3.0/dependency-graph.png"><img src="https://raw.githubusercontent.com/knutwalker/rx-redis/v0.3.0/dependency-graph.png" alt="dependency-graph" width="640" height="171"></a>
 
 
 `rx-redis-parent` is the umbrella artifact and should not be used.

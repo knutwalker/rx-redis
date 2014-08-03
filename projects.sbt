@@ -3,6 +3,7 @@ import Keys._
 import Common._
 import Dependencies._
 import com.typesafe.sbt.pgp.PgpKeys._
+import spray.revolver.RevolverPlugin.Revolver
 
 lazy val core = {
   project.in(file("modules") / "core").
@@ -35,7 +36,6 @@ lazy val client = {
     configs(IntegrationTest).
     settings(mainItSettings: _*).
     settings(formatterSettings: _*).
-    settings(mainBuildInfoSettings: _*).
     settings(
       name := "rx-redis-client",
       libraryDependencies ++= clientDeps

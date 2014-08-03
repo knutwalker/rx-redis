@@ -3,13 +3,12 @@ import com.typesafe.sbt.SbtScalariform._
 import sbt.Defaults._
 import sbt.Keys._
 import sbt._
-import sbtbuildinfo.Plugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
 import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease._
-import xerial.sbt.Sonatype.SonatypeKeys._
 import scalariform.formatter.preferences._
+import xerial.sbt.Sonatype.SonatypeKeys._
 
 
 object Common {
@@ -64,35 +63,6 @@ object Common {
     tagComment <<= (Keys.version in ThisBuild) map (v => s"Release version $v"),
     commitMessage <<= (Keys.version in ThisBuild) map (v => s"Set version to $v"),
     versionBump := sbtrelease.Version.Bump.Bugfix
-  )
-
-  private lazy val buildKeys = List[BuildInfoKey](
-    BuildInfoKey.map(organization) { case (k, v) => "groupId" -> v},
-    BuildInfoKey.map(name) { case (k, v) => "artifactId" -> v },
-    version,
-    scalaVersion,
-    sbtVersion,
-    BuildInfoKey.map(buildInfoBuildNumber) { case (k, v) => "buildNumber" -> v},
-    BuildInfoKey.action("buildTimeMillis") {
-      System.currentTimeMillis
-    },
-    BuildInfoKey.action("buildTime") {
-      val format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-      format.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
-      format.format(new java.util.Date())
-    },
-    BuildInfoKey.action("gitCommit") {
-      "git describe --always".!!.trim
-    },
-    BuildInfoKey.action("gitCommitSha1") {
-      "git rev-parse HEAD".!!.trim
-    }
-  )
-
-  lazy val mainBuildInfoSettings = buildInfoSettings ++List(
-    sourceGenerators in Compile <+= buildInfo,
-    buildInfoKeys := buildKeys,
-    buildInfoPackage := "rx.redis"
   )
 
   lazy val mainItSettings = itSettings ++ inConfig(IntegrationTest)(List(
