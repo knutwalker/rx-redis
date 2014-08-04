@@ -77,13 +77,13 @@ object AnotherExample extends App {
   }
 
 
-  client.get("foo").doOnCompleted(client.shutdown()) foreach { getResult =>
+  client.get("foo") foreach { getResult =>
     println(s"GET foo: $getResult")
   }
 
-  println("before await")
+  println("before shutdown")
 
-  RxRedis.await(client)
+  RxRedis.shutdown(client)
 
   println("Client is closed")
 }

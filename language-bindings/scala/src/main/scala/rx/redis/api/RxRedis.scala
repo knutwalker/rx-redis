@@ -16,6 +16,8 @@
 
 package rx.redis.api
 
+import rx.lang.scala.Observable
+
 import rx.redis.clients.RawClient
 
 object RxRedis {
@@ -23,7 +25,16 @@ object RxRedis {
     new Client(RawClient(host, port))
   }
 
+  def disconnect(client: Client): Observable[Unit] = {
+    client.shutdown()
+  }
+
   def await(client: Client): Unit = {
     client.closedObservable.toBlocking.toList.lastOption.getOrElse(())
+  }
+
+  def shutdown(client: Client): Unit = {
+    disconnect(client)
+    await(client)
   }
 }
