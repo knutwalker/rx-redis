@@ -62,7 +62,7 @@ class ThreadSafetySpec extends FunSuite {
     def correct: Int = _correct
   }
 
-  test("must not diverge when hared amongst threads") {
+  test("must not diverge when shared amongst threads") {
 
     val client = RawClient("127.0.0.1", 6379)
 
