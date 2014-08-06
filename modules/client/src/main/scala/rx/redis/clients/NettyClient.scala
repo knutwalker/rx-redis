@@ -18,9 +18,11 @@ package rx.redis.clients
 
 import rx.{ Observable, Observer }
 
-trait NettyClient[Send <: AnyRef, Recv <: AnyRef] {
+import rx.redis.resp.{ RespType, DataType }
 
-  def send(data: Send, receiver: Observer[Recv]): Unit
+trait NettyClient {
+
+  def send(data: DataType, receiver: Observer[RespType]): Unit
 
   def close(): Observable[Unit]
 

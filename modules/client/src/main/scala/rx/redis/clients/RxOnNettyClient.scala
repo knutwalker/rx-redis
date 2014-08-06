@@ -16,69 +16,31 @@
 
 package rx.redis.clients
 
-import rx.functions.{ Func1, Func2 }
-import rx.schedulers.Schedulers
-import rx.subjects.{ AsyncSubject, PublishSubject }
+import rx.subjects.AsyncSubject
 import rx.{ Observable, Observer }
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.channel.{ ChannelFuture, ChannelFutureListener, ChannelHandlerContext, ChannelOption }
+import io.netty.channel.{ ChannelFuture, ChannelFutureListener, ChannelOption }
 import io.netty.util.concurrent.DefaultThreadFactory
 
-import rx.redis.pipeline.RxChannelInitializer
+import rx.redis.pipeline.{ RxAdapter, RxChannelInitializer }
+import rx.redis.resp.{ DataType, RespType }
 
-object RxOnNettyClient {
-  private final class WriteOnChannel[Send <: AnyRef, Recv <: AnyRef](ctx: ChannelHandlerContext)
-      extends Func1[(Send, Observer[Recv]), Observer[Recv]] {
+private[redis] final class RxOnNettyClient(host: String, port: Int) extends NettyClient {
 
-    def call(t1: (Send, Observer[Recv])): Observer[Recv] = {
-      ctx.writeAndFlush(t1._1)
-      t1._2
-    }
-  }
-  private final class ReturnToSender[Recv <: AnyRef] extends Func2[Observer[_ >: Recv], Recv, Unit] {
-    def call(t1: Observer[_ >: Recv], t2: Recv): Unit = {
-      t1.onNext(t2)
-      t1.onCompleted()
-    }
-  }
-  private object DiscardingObserver {
-    def apply(o: Observable[Unit]): Observable[Unit] = {
-      val s = AsyncSubject.create[Unit]()
-      o.subscribe(new DiscardingObserver(s))
-      s
-    }
-  }
-
-  private final class DiscardingObserver(target: Observer[_]) extends Observer[Unit] {
-    def onNext(t: Unit): Unit = ()
-    def onError(error: Throwable): Unit = target.onError(error)
-    def onCompleted(): Unit = target.onCompleted()
-  }
-}
-
-private[redis] final class RxOnNettyClient[Send <: AnyRef, Recv <: AnyRef](host: String, port: Int) extends NettyClient[Send, Recv] {
-  import rx.redis.clients.RxOnNettyClient.{ DiscardingObserver, ReturnToSender, WriteOnChannel }
-
-  private val inputSubject =
-    PublishSubject.create[(Send, Observer[Recv])]()
-
-  private val responseSubject =
-    PublishSubject.create[Recv]()
+  private val closedSubject =
+    AsyncSubject.create[Unit]()
 
   private val channelInitializer =
-    new RxChannelInitializer(responseSubject, optimizeForThroughput = true)
+    new RxChannelInitializer(optimizeForThroughput = true)
 
   private val threadFactory =
     new DefaultThreadFactory("rx-redis", true)
 
   private val eventLoopGroup =
     new NioEventLoopGroup(1, threadFactory)
-
-  private val scheduler =
-    Schedulers.from(eventLoopGroup)
 
   private val bootstrap = {
     val b = new Bootstrap()
@@ -92,43 +54,31 @@ private[redis] final class RxOnNettyClient[Send <: AnyRef, Recv <: AnyRef](host:
       handler(channelInitializer)
   }
   private val channel = bootstrap.connect(host, port).sync().channel()
-  private val channelContext = channel.pipeline().lastContext
+  private val pipeline = channel.pipeline()
+  private val emptyPromise = channel.voidPromise()
 
-  private val senders: Observable[Observer[Recv]] =
-    inputSubject.
-      onBackpressureBuffer().
-      observeOn(scheduler).
-      map(new WriteOnChannel[Send, Recv](channelContext))
-
-  private val returnedResponses =
-    senders.
-      onBackpressureBuffer().
-      zipWith[Recv, Unit](responseSubject, new ReturnToSender[Recv])
-
-  def send(data: Send, receiver: Observer[Recv]): Unit = {
-    inputSubject.onNext(data -> receiver)
+  def send(data: DataType, receiver: Observer[RespType]): Unit = {
+    pipeline.write(RxAdapter.writeAndFlush(data, receiver), emptyPromise)
   }
 
-  val closed: Observable[Unit] = {
-    DiscardingObserver(returnedResponses)
-  }
+  val closed: Observable[Unit] = closedSubject
 
   def close(): AsyncSubject[Unit] = {
-    val closedSubject = AsyncSubject.create[Unit]()
-    channelContext.close.addListener(new ChannelFutureListener {
+    val closingSubject = AsyncSubject.create[Unit]()
+    channel.close.addListener(new ChannelFutureListener {
       def operationComplete(future: ChannelFuture): Unit = {
+        closedSubject.onCompleted()
         try {
           if (future.isSuccess) {
-            closedSubject.onCompleted()
+            closingSubject.onCompleted()
           } else {
-            closedSubject.onError(future.cause)
+            closingSubject.onError(future.cause)
           }
         } finally {
           bootstrap.group.shutdownGracefully
         }
       }
     })
-    inputSubject.onCompleted()
-    closedSubject
+    closingSubject
   }
 }

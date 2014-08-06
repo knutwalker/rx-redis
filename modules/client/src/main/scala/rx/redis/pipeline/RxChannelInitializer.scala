@@ -16,11 +16,10 @@
 
 package rx.redis.pipeline
 
-import rx.Observer
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 
-class RxChannelInitializer[Recv <: AnyRef](responses: Observer[Recv], optimizeForThroughput: Boolean) extends ChannelInitializer[SocketChannel] {
+class RxChannelInitializer(optimizeForThroughput: Boolean) extends ChannelInitializer[SocketChannel] {
   def initChannel(ch: SocketChannel): Unit = {
     if (optimizeForThroughput) {
       ch.config().setPerformancePreferences(0, 1, 3)
@@ -31,7 +30,7 @@ class RxChannelInitializer[Recv <: AnyRef](responses: Observer[Recv], optimizeFo
     }
 
     ch.pipeline().
-      addLast("redis-resp-codec", new RespCodec).
-      addLast("netty-observable-adapter", new RxObservableAdapter(responses))
+      addLast("resp-codec", new RespCodec).
+      addLast("rx-adapter", new RxAdapter)
   }
 }

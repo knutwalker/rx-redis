@@ -28,7 +28,7 @@ import rx.redis.serialization.{ BytesFormat, Id, Reads, Writes }
 
 object RawClient {
   def apply(host: String, port: Int): RawClient = {
-    val netty = new RxOnNettyClient[DataType, RespType](host, port)
+    val netty = new RxOnNettyClient(host, port)
     new DefaultClient(netty)
   }
 }

@@ -23,7 +23,7 @@ import rx.subjects.AsyncSubject
 
 import rx.redis.resp.{ DataType, RespType }
 
-private[redis] final class DefaultClient(netty: NettyClient[DataType, RespType]) extends RawClient {
+private[redis] final class DefaultClient(netty: NettyClient) extends RawClient {
 
   private val isClosed = new AtomicBoolean(false)
   private val alreadyClosed: Observable[Unit] =
