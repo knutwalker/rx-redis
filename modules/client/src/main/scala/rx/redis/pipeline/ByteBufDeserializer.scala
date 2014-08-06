@@ -53,14 +53,12 @@ object ByteBufDeserializer {
       if (!bb.isReadable) None
       else INSTANCE(bb) match {
         case NotEnoughData ⇒ Some(NotEnoughData)
-        case e: ErrorType ⇒ {
+        case e: ErrorType ⇒
           f(e)
           None
-        }
-        case x ⇒ {
+        case x ⇒
           f(x)
           loop()
-        }
       }
     loop()
   }
