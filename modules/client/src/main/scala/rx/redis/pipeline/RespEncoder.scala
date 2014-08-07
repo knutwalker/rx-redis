@@ -27,6 +27,7 @@ trait RespEncoder { this: ChannelHandlerAdapter ⇒
     case data: DataType ⇒
       encode(ctx, promise, data)
     case _ ⇒
+      ReferenceCountUtil.release(msg)
       promise.setFailure(new IllegalArgumentException(s"msg is not a [DataType]."))
   }
 
@@ -37,7 +38,7 @@ trait RespEncoder { this: ChannelHandlerAdapter ⇒
     } catch {
       case e: Throwable ⇒
         buf.release()
-        throw e
+        promise.setFailure(e)
     }
     if (buf.isReadable) {
       ctx.write(buf, promise)

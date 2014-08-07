@@ -63,7 +63,7 @@ private[redis] final class RxOnNettyClient(host: String, port: Int) extends Nett
 
   val closed: Observable[Unit] = closedSubject
 
-  def close(): AsyncSubject[Unit] = {
+  def close(): Observable[Unit] = {
     val closingSubject = AsyncSubject.create[Unit]()
     channel.close.addListener(new ChannelFutureListener {
       def operationComplete(future: ChannelFuture): Unit = {

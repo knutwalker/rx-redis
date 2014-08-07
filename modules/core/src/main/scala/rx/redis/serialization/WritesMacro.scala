@@ -18,11 +18,11 @@ package rx.redis.serialization
 
 import java.util.Locale
 import scala.language.higherKinds
-import scala.reflect.macros.blackbox.Context
+import scala.reflect.macros.blackbox
 
 import rx.redis.util.Utf8
 
-class WritesMacro(val c: Context) {
+class WritesMacro(val c: blackbox.Context) {
   import c.universe._
 
   def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, BytesFormat, Writes]

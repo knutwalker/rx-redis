@@ -21,7 +21,7 @@ import rx.internal.util.MpscPaddedQueue
 import io.netty.channel.{ ChannelPromise, ChannelHandlerContext, ChannelHandlerAdapter }
 import io.netty.util.ReferenceCountUtil
 
-import rx.redis.resp.{ RespType, DataType }
+import rx.redis.resp.{ DataType, RespType }
 
 object RxAdapter {
 
@@ -31,18 +31,21 @@ object RxAdapter {
     def apply(ctx: ChannelHandlerContext, cmd: DataType, promise: ChannelPromise): Unit = {
       ctx.write(cmd, promise)
     }
+    override def toString(): String = "ChannelAction[Write]"
   }
 
   object Flush extends ChannelAction {
     def apply(ctx: ChannelHandlerContext, cmd: DataType, promise: ChannelPromise): Unit = {
       ctx.flush()
     }
+    override def toString(): String = "ChannelAction[Flush]"
   }
 
   object WriteAndFlush extends ChannelAction {
     def apply(ctx: ChannelHandlerContext, cmd: DataType, promise: ChannelPromise): Unit = {
       ctx.writeAndFlush(cmd, promise)
     }
+    override def toString(): String = "ChannelAction[WriteAndFlush]"
   }
 
   case class AdapterAction(cmd: DataType, sender: Observer[RespType], action: ChannelAction)
@@ -62,7 +65,7 @@ class RxAdapter extends ChannelHandlerAdapter {
 
   private final val queue = new MpscPaddedQueue[Observer[RespType]]
 
-  override def channelRead(ctx: ChannelHandlerContext, msg: scala.Any): Unit = {
+  override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     val sender = queue.poll()
     if (sender ne null) {
       try {
