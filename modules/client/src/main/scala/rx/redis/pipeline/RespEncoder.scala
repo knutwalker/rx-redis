@@ -18,6 +18,7 @@ package rx.redis.pipeline
 
 import io.netty.buffer.Unpooled
 import io.netty.channel.{ ChannelPromise, ChannelHandlerContext, ChannelHandlerAdapter }
+import io.netty.util.ReferenceCountUtil
 
 import rx.redis.resp.DataType
 
