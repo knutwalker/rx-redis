@@ -29,7 +29,7 @@ private[redis] trait RespEncoder { this: ChannelOutboundHandler ⇒
       encode(ctx, promise, data)
     case _ ⇒
       ReferenceCountUtil.release(msg)
-      promise.setFailure(new IllegalArgumentException(s"msg is not a [DataType]."))
+      promise.setFailure(new IllegalArgumentException(s"$msg is not a [DataType]."))
   }
 
   private final def encode(ctx: ChannelHandlerContext, promise: ChannelPromise, data: DataType): Unit = {

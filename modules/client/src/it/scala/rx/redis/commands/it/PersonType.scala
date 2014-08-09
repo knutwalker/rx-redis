@@ -22,7 +22,7 @@ import rx.redis.util._
 trait PersonType {
 
   case class Person(name: String, age: Int) {
-    def redisString = s"${age}|${name}"
+    def redisString = s"$age|$name"
   }
   object Person {
     def apply(redisString: String): Person = {
