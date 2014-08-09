@@ -17,9 +17,9 @@
 package rx.redis.pipeline
 
 import rx.Observer
-import rx.internal.util.MpscPaddedQueue
-import io.netty.channel.{ ChannelPromise, ChannelHandlerContext, ChannelHandlerAdapter }
+import io.netty.channel.{ ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise }
 import io.netty.util.ReferenceCountUtil
+import io.netty.util.internal.PlatformDependent
 
 import rx.redis.resp.{ DataType, RespType }
 
@@ -60,10 +60,10 @@ object RxAdapter {
     AdapterAction(cmd, sender, Flush)
 }
 
-class RxAdapter extends ChannelHandlerAdapter {
-  import RxAdapter.AdapterAction
+private[redis] class RxAdapter extends ChannelDuplexHandler {
+  import rx.redis.pipeline.RxAdapter.AdapterAction
 
-  private final val queue = new MpscPaddedQueue[Observer[RespType]]
+  private final val queue = PlatformDependent.newMpscQueue[Observer[RespType]]
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     val sender = queue.poll()

@@ -17,12 +17,12 @@
 package rx.redis.pipeline
 
 import io.netty.buffer.Unpooled
-import io.netty.channel.{ ChannelPromise, ChannelHandlerContext, ChannelHandlerAdapter }
+import io.netty.channel.{ ChannelPromise, ChannelHandlerContext, ChannelOutboundHandler }
 import io.netty.util.ReferenceCountUtil
 
 import rx.redis.resp.DataType
 
-trait RespEncoder { this: ChannelHandlerAdapter ⇒
+private[redis] trait RespEncoder { this: ChannelOutboundHandler ⇒
 
   final override def write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise): Unit = msg match {
     case data: DataType ⇒

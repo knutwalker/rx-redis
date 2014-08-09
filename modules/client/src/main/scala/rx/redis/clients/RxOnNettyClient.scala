@@ -28,21 +28,28 @@ import io.netty.util.concurrent.DefaultThreadFactory
 import rx.redis.pipeline.{ RxAdapter, RxChannelInitializer }
 import rx.redis.resp.{ DataType, RespType }
 
-private[redis] final class RxOnNettyClient(host: String, port: Int) extends NettyClient {
+import scala.language.implicitConversions
 
-  private val closedSubject =
+private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClient {
+
+  @inline
+  private final implicit def writeToRunnable(f: ⇒ ChannelFuture): Runnable = new Runnable {
+    def run(): Unit = f
+  }
+
+  private final val closedSubject =
     AsyncSubject.create[Unit]()
 
-  private val channelInitializer =
+  private final val channelInitializer =
     new RxChannelInitializer(optimizeForThroughput = true)
 
-  private val threadFactory =
+  private final val threadFactory =
     new DefaultThreadFactory("rx-redis", true)
 
-  private val eventLoopGroup =
+  private final val eventLoopGroup =
     new NioEventLoopGroup(1, threadFactory)
 
-  private val bootstrap = {
+  private final val bootstrap = {
     val b = new Bootstrap()
     b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT).
       option(ChannelOption.SO_KEEPALIVE, java.lang.Boolean.TRUE).
@@ -53,12 +60,13 @@ private[redis] final class RxOnNettyClient(host: String, port: Int) extends Nett
       group(eventLoopGroup).
       handler(channelInitializer)
   }
-  private val channel = bootstrap.connect(host, port).sync().channel()
-  private val pipeline = channel.pipeline()
-  private val emptyPromise = channel.voidPromise()
+
+  private final val channel = bootstrap.connect(host, port).sync().channel()
+  private final val pipeline = channel.pipeline()
+  private final val emptyPromise = channel.voidPromise()
 
   def send(data: DataType, receiver: Observer[RespType]): Unit = {
-    pipeline.write(RxAdapter.writeAndFlush(data, receiver), emptyPromise)
+    eventLoopGroup.execute(pipeline.write(RxAdapter.writeAndFlush(data, receiver), emptyPromise))
   }
 
   val closed: Observable[Unit] = closedSubject

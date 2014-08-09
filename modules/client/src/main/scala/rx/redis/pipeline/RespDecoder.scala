@@ -16,10 +16,10 @@
 
 package rx.redis.pipeline
 
-import io.netty.buffer.{ ByteBufAllocator, ByteBuf }
-import io.netty.channel.{ ChannelHandlerContext, ChannelHandlerAdapter }
+import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
+import io.netty.channel.{ ChannelHandlerContext, ChannelInboundHandler }
 
-trait RespDecoder { this: ChannelHandlerAdapter ⇒
+private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
 
   private final var buffered: ByteBuf = null
 

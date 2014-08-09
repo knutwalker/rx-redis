@@ -16,6 +16,6 @@
 
 package rx.redis.pipeline
 
-import io.netty.channel.ChannelHandlerAdapter
+import io.netty.channel.ChannelDuplexHandler
 
-private[redis] class RespCodec extends ChannelHandlerAdapter with RespDecoder with RespEncoder
+private[redis] class RespCodec extends ChannelDuplexHandler with RespDecoder with RespEncoder

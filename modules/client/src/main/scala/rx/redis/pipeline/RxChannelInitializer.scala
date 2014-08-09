@@ -19,7 +19,7 @@ package rx.redis.pipeline
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 
-class RxChannelInitializer(optimizeForThroughput: Boolean) extends ChannelInitializer[SocketChannel] {
+private[redis] class RxChannelInitializer(optimizeForThroughput: Boolean) extends ChannelInitializer[SocketChannel] {
   def initChannel(ch: SocketChannel): Unit = {
     if (optimizeForThroughput) {
       ch.config().setPerformancePreferences(0, 1, 3)

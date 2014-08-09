@@ -20,12 +20,10 @@ import rx.functions.Func2
 
 class StringCommandsSpec extends ItCommandsSuite {
 
-
   test("GET and SET") {
     client.set("foo", "bar")
     val result = client.get[String]("foo").synch
     assert(result == Some("bar"))
-
     val noResult = client.get[String]("bar").synch
     assert(noResult == None)
   }
