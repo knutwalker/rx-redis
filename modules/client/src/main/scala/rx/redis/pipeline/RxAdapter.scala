@@ -21,47 +21,9 @@ import io.netty.channel.{ ChannelDuplexHandler, ChannelHandlerContext, ChannelPr
 import io.netty.util.ReferenceCountUtil
 import io.netty.util.internal.PlatformDependent
 
-import rx.redis.resp.{ DataType, RespType }
-
-object RxAdapter {
-
-  sealed trait ChannelAction extends ((ChannelHandlerContext, DataType, ChannelPromise) ⇒ Unit)
-
-  object Write extends ChannelAction {
-    def apply(ctx: ChannelHandlerContext, cmd: DataType, promise: ChannelPromise): Unit = {
-      ctx.write(cmd, promise)
-    }
-    override def toString(): String = "ChannelAction[Write]"
-  }
-
-  object Flush extends ChannelAction {
-    def apply(ctx: ChannelHandlerContext, cmd: DataType, promise: ChannelPromise): Unit = {
-      ctx.flush()
-    }
-    override def toString(): String = "ChannelAction[Flush]"
-  }
-
-  object WriteAndFlush extends ChannelAction {
-    def apply(ctx: ChannelHandlerContext, cmd: DataType, promise: ChannelPromise): Unit = {
-      ctx.writeAndFlush(cmd, promise)
-    }
-    override def toString(): String = "ChannelAction[WriteAndFlush]"
-  }
-
-  case class AdapterAction(cmd: DataType, sender: Observer[RespType], action: ChannelAction)
-
-  def write(cmd: DataType, sender: Observer[RespType]) =
-    AdapterAction(cmd, sender, Write)
-
-  def writeAndFlush(cmd: DataType, sender: Observer[RespType]) =
-    AdapterAction(cmd, sender, WriteAndFlush)
-
-  def flush(cmd: DataType, sender: Observer[RespType]) =
-    AdapterAction(cmd, sender, Flush)
-}
+import rx.redis.resp.RespType
 
 private[redis] class RxAdapter extends ChannelDuplexHandler {
-  import rx.redis.pipeline.RxAdapter.AdapterAction
 
   private final val queue = PlatformDependent.newMpscQueue[Observer[RespType]]
 
@@ -85,8 +47,9 @@ private[redis] class RxAdapter extends ChannelDuplexHandler {
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = ()
 
   override def write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise): Unit = msg match {
-    case AdapterAction(cmd, sender, action) ⇒
+    case aa @ AdapterAction(cmd, sender, action) ⇒
       queue.offer(sender)
+      AdapterAction.recycle(aa)
       action(ctx, cmd, promise)
     case _ ⇒
       super.write(ctx, msg, promise)

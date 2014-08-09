@@ -25,7 +25,7 @@ import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.channel.{ ChannelFuture, ChannelFutureListener, ChannelOption }
 import io.netty.util.concurrent.DefaultThreadFactory
 
-import rx.redis.pipeline.{ RxAdapter, RxChannelInitializer }
+import rx.redis.pipeline.{ AdapterAction, RxChannelInitializer }
 import rx.redis.resp.{ DataType, RespType }
 
 import scala.language.implicitConversions
@@ -66,7 +66,7 @@ private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClien
   private final val emptyPromise = channel.voidPromise()
 
   def send(data: DataType, receiver: Observer[RespType]): Unit = {
-    eventLoopGroup.execute(pipeline.write(RxAdapter.writeAndFlush(data, receiver), emptyPromise))
+    eventLoopGroup.execute(pipeline.write(AdapterAction.writeAndFlush(data, receiver), emptyPromise))
   }
 
   val closed: Observable[Unit] = closedSubject
