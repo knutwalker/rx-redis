@@ -95,10 +95,11 @@ abstract class RawClient {
     }
   }
 
-  def shutdown(): Observable[Unit] = disconnect()
+  // ==================
+  //  Generic Commands
+  // ==================
 
   def command(cmd: DataType): Observable[RespType]
-  def closedObservable: Observable[Unit]
 
   def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] =
     command(A.write(cmd))

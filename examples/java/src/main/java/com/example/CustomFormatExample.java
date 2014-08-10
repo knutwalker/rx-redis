@@ -33,9 +33,8 @@ public final class CustomFormatExample {
     client.get("person:knut").forEach(s -> System.out.println("Person as string: " + s.orElse("")));
     client.getBytes("person:knut").forEach(b -> System.out.println("Person as bytes: " + b.map(Arrays::toString).orElse("")));
     client.getAs("person:knut", Person.BYTES_FORMAT)
-        .doOnCompleted(client::shutdown)
         .forEach(p -> System.out.println("Person as Person: " + p.orElse(null)));
 
-    RxRedis.await(client);
+    RxRedis.shutdown(client);
   }
 }

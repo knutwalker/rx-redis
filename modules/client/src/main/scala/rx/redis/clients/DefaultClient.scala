@@ -33,6 +33,4 @@ private[redis] final class DefaultClient(protected val netty: NettyClient) exten
     eagerObservable(netty.close())
   }
 
-  val closedObservable: Observable[Unit] =
-    netty.closed
 }

@@ -44,8 +44,8 @@ object Example extends App {
   val mixed = client.ping() ++
     client.echo("42") ++
     client.incr("what?").map(_.toString)
-  mixed.doOnCompleted(client.shutdown())
-    .foreach(r => println("mixed = " + r))
 
-  RxRedis.await(client)
+  mixed.foreach(r => println("mixed = " + r))
+
+  RxRedis.shutdown(client)
 }

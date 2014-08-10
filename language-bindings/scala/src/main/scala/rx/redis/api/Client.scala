@@ -26,11 +26,12 @@ import rx.redis.resp.{ DataType, RespType }
 import rx.redis.serialization.BytesFormat
 
 final class Client(raw: RawClient) {
+  @deprecated("Use disconnect", "0.4.0")
   def shutdown(): Observable[Unit] =
-    raw.shutdown()
+    disconnect()
 
-  def closedObservable: Observable[Unit] =
-    raw.closedObservable
+  private[api] def disconnect(): Observable[Unit] =
+    raw.disconnect()
 
   def command(dt: DataType): Observable[RespType] =
     raw.command(dt)

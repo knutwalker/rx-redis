@@ -45,11 +45,10 @@ public final class AdvancedExample {
     final Map<String, String> map = new HashMap<>();
 
     client.hgetAll("qux")
-        .doOnCompleted(client::shutdown)
         .forEach(e -> map.put(e.getKey(), e.getValue()));
 
     System.out.println("map = " + map);
 
-    RxRedis.await(client);
+    RxRedis.shutdown(client);
   }
 }

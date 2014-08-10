@@ -84,8 +84,7 @@ class ThreadSafetySpec extends FunSuite {
     def client = RawClient("127.0.0.1", 6379)
 
     def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, { c =>
-      c.shutdown()
-      c.closedObservable.toBlocking.lastOrDefault(())
+      c.disconnect().toBlocking.lastOrDefault(())
     })
 
     val threads = List.tabulate(threadCount)(createThread)

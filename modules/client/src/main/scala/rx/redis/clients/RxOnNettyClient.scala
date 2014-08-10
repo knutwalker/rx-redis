@@ -16,8 +16,7 @@
 
 package rx.redis.clients
 
-import rx.subjects.AsyncSubject
-import rx.{ Observable, Observer }
+import rx.Observer
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.nio.NioEventLoopGroup
@@ -36,9 +35,6 @@ private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClien
   private final implicit def writeToRunnable(f: ⇒ ChannelFuture): Runnable = new Runnable {
     def run(): Unit = f
   }
-
-  private final val closedSubject =
-    AsyncSubject.create[Unit]()
 
   private final val channelInitializer =
     new RxChannelInitializer(optimizeForThroughput = true)
@@ -69,13 +65,10 @@ private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClien
     eventLoopGroup.execute(pipeline.write(AdapterAction.writeAndFlush(data, receiver), emptyPromise))
   }
 
-  val closed: Observable[Unit] = closedSubject
-
   def close(): ChannelFuture = {
     val p = channel.close()
     p.addListener(new ChannelFutureListener {
       def operationComplete(future: ChannelFuture): Unit = {
-        closedSubject.onCompleted()
         bootstrap.group.shutdownGracefully
       }
     })

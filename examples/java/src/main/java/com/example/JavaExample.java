@@ -50,9 +50,8 @@ public final class JavaExample {
     client.ping()
         .concatWith(client.echo("42"))
         .concatWith(client.incr("what?").map(String::valueOf))
-        .doOnCompleted(client::shutdown)
         .subscribe(r -> System.out.println("mixed = " + r));
 
-    RxRedis.await(client);
+    RxRedis.shutdown(client);
   }
 }

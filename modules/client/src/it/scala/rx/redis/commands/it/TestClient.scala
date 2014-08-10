@@ -32,8 +32,7 @@ trait TestClient extends BeforeAndAfter { this: Suite =>
   }
 
   after {
-    _client.shutdown()
-    _client.closedObservable.toBlocking.lastOrDefault(())
+    _client.disconnect().toBlocking.lastOrDefault(())
   }
 
   def client = _client

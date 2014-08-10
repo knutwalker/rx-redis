@@ -25,16 +25,18 @@ object RxRedis {
     new Client(RawClient(host, port))
   }
 
-  def disconnect(client: Client): Observable[Unit] = {
-    client.shutdown()
+  @deprecated("use shutdown", "0.4.0")
+  def await(client: Client): Unit = {
+    shutdown(client)
   }
 
-  def await(client: Client): Unit = {
-    client.closedObservable.toBlocking.toList.lastOption.getOrElse(())
+  def disconnect(client: Client): Observable[Unit] = {
+    client.disconnect()
   }
 
   def shutdown(client: Client): Unit = {
-    disconnect(client)
-    await(client)
+    disconnect(client).
+      onErrorReturn(_ ⇒ ()).
+      toBlocking.lastOption.getOrElse(())
   }
 }

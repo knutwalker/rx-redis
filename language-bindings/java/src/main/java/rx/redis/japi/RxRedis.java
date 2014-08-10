@@ -16,6 +16,7 @@
 
 package rx.redis.japi;
 
+import rx.Observable;
 import rx.redis.clients.RawClient;
 import rx.redis.resp.DataType;
 import rx.redis.serialization.Writes;
@@ -45,7 +46,19 @@ public final class RxRedis {
     return Writes.DirectStringWrites$.MODULE$.write(cmd);
   }
 
+  public static Observable<Void> disconnect(final Client client) {
+    return client.disconnect();
+  }
+
+  public static void shutdown(final Client client) {
+    disconnect(client).toBlocking().lastOrDefault(null);
+  }
+
+  /**
+   * Use {@link #shutdown(Client)}
+   */
+  @Deprecated
   public static void await(final Client client) {
-    client.closedObservable().toBlocking().lastOrDefault(null);
+    shutdown(client);
   }
 }

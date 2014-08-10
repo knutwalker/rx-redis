@@ -23,9 +23,22 @@ import io.netty.util.internal.PlatformDependent
 
 import rx.redis.resp.RespType
 
+import scala.util.control.NoStackTrace
+
 private[redis] class RxAdapter extends ChannelDuplexHandler {
 
   private final val queue = PlatformDependent.newMpscQueue[Observer[RespType]]
+  private final var canWrite = true
+  private final var closePromise: ChannelPromise = _
+  private final val ChannelClosedException = new IllegalStateException("Channel already closed") with NoStackTrace
+
+  private def canClose: Boolean = !canWrite && (closePromise ne null)
+
+  private def closeChannel(ctx: ChannelHandlerContext): Unit = {
+    val promise = closePromise
+    closePromise = null
+    ctx.close(promise)
+  }
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     val sender = queue.poll()
@@ -39,22 +52,42 @@ private[redis] class RxAdapter extends ChannelDuplexHandler {
       } finally {
         ReferenceCountUtil.release(msg)
       }
+      if (queue.isEmpty && canClose) {
+        closeChannel(ctx)
+      }
     } else {
       ReferenceCountUtil.release(msg)
+      if (canClose) {
+        closeChannel(ctx)
+      }
     }
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = ()
 
   override def write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise): Unit = {
-    try {
-      val aa = msg.asInstanceOf[AdapterAction]
-      if (aa.sender ne null) queue.offer(aa.sender)
-      aa.action(ctx, aa.cmd, promise)
-      aa.recycle()
-    } catch {
-      case cc: ClassCastException ⇒
-        super.write(ctx, msg, promise)
+    if (canWrite) {
+      try {
+        val aa = msg.asInstanceOf[AdapterAction]
+        if (aa.sender ne null) queue.offer(aa.sender)
+        aa.action(ctx, aa.cmd, promise)
+        aa.recycle()
+      } catch {
+        case cc: ClassCastException ⇒
+          super.write(ctx, msg, promise)
+      }
+    } else {
+      ReferenceCountUtil.release(msg)
+      promise.setFailure(ChannelClosedException)
+    }
+  }
+
+  override def close(ctx: ChannelHandlerContext, future: ChannelPromise): Unit = {
+    canWrite = false
+    if (queue.isEmpty) {
+      ctx.close(future)
+    } else {
+      closePromise = future
     }
   }
 }

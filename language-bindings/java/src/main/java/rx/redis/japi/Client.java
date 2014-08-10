@@ -50,12 +50,16 @@ public final class Client {
     return Tuple2.apply(t, u);
   }
 
+  /**
+   * Use {@link RxRedis#disconnect(Client)}.
+   */
+  @Deprecated
   public Observable<Void> shutdown() {
-    return raw.shutdown().map(x -> null);
+    return disconnect();
   }
 
-  public Observable<Void> closedObservable() {
-    return raw.closedObservable().map(x -> null);
+  Observable<Void> disconnect() {
+    return raw.disconnect().map(x -> null);
   }
 
   public Observable<RespType> command(final DataType dataType) {

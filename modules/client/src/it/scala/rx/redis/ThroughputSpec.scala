@@ -31,8 +31,7 @@ class ThroughputSpec extends FunSuite with BeforeAndAfter {
 
     val afterTest = System.currentTimeMillis()
 
-    client.shutdown()
-    client.closedObservable.toBlocking.lastOrDefault(())
+    client.disconnect().toBlocking.lastOrDefault(())
 
     val end = System.currentTimeMillis()
 
@@ -54,8 +53,7 @@ class ThroughputSpec extends FunSuite with BeforeAndAfter {
   private def getFoo = {
     val client = RawClient("127.0.0.1", 6379)
     val single = client.get[Long]("foo").toBlocking.single()
-    client.shutdown()
-    client.closedObservable.toBlocking.lastOrDefault(())
+    client.disconnect().toBlocking.lastOrDefault(())
     single.getOrElse(-1L)
   }
 
