@@ -16,15 +16,22 @@
 
 package rx.redis.clients
 
+import rx.Observable.OnSubscribe
+import rx.subjects.AsyncSubject
+import io.netty.channel.{ ChannelFutureListener, ChannelFuture }
+
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
-import rx.Observable
+import rx.{ Subscriber, Observable }
 import rx.functions.Func1
 
 import rx.redis.commands._
 import rx.redis.resp.{ DataType, RespType }
 import rx.redis.serialization.{ BytesFormat, Id, Reads, Writes }
+
+import scala.util.control.NoStackTrace
 
 object RawClient {
   def apply(host: String, port: Int): RawClient = {
@@ -34,9 +41,63 @@ object RawClient {
 }
 
 abstract class RawClient {
+  protected val netty: NettyClient
+
+  protected def eagerObservable(f: ChannelFuture): Observable[Unit] = {
+    val subject = AsyncSubject.create[Unit]()
+    f.addListener(new ChannelFutureListener {
+      def operationComplete(future: ChannelFuture): Unit = {
+        if (future.isSuccess) {
+          subject.onNext(())
+          subject.onCompleted()
+        } else {
+          subject.onError(future.cause())
+        }
+      }
+    })
+    subject
+  }
+
+  protected def lazyObservable(f: ⇒ ChannelFuture): Observable[Unit] = {
+    Observable.create[Unit](new OnSubscribe[Unit] {
+      def call(subject: Subscriber[_ >: Unit]): Unit = {
+        f.addListener(new ChannelFutureListener {
+          def operationComplete(future: ChannelFuture): Unit = {
+            if (!subject.isUnsubscribed) {
+              if (future.isSuccess) {
+                subject.onNext(())
+                subject.onCompleted()
+              } else {
+                subject.onError(future.cause())
+              }
+            }
+          }
+        })
+      }
+    })
+  }
+
+  // =========
+  //  Closing
+  // =========
+
+  private val isClosed = new AtomicBoolean(false)
+  private val alreadyClosed: Observable[Unit] =
+    Observable.error(new IllegalStateException("Client has already shutdown.") with NoStackTrace)
+
+  protected def closeClient(): Observable[Unit]
+
+  def disconnect(): Observable[Unit] = {
+    if (isClosed.compareAndSet(false, true)) {
+      closeClient()
+    } else {
+      alreadyClosed
+    }
+  }
+
+  def shutdown(): Observable[Unit] = disconnect()
 
   def command(cmd: DataType): Observable[RespType]
-  def shutdown(): Observable[Unit]
   def closedObservable: Observable[Unit]
 
   def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] =

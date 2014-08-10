@@ -27,7 +27,7 @@ private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
     case in: ByteBuf ⇒
       decode(ctx, in)
     case _ ⇒
-      throw new IllegalArgumentException(s"$msg is not a [ByteBuf].")
+      throw new IllegalArgumentException(s"msg is not a [${classOf[ByteBuf].getName}].")
   }
 
   final override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {

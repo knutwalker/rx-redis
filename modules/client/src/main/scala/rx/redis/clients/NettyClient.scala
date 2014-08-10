@@ -17,6 +17,7 @@
 package rx.redis.clients
 
 import rx.{ Observable, Observer }
+import io.netty.channel.ChannelFuture
 
 import rx.redis.resp.{ RespType, DataType }
 
@@ -24,7 +25,6 @@ trait NettyClient {
 
   def send(data: DataType, receiver: Observer[RespType]): Unit
 
-  def close(): Observable[Unit]
-
   def closed: Observable[Unit]
+  def close(): ChannelFuture
 }

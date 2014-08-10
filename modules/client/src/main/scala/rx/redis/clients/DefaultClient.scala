@@ -16,18 +16,12 @@
 
 package rx.redis.clients
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import rx.Observable
 import rx.subjects.AsyncSubject
 
 import rx.redis.resp.{ DataType, RespType }
 
-private[redis] final class DefaultClient(netty: NettyClient) extends RawClient {
-
-  private val isClosed = new AtomicBoolean(false)
-  private val alreadyClosed: Observable[Unit] =
-    Observable.error(new IllegalStateException("Client has already shutdown."))
+private[redis] final class DefaultClient(protected val netty: NettyClient) extends RawClient {
 
   def command(cmd: DataType): Observable[RespType] = {
     val s = AsyncSubject.create[RespType]()
@@ -35,16 +29,8 @@ private[redis] final class DefaultClient(netty: NettyClient) extends RawClient {
     s
   }
 
-  def shutdown(): Observable[Unit] = {
-    if (isClosed.compareAndSet(false, true)) {
-      close()
-    } else {
-      alreadyClosed
-    }
-  }
-
-  private def close(): Observable[Unit] = {
-    netty.close()
+  protected def closeClient(): Observable[Unit] = {
+    eagerObservable(netty.close())
   }
 
   val closedObservable: Observable[Unit] =
