@@ -33,7 +33,12 @@ object ChannelAction {
 
   object Flush extends ChannelAction {
     def apply(ctx: ChannelHandlerContext, cmd: DataType, promise: ChannelPromise): Unit = {
-      ctx.flush()
+      try {
+        ctx.flush()
+        promise.setSuccess()
+      } catch {
+        case t: Throwable ⇒ promise.setFailure(t)
+      }
     }
     override def toString(): String = "ChannelAction[Flush]"
   }

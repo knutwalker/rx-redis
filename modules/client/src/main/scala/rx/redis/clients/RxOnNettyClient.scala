@@ -30,7 +30,6 @@ import rx.redis.resp.{ DataType, RespType }
 import scala.language.implicitConversions
 
 private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClient {
-
   @inline
   private final implicit def writeToRunnable(f: ⇒ ChannelFuture): Runnable = new Runnable {
     def run(): Unit = f
@@ -63,6 +62,16 @@ private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClien
 
   def send(data: DataType, receiver: Observer[RespType]): Unit = {
     eventLoopGroup.execute(pipeline.write(AdapterAction.writeAndFlush(data, receiver), emptyPromise))
+  }
+
+  def buffer(data: DataType, receiver: Observer[RespType]): Unit = {
+    eventLoopGroup.execute(pipeline.write(AdapterAction.write(data, receiver), emptyPromise))
+  }
+
+  def flush(): ChannelFuture = {
+    val promise = channel.newPromise()
+    eventLoopGroup.execute(pipeline.write(AdapterAction.flush(), emptyPromise))
+    promise
   }
 
   def close(): ChannelFuture = {

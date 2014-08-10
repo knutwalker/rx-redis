@@ -17,11 +17,10 @@
 package rx.redis.pipeline
 
 import rx.Observer
-
 import io.netty.util.Recycler
 import io.netty.util.Recycler.Handle
 
-import rx.redis.resp.{ RespType, DataType }
+import rx.redis.resp.{ DataType, NullArray, RespType }
 
 class AdapterAction private (private val handle: Handle) {
   private var _cmd: DataType = _
@@ -59,6 +58,6 @@ object AdapterAction {
   def writeAndFlush(cmd: DataType, sender: Observer[RespType]): AdapterAction =
     apply(cmd, sender, ChannelAction.WriteAndFlush)
 
-  def flush(cmd: DataType, sender: Observer[RespType]): AdapterAction =
-    apply(cmd, sender, ChannelAction.Flush)
+  def flush(): AdapterAction =
+    apply(NullArray, null, ChannelAction.Flush)
 }
