@@ -24,9 +24,20 @@ import io.netty.util.Recycler.Handle
 import rx.redis.resp.{ RespType, DataType }
 
 class AdapterAction private (private val handle: Handle) {
-  private var cmd: DataType = _
-  private var sender: Observer[RespType] = _
-  private var action: ChannelAction = _
+  private var _cmd: DataType = _
+  private var _sender: Observer[RespType] = _
+  private var _action: ChannelAction = _
+
+  def cmd = _cmd
+  def sender = _sender
+  def action = _action
+
+  def recycle(): Unit = {
+    _cmd = null
+    _sender = null
+    _action = null
+    AdapterAction.InstanceRecycler.recycle(this, handle)
+  }
 }
 
 object AdapterAction {
@@ -34,20 +45,13 @@ object AdapterAction {
     def newObject(handle: Handle): AdapterAction = new AdapterAction(handle)
   }
 
-  def recycle(aa: AdapterAction): Unit = {
-    InstanceRecycler.recycle(aa, aa.handle)
-  }
-
   def apply(cmd: DataType, sender: Observer[RespType], action: ChannelAction): AdapterAction = {
     val adapterAction = InstanceRecycler.get()
-    adapterAction.cmd = cmd
-    adapterAction.sender = sender
-    adapterAction.action = action
+    adapterAction._cmd = cmd
+    adapterAction._sender = sender
+    adapterAction._action = action
     adapterAction
   }
-
-  def unapply(aa: AdapterAction): Option[(DataType, Observer[RespType], ChannelAction)] =
-    Some((aa.cmd, aa.sender, aa.action))
 
   def write(cmd: DataType, sender: Observer[RespType]): AdapterAction =
     apply(cmd, sender, ChannelAction.Write)

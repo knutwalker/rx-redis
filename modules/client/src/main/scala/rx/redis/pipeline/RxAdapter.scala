@@ -46,12 +46,15 @@ private[redis] class RxAdapter extends ChannelDuplexHandler {
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = ()
 
-  override def write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise): Unit = msg match {
-    case aa @ AdapterAction(cmd, sender, action) ⇒
-      queue.offer(sender)
-      AdapterAction.recycle(aa)
-      action(ctx, cmd, promise)
-    case _ ⇒
-      super.write(ctx, msg, promise)
+  override def write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise): Unit = {
+    try {
+      val aa = msg.asInstanceOf[AdapterAction]
+      if (aa.sender ne null) queue.offer(aa.sender)
+      aa.action(ctx, aa.cmd, promise)
+      aa.recycle()
+    } catch {
+      case cc: ClassCastException ⇒
+        super.write(ctx, msg, promise)
+    }
   }
 }
