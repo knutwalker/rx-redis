@@ -56,20 +56,21 @@ private[redis] class RxNettyClient(host: String, port: Int) extends NettyClient 
   }
 
   private final val channel = bootstrap.connect(host, port).sync().channel()
+  private final val eventLoop = channel.eventLoop()
   private final val pipeline = channel.pipeline()
   private final val emptyPromise = channel.voidPromise()
 
   def send(data: DataType, receiver: Observer[RespType]): Unit = {
-    eventLoopGroup.execute(pipeline.write(AdapterAction.writeAndFlush(data, receiver), emptyPromise))
+    eventLoop.execute(pipeline.write(AdapterAction.writeAndFlush(data, receiver), emptyPromise))
   }
 
   def buffer(data: DataType, receiver: Observer[RespType]): Unit = {
-    eventLoopGroup.execute(pipeline.write(AdapterAction.write(data, receiver), emptyPromise))
+    eventLoop.execute(pipeline.write(AdapterAction.write(data, receiver), emptyPromise))
   }
 
   def flush(): ChannelFuture = {
     val promise = channel.newPromise()
-    eventLoopGroup.execute(pipeline.write(AdapterAction.flush(), emptyPromise))
+    eventLoop.execute(pipeline.write(AdapterAction.flush(), emptyPromise))
     promise
   }
 
