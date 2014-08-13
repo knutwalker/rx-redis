@@ -69,12 +69,12 @@ private[redis] class RxAdapter extends ChannelDuplexHandler {
     if (canWrite) {
       try {
         val aa = msg.asInstanceOf[AdapterAction]
-        if (aa.sender ne null) queue.offer(aa.sender)
-        aa.action(ctx, aa.cmd, promise)
+        queue.offer(aa.sender)
+        ctx.write(aa.cmd, promise)
         aa.recycle()
       } catch {
         case cc: ClassCastException ⇒
-          super.write(ctx, msg, promise)
+          ctx.write(msg, promise)
       }
     } else {
       ReferenceCountUtil.release(msg)
