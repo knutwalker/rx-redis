@@ -17,10 +17,10 @@
 package rx.redis.pipeline
 
 import rx.Observable.OnSubscribe
+import rx.redis.channel.SharedNioEventLoopGroup
 import rx.{ Observable, Subscriber, Observer }
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.channel.{ EventLoopGroup, Channel, ChannelFuture, ChannelFutureListener, ChannelOption }
 import io.netty.util.concurrent.{ GenericFutureListener, Future, DefaultThreadFactory }
@@ -31,7 +31,7 @@ import scala.language.implicitConversions
 
 object RxNettyClient {
   private final val threadFactory = new DefaultThreadFactory("rx-redis", true)
-  private final def eventLoopGroup = new NioEventLoopGroup(1, threadFactory)
+  private final val eventLoopGroup = new SharedNioEventLoopGroup(0, threadFactory)
 
   def apply(host: String, port: Int): NettyClient = {
     val channelInitializer = new RxChannelInitializer(optimizeForThroughput = true)
@@ -43,7 +43,7 @@ object RxNettyClient {
         option(ChannelOption.SO_RCVBUF, Int.box(1024 * 1024)).
         option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, Int.box(10 * 64 * 1024)).
         channel(classOf[NioSocketChannel]).
-        group(eventLoopGroup).
+        group(eventLoopGroup.retain()).
         handler(channelInitializer)
     }
 
@@ -75,8 +75,7 @@ object RxNettyClient {
     def operationComplete(future: ChannelFuture): Unit =
       NettyFutureSubscription(
         future, subscriber,
-        { eventLoopGroup.shutdownGracefully(); subscriber.onCompleted() })
-    //        eventLoopGroup.shutdownGracefully().addListener(new ShutdownListener(subscriber)))
+        eventLoopGroup.shutdownGracefully().addListener(new ShutdownListener(subscriber)))
   }
 
   private final class ShutdownListener[F <: Future[_], S <: Subscriber[_ >: Unit]](subscriber: S) extends GenericFutureListener[F] {
