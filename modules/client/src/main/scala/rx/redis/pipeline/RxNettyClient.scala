@@ -57,33 +57,31 @@ object RxNettyClient {
         new ChannelCloseListener(subscriber, channel.eventLoop.parent))
   }
 
-  private object NettyFutureSubscription {
-    def apply[F <: Future[_], S <: Subscriber[_ >: Unit]](future: F, subscriber: S, onNext: ⇒ Unit): Unit =
-      if (subscriber.isUnsubscribed) {
-        future.cancel(true)
-      } else if (future.isCancelled) {
-        subscriber.unsubscribe()
-      } else if (future.isSuccess) {
-        subscriber.onNext(())
-        onNext
-      } else {
-        subscriber.onError(future.cause())
-      }
-  }
-
   private final class ChannelCloseListener[S <: Subscriber[_ >: Unit]](subscriber: S, eventLoopGroup: EventLoopGroup) extends ChannelFutureListener {
     def operationComplete(future: ChannelFuture): Unit =
-      NettyFutureSubscription(
+      futureSubscription(
         future, subscriber,
         eventLoopGroup.shutdownGracefully().addListener(new ShutdownListener(subscriber)))
   }
 
   private final class ShutdownListener[F <: Future[_], S <: Subscriber[_ >: Unit]](subscriber: S) extends GenericFutureListener[F] {
     def operationComplete(future: F): Unit =
-      NettyFutureSubscription(
+      futureSubscription(
         future, subscriber,
         subscriber.onCompleted())
   }
+
+  private final def futureSubscription[F <: Future[_], S <: Subscriber[_ >: Unit]](future: F, subscriber: S, onNext: ⇒ Unit): Unit =
+    if (subscriber.isUnsubscribed) {
+      future.cancel(true)
+    } else if (future.isCancelled) {
+      subscriber.unsubscribe()
+    } else if (future.isSuccess) {
+      subscriber.onNext(())
+      onNext
+    } else {
+      subscriber.onError(future.cause())
+    }
 }
 
 private[redis] class RxNettyClient(channel: Channel) extends NettyClient {

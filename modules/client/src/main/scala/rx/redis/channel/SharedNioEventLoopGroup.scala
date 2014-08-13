@@ -16,17 +16,20 @@
 
 package rx.redis.channel
 
+import java.util.Spliterator
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ TimeUnit, ThreadFactory }
 
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.util.ReferenceCounted
-import io.netty.util.concurrent.{ GlobalEventExecutor, DefaultPromise, Future }
+import io.netty.util.concurrent.{ EventExecutor, GlobalEventExecutor, DefaultPromise, Future }
+
+import java.util.function.Consumer
 
 final class SharedNioEventLoopGroup(threadCount: Int, threadFactory: ThreadFactory) extends NioEventLoopGroup(threadCount, threadFactory) with ReferenceCounted {
 
-  private final val refs = new AtomicInteger(1)
-  private final def newFuture = new DefaultPromise[Void](GlobalEventExecutor.INSTANCE)
+  private val refs = new AtomicInteger(1)
+  private def newFuture = new DefaultPromise[Void](GlobalEventExecutor.INSTANCE)
 
   sys.addShutdownHook {
     refs.set(0)
@@ -68,4 +71,8 @@ final class SharedNioEventLoopGroup(threadCount: Int, threadFactory: ThreadFacto
   def release(decrement: Int): Boolean = {
     refs.addAndGet(-decrement) <= 0
   }
+
+  // IntelliJ complains otherwise
+  override def forEach(action: Consumer[_ >: EventExecutor]): Unit = super.forEach(action)
+  override def spliterator(): Spliterator[EventExecutor] = super.spliterator()
 }
