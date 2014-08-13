@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package rx.redis.pipeline
-
-import java.nio.charset.Charset
+package rx.redis.serialization
 
 import io.netty.buffer.ByteBuf
 
-import rx.redis.serialization.BytesAccess
+import java.nio.charset.Charset
 
 object ByteBufAccess extends BytesAccess[ByteBuf] {
   def markReaderIndex(a: ByteBuf): Unit =

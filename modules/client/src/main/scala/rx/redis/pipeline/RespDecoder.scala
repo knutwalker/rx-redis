@@ -19,6 +19,8 @@ package rx.redis.pipeline
 import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
 import io.netty.channel.{ ChannelHandlerContext, ChannelInboundHandler }
 
+import rx.redis.serialization.ByteBufDeserializer
+
 private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
 
   private final var buffered: ByteBuf = null

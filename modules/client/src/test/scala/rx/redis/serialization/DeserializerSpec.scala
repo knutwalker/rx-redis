@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.pipeline
+package rx.redis.serialization
 
 import io.netty.buffer.UnpooledByteBufAllocator
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.clients
+package rx.redis.pipeline
 
 import rx.Observer
 import io.netty.bootstrap.Bootstrap
@@ -24,12 +24,11 @@ import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.channel.{ ChannelFuture, ChannelFutureListener, ChannelOption }
 import io.netty.util.concurrent.DefaultThreadFactory
 
-import rx.redis.pipeline.{ AdapterAction, RxChannelInitializer }
 import rx.redis.resp.{ DataType, RespType }
 
 import scala.language.implicitConversions
 
-private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClient {
+private[redis] class RxNettyClient(host: String, port: Int) extends NettyClient {
   @inline
   private final implicit def writeToRunnable(f: ⇒ ChannelFuture): Runnable = new Runnable {
     def run(): Unit = f
@@ -75,12 +74,10 @@ private[redis] class RxOnNettyClient(host: String, port: Int) extends NettyClien
   }
 
   def close(): ChannelFuture = {
-    val p = channel.close()
-    p.addListener(new ChannelFutureListener {
+    channel.close().addListener(new ChannelFutureListener {
       def operationComplete(future: ChannelFuture): Unit = {
         bootstrap.group.shutdownGracefully
       }
     })
-    p
   }
 }

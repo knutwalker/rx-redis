@@ -16,22 +16,18 @@
 
 package rx.redis.pipeline
 
-import java.nio.charset.Charset
+import rx.Observer
+import io.netty.channel.ChannelFuture
 
-import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
+import rx.redis.resp.{ DataType, RespType }
 
-import rx.redis.resp._
-import rx.redis.serialization.Serializer
+trait NettyClient {
 
-object ByteBufSerializer {
-  private final val INSTANCE = new Serializer[ByteBuf]()(ByteBufAccess)
+  def send(data: DataType, receiver: Observer[RespType]): Unit
 
-  def apply(dt: DataType, bb: ByteBuf): ByteBuf = INSTANCE(dt, bb)
+  def buffer(data: DataType, receiver: Observer[RespType]): Unit
 
-  def apply(dt: DataType, alloc: ByteBufAllocator): ByteBuf = {
-    INSTANCE(dt, alloc.buffer())
-  }
-  def apply(dt: DataType, charset: Charset, alloc: ByteBufAllocator): String = {
-    apply(dt, alloc).toString(charset)
-  }
+  def flush(): ChannelFuture
+
+  def close(): ChannelFuture
 }

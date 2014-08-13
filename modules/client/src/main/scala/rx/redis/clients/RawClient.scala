@@ -20,6 +20,8 @@ import rx.Observable.OnSubscribe
 import rx.subjects.AsyncSubject
 import io.netty.channel.{ ChannelFutureListener, ChannelFuture }
 
+import rx.redis.pipeline.{ RxNettyClient, NettyClient }
+
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
@@ -35,7 +37,7 @@ import scala.util.control.NoStackTrace
 
 object RawClient {
   def apply(host: String, port: Int): RawClient = {
-    val netty = new RxOnNettyClient(host, port)
+    val netty = new RxNettyClient(host, port)
     new DefaultClient(netty)
   }
 }

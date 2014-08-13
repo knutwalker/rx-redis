@@ -19,6 +19,7 @@ package rx.redis.clients
 import rx.Observable
 import rx.subjects.AsyncSubject
 
+import rx.redis.pipeline.NettyClient
 import rx.redis.resp.{ DataType, RespType }
 
 private[redis] final class DefaultClient(protected val netty: NettyClient) extends RawClient {

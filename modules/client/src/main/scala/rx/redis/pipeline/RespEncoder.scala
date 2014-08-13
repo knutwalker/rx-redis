@@ -21,6 +21,7 @@ import io.netty.channel.{ ChannelPromise, ChannelHandlerContext, ChannelOutbound
 import io.netty.util.ReferenceCountUtil
 
 import rx.redis.resp.DataType
+import rx.redis.serialization.ByteBufSerializer
 
 private[redis] trait RespEncoder { this: ChannelOutboundHandler ⇒
 

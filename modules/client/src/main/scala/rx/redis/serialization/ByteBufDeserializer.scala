@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package rx.redis.pipeline
+package rx.redis.serialization
+
+import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
+
+import rx.redis.resp.{ ErrorType, NotEnoughData, RespType }
+import rx.redis.util.Utf8
 
 import java.nio.charset.Charset
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
-
-import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
-
-import rx.redis.resp._
-import rx.redis.serialization.Deserializer
-import rx.redis.util.Utf8
 
 object ByteBufDeserializer {
 
