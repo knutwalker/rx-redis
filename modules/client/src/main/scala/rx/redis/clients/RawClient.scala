@@ -37,8 +37,7 @@ import scala.util.control.NoStackTrace
 
 object RawClient {
   def apply(host: String, port: Int): RawClient = {
-    val netty = new RxNettyClient(host, port)
-    new DefaultClient(netty)
+    new DefaultClient(RxNettyClient(host, port))
   }
 }
 
@@ -58,6 +57,11 @@ abstract class RawClient {
       }
     })
     subject
+  }
+
+  protected def eagerObservable(f: Observable[Unit]): Observable[Unit] = {
+    f.subscribe()
+    f
   }
 
   protected def lazyObservable(f: ⇒ ChannelFuture): Observable[Unit] = {

@@ -16,46 +16,83 @@
 
 package rx.redis.pipeline
 
-import rx.Observer
+import rx.Observable.OnSubscribe
+import rx.{ Observable, Subscriber, Observer }
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioSocketChannel
-import io.netty.channel.{ ChannelFuture, ChannelFutureListener, ChannelOption }
-import io.netty.util.concurrent.DefaultThreadFactory
+import io.netty.channel.{ EventLoopGroup, Channel, ChannelFuture, ChannelFutureListener, ChannelOption }
+import io.netty.util.concurrent.{ GenericFutureListener, Future, DefaultThreadFactory }
 
 import rx.redis.resp.{ DataType, RespType }
 
 import scala.language.implicitConversions
 
-private[redis] class RxNettyClient(host: String, port: Int) extends NettyClient {
+object RxNettyClient {
+  private final val threadFactory = new DefaultThreadFactory("rx-redis", true)
+  private final def eventLoopGroup = new NioEventLoopGroup(1, threadFactory)
+
+  def apply(host: String, port: Int): NettyClient = {
+    val channelInitializer = new RxChannelInitializer(optimizeForThroughput = true)
+    val bootstrap = {
+      val b = new Bootstrap()
+      b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT).
+        option(ChannelOption.SO_KEEPALIVE, java.lang.Boolean.TRUE).
+        option(ChannelOption.SO_SNDBUF, Int.box(1024 * 1024)).
+        option(ChannelOption.SO_RCVBUF, Int.box(1024 * 1024)).
+        option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, Int.box(10 * 64 * 1024)).
+        channel(classOf[NioSocketChannel]).
+        group(eventLoopGroup).
+        handler(channelInitializer)
+    }
+
+    val channel = bootstrap.connect(host, port).sync().channel()
+    new RxNettyClient(channel)
+  }
+
+  private final class ChannelCloseSubscribe(channel: Channel) extends OnSubscribe[Unit] {
+    def call(subscriber: Subscriber[_ >: Unit]): Unit =
+      channel.close().addListener(
+        new ChannelCloseListener(subscriber, channel.eventLoop.parent))
+  }
+
+  private object NettyFutureSubscription {
+    def apply[F <: Future[_], S <: Subscriber[_ >: Unit]](future: F, subscriber: S, onNext: ⇒ Unit): Unit =
+      if (subscriber.isUnsubscribed) {
+        future.cancel(true)
+      } else if (future.isCancelled) {
+        subscriber.unsubscribe()
+      } else if (future.isSuccess) {
+        subscriber.onNext(())
+        onNext
+      } else {
+        subscriber.onError(future.cause())
+      }
+  }
+
+  private final class ChannelCloseListener[S <: Subscriber[_ >: Unit]](subscriber: S, eventLoopGroup: EventLoopGroup) extends ChannelFutureListener {
+    def operationComplete(future: ChannelFuture): Unit =
+      NettyFutureSubscription(
+        future, subscriber,
+        { eventLoopGroup.shutdownGracefully(); subscriber.onCompleted() })
+    //        eventLoopGroup.shutdownGracefully().addListener(new ShutdownListener(subscriber)))
+  }
+
+  private final class ShutdownListener[F <: Future[_], S <: Subscriber[_ >: Unit]](subscriber: S) extends GenericFutureListener[F] {
+    def operationComplete(future: F): Unit =
+      NettyFutureSubscription(
+        future, subscriber,
+        subscriber.onCompleted())
+  }
+}
+
+private[redis] class RxNettyClient(channel: Channel) extends NettyClient {
   @inline
   private final implicit def writeToRunnable(f: ⇒ ChannelFuture): Runnable = new Runnable {
     def run(): Unit = f
   }
 
-  private final val channelInitializer =
-    new RxChannelInitializer(optimizeForThroughput = true)
-
-  private final val threadFactory =
-    new DefaultThreadFactory("rx-redis", true)
-
-  private final val eventLoopGroup =
-    new NioEventLoopGroup(1, threadFactory)
-
-  private final val bootstrap = {
-    val b = new Bootstrap()
-    b.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT).
-      option(ChannelOption.SO_KEEPALIVE, java.lang.Boolean.TRUE).
-      option(ChannelOption.SO_SNDBUF, Int.box(1024 * 1024)).
-      option(ChannelOption.SO_RCVBUF, Int.box(1024 * 1024)).
-      option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, Int.box(10 * 64 * 1024)).
-      channel(classOf[NioSocketChannel]).
-      group(eventLoopGroup).
-      handler(channelInitializer)
-  }
-
-  private final val channel = bootstrap.connect(host, port).sync().channel()
   private final val eventLoop = channel.eventLoop()
   private final val pipeline = channel.pipeline()
   private final val emptyPromise = channel.voidPromise()
@@ -74,11 +111,7 @@ private[redis] class RxNettyClient(host: String, port: Int) extends NettyClient 
     promise
   }
 
-  def close(): ChannelFuture = {
-    channel.close().addListener(new ChannelFutureListener {
-      def operationComplete(future: ChannelFuture): Unit = {
-        bootstrap.group.shutdownGracefully
-      }
-    })
+  def close(): Observable[Unit] = {
+    Observable.create(new RxNettyClient.ChannelCloseSubscribe(channel)).cache()
   }
 }

@@ -16,7 +16,7 @@
 
 package rx.redis.pipeline
 
-import rx.Observer
+import rx.{ Observable, Observer }
 import io.netty.channel.ChannelFuture
 
 import rx.redis.resp.{ DataType, RespType }
@@ -29,5 +29,5 @@ trait NettyClient {
 
   def flush(): ChannelFuture
 
-  def close(): ChannelFuture
+  def close(): Observable[Unit]
 }
