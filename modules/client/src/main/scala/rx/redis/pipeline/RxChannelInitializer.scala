@@ -16,8 +16,12 @@
 
 package rx.redis.pipeline
 
+import rx.Observer
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
+import io.netty.util.internal.PlatformDependent
+
+import rx.redis.resp.RespType
 
 private[redis] class RxChannelInitializer(optimizeForThroughput: Boolean) extends ChannelInitializer[SocketChannel] {
   def initChannel(ch: SocketChannel): Unit = {
@@ -29,8 +33,11 @@ private[redis] class RxChannelInitializer(optimizeForThroughput: Boolean) extend
       ch.config().setTcpNoDelay(true)
     }
 
+    val queue = PlatformDependent.newMpscQueue[Observer[RespType]]
+
     ch.pipeline().
       addLast("resp-codec", new RespCodec).
-      addLast("rx-adapter", new RxAdapter)
+      addLast("rx-adapter", new RxAdapter(queue)).
+      addLast("rx-closer", new RxCloser(queue))
   }
 }

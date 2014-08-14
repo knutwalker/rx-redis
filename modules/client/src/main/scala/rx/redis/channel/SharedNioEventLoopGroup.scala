@@ -44,7 +44,7 @@ final class SharedNioEventLoopGroup(threadCount: Int, threadFactory: ThreadFacto
     }
   }
 
-  @java.lang.Deprecated
+  @deprecated("use shutdownGracefully", "Netty 4.x")
   override def shutdown(): Unit = {
     if (release()) {
       super.shutdown()
