@@ -19,7 +19,7 @@ package rx.redis
 import rx.functions.Action1
 
 import rx.redis.clients.RawClient
-import rx.redis.resp.{DataType, RespBytes, RespType}
+import rx.redis.resp.{RespBytes, RespType}
 
 import org.scalatest.FunSuite
 
@@ -30,7 +30,7 @@ class ThreadSafetySpec extends FunSuite {
   val threadCount = 25
 
   private class TestThread(
-      commandToSend: DataType,
+      commandToSend: RespType,
       expected: RespType,
       getClient: => RawClient,
       shutdown: RawClient => Unit)

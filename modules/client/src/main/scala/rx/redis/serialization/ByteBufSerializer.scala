@@ -18,19 +18,19 @@ package rx.redis.serialization
 
 import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
 
-import rx.redis.resp.DataType
+import rx.redis.resp.RespType
 
 import java.nio.charset.Charset
 
 object ByteBufSerializer {
   private final val INSTANCE = new Serializer[ByteBuf]()(ByteBufAccess)
 
-  def apply(dt: DataType, bb: ByteBuf): ByteBuf = INSTANCE(dt, bb)
+  def apply(dt: RespType, bb: ByteBuf): ByteBuf = INSTANCE(dt, bb)
 
-  def apply(dt: DataType, alloc: ByteBufAllocator): ByteBuf = {
+  def apply(dt: RespType, alloc: ByteBufAllocator): ByteBuf = {
     INSTANCE(dt, alloc.buffer())
   }
-  def apply(dt: DataType, charset: Charset, alloc: ByteBufAllocator): String = {
+  def apply(dt: RespType, charset: Charset, alloc: ByteBufAllocator): String = {
     apply(dt, alloc).toString(charset)
   }
 }

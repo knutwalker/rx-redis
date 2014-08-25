@@ -19,13 +19,13 @@ package rx.redis.pipeline
 import rx.{ Observable, Observer }
 import io.netty.channel.ChannelFuture
 
-import rx.redis.resp.{ DataType, RespType }
+import rx.redis.resp.RespType
 
 trait NettyClient {
 
-  def send(data: DataType, receiver: Observer[RespType]): Unit
+  def send(data: RespType, receiver: Observer[RespType]): Unit
 
-  def buffer(data: DataType, receiver: Observer[RespType]): Unit
+  def buffer(data: RespType, receiver: Observer[RespType]): Unit
 
   def flush(): ChannelFuture
 

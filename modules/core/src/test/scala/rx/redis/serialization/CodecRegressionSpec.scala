@@ -32,7 +32,7 @@ class CodecRegressionSpec extends FunSuite with PropertyChecks with ByteBufAcces
   val genBytes = arbitrary[Array[Byte]] map (RespBytes(_))
   val genInteger = arbitrary[Long] map RespInteger
   val genAnyPrimitive = Gen.oneOf(genString, genError, genBytes, genInteger, Gen.const(NullString))
-  val genArray = Gen.containerOf[Array, DataType](genAnyPrimitive) map RespArray
+  val genArray = Gen.containerOf[Array, RespType](genAnyPrimitive) map RespArray
   val genAnyData = Gen.oneOf(genString, genError, genBytes, genInteger, genArray, Gen.const(NullArray))
 
   test("serialze <> deserialze must be the same") {

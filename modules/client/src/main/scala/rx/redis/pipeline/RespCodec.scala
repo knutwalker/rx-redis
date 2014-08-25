@@ -16,6 +16,16 @@
 
 package rx.redis.pipeline
 
-import io.netty.channel.ChannelDuplexHandler
+import io.netty.channel.{ ChannelHandlerContext, ChannelDuplexHandler }
+import rx.redis.serialization.Deserializer
 
-private[redis] class RespCodec extends ChannelDuplexHandler with RespDecoder with RespEncoder
+private[redis] class RespCodec extends ChannelDuplexHandler with RespDecoder with RespEncoder {
+  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
+    if (Deserializer.RespFailure(cause)) {
+      // TODO: error logging
+      println("cause = " + cause)
+    } else {
+      super.exceptionCaught(ctx, cause)
+    }
+  }
+}

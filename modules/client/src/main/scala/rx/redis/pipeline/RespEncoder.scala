@@ -20,20 +20,20 @@ import io.netty.buffer.Unpooled
 import io.netty.channel.{ ChannelPromise, ChannelHandlerContext, ChannelOutboundHandler }
 import io.netty.util.ReferenceCountUtil
 
-import rx.redis.resp.DataType
+import rx.redis.resp.RespType
 import rx.redis.serialization.ByteBufSerializer
 
 private[redis] trait RespEncoder { this: ChannelOutboundHandler ⇒
 
   final override def write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise): Unit = msg match {
-    case data: DataType ⇒
+    case data: RespType ⇒
       encode(ctx, promise, data)
     case _ ⇒
       ReferenceCountUtil.release(msg)
-      promise.setFailure(new IllegalArgumentException(s"msg is not a [${classOf[DataType].getName}]."))
+      promise.setFailure(new IllegalArgumentException(s"msg is not a [${classOf[RespType].getName}]."))
   }
 
-  private final def encode(ctx: ChannelHandlerContext, promise: ChannelPromise, data: DataType): Unit = {
+  private final def encode(ctx: ChannelHandlerContext, promise: ChannelPromise, data: RespType): Unit = {
     val buf = ctx.alloc.ioBuffer
     try {
       ByteBufSerializer(data, buf)

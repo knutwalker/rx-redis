@@ -30,7 +30,7 @@ import rx.{ Subscriber, Observable }
 import rx.functions.Func1
 
 import rx.redis.commands._
-import rx.redis.resp.{ DataType, RespType }
+import rx.redis.resp.RespType
 import rx.redis.serialization.{ BytesFormat, Id, Reads, Writes }
 
 import scala.util.control.NoStackTrace
@@ -105,7 +105,7 @@ abstract class RawClient {
   //  Generic Commands
   // ==================
 
-  def command(cmd: DataType): Observable[RespType]
+  def command(cmd: RespType): Observable[RespType]
 
   def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] =
     command(A.write(cmd))

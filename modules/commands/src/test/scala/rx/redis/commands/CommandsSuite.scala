@@ -18,7 +18,7 @@ package rx.redis.commands
 
 import java.nio.charset.StandardCharsets
 
-import rx.redis.resp.{ DataType, RespArray, RespBytes }
+import rx.redis.resp.{ RespType, RespArray, RespBytes }
 import rx.redis.serialization.Writes
 
 import org.scalatest.FunSuite
@@ -30,7 +30,7 @@ class CommandsSuite extends FunSuite {
   protected def pretty(s: String, snip: Option[Int] = None) =
     Some(s.replaceAllLiterally("\r\n", "\\r\\n")).map(s ⇒ snip.fold(s)(s.take)).get
 
-  protected def ser[A: Writes](c: A, expected: DataType) = {
+  protected def ser[A: Writes](c: A, expected: RespType) = {
     val buf = Writes[A].write(c)
     assert(buf == expected)
   }

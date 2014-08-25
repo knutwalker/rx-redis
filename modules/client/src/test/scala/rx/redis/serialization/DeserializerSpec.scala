@@ -18,7 +18,8 @@ package rx.redis.serialization
 
 import io.netty.buffer.UnpooledByteBufAllocator
 
-import rx.redis.resp.{ NotEnoughData, RespBytes }
+import rx.redis.resp.RespBytes
+import rx.redis.serialization.ByteBufDeserializer.ParseAllResult
 import rx.redis.util.Utf8
 
 import org.scalatest.{ FunSuite, Inside }
@@ -44,22 +45,22 @@ class DeserializerSpec extends FunSuite with Inside {
   test("foreach should return whether there is data left") {
     val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n$2\r"
     val remainder = ByteBufDeserializer.foreach(resp, Utf8, alloc)(_ ⇒ ())
-    assert(remainder == Some(NotEnoughData))
+    assert(remainder)
 
     val resp2 = "$3\r\nfoo\r\n$3\r\nbar\r\n"
     val remainder2 = ByteBufDeserializer.foreach(resp2, Utf8, alloc)(_ ⇒ ())
-    assert(remainder2 == None)
+    assert(!remainder2)
   }
 
   test("parseAll should parse all items") {
     val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n"
     val result = ByteBufDeserializer.parseAll(resp, Utf8, alloc)
-    assert(result == List(RespBytes("foo"), RespBytes("bar")))
+    assert(result == ParseAllResult(List(RespBytes("foo"), RespBytes("bar")), hasRemainder = false))
   }
 
   test("parseAll should also include whether there is data left") {
     val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n$2\r"
     val result = ByteBufDeserializer.parseAll(resp, Utf8, alloc)
-    assert(result == List(RespBytes("foo"), RespBytes("bar"), NotEnoughData))
+    assert(result == ParseAllResult(List(RespBytes("foo"), RespBytes("bar")), hasRemainder = true))
   }
 }

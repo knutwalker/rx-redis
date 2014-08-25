@@ -16,12 +16,12 @@
 
 package rx
 
-import rx.redis.resp.DataType
+import rx.redis.resp.RespType
 import rx.redis.serialization.Writes
 
 package object redis {
   implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
-    def cmd(args: String*): DataType = {
+    def cmd(args: String*): RespType = {
       val strings = ctx.parts.iterator
       val expressions = args.iterator
       val result = strings.

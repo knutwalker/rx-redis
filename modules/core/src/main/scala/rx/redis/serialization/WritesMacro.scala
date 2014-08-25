@@ -154,7 +154,7 @@ class WritesMacro(val c: blackbox.Context) {
     }
     val argumentTrees = arguments map (_.tree)
 
-    val dt = tq"rx.redis.resp.DataType"
+    val dt = tq"rx.redis.resp.RespType"
     val generated = q"""
     object $objectName extends $finalTpe {
       def write(value: $tpe): $dt = {

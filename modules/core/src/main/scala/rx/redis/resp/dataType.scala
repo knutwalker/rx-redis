@@ -23,22 +23,20 @@ import rx.redis.util.Utf8
 
 sealed abstract class RespType
 
-sealed abstract class DataType extends RespType
-
-case class RespString(data: String) extends DataType {
+case class RespString(data: String) extends RespType {
   require(!data.contains("\r\n"), "A RESP String must not contain [\\r\\n].")
   override def toString: String = data
 }
 
-case class RespError(reason: String) extends DataType {
+case class RespError(reason: String) extends RespType {
   override def toString: String = reason
 }
 
-case class RespInteger(value: Long) extends DataType {
+case class RespInteger(value: Long) extends RespType {
   override def toString: String = value.toString
 }
 
-case class RespArray(elements: Array[DataType]) extends DataType {
+case class RespArray(elements: Array[RespType]) extends RespType {
   override def toString: String = elements.map(_.toString).mkString("[", ", ", "]")
 
   override def equals(obj: scala.Any): Boolean = obj match {
@@ -48,7 +46,7 @@ case class RespArray(elements: Array[DataType]) extends DataType {
   }
 }
 
-case class RespBytes(bytes: Array[Byte]) extends DataType {
+case class RespBytes(bytes: Array[Byte]) extends RespType {
   override def equals(obj: scala.Any): Boolean = obj match {
     case RespBytes(bs) ⇒ util.Arrays.equals(bytes, bs)
     case _             ⇒ super.equals(obj)
@@ -66,22 +64,22 @@ object RespBytes {
     apply(s, Utf8)
 }
 
-case object NullString extends DataType {
+case object NullString extends RespType {
   override def toString: String = "NULL"
 }
 
-case object NullArray extends DataType {
+case object NullArray extends RespType {
   override def toString: String = "NULL"
 }
 
-sealed abstract class ErrorType extends RespType
-
-case object NotEnoughData extends ErrorType {
-  override def toString: String = "[INCOMPLETE]"
-}
-case class ProtocolError(pos: Int, found: Char, expected: List[Byte]) extends ErrorType {
-  override def toString: String = {
-    val e = expected mkString ", "
-    s"Protocol error at char $pos, expected [$e], but found [$found]"
-  }
-}
+//sealed abstract class ErrorType extends RespType
+//
+//case object NotEnoughData extends ErrorType {
+//  override def toString: String = "[INCOMPLETE]"
+//}
+//case class ProtocolError(pos: Int, found: Char, expected: List[Byte]) extends ErrorType {
+//  override def toString: String = {
+//    val e = expected mkString ", "
+//    s"Protocol error at char $pos, expected [$e], but found [$found]"
+//  }
+//}

@@ -27,7 +27,7 @@ class SerializerSpec extends FunSuite with Inside with ByteBufAccess {
 
   val alloc = UnpooledByteBufAllocator.DEFAULT
 
-  private def compare(dt: DataType, resp: String) = {
+  private def compare(dt: RespType, resp: String) = {
     val serializer = new Serializer[ByteBuf]
 
     val buf = alloc.buffer()

@@ -36,7 +36,7 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
     A.writeByte(bb, Colon).writeBytes(bb, content).writeBytes(bb, CrLf)
   }
 
-  private def writeArray(bb: A, items: Array[DataType]): Unit = {
+  private def writeArray(bb: A, items: Array[RespType]): Unit = {
     val size = BytesFormat[Long].bytes(items.length)
     A.writeByte(bb, Asterisk).
       writeBytes(bb, size).
@@ -59,7 +59,7 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
   def writeNullArray(bb: A): Unit = {
     A.writeByte(bb, Asterisk).writeBytes(bb, Nullary).writeBytes(bb, CrLf)
   }
-  private def quickApply(data: DataType, bb: A): Unit = data match {
+  private def quickApply(data: RespType, bb: A): Unit = data match {
     case RespString(s)  ⇒ writeSimpleString(bb, s)
     case RespError(e)   ⇒ writeError(bb, e)
     case RespInteger(l) ⇒ writeInteger(bb, l)
@@ -69,7 +69,7 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
     case NullArray      ⇒ writeNullArray(bb)
   }
 
-  def apply(data: DataType, bb: A): A = {
+  def apply(data: RespType, bb: A): A = {
     quickApply(data, bb)
     bb
   }

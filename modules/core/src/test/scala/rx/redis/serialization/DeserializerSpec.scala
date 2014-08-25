@@ -20,6 +20,7 @@ import scala.annotation.tailrec
 
 import io.netty.buffer.{ ByteBuf, Unpooled }
 
+import rx.redis.serialization.Deserializer.{ ProtocolError, NotEnoughData }
 import rx.redis.resp._
 import rx.redis.util._
 
@@ -28,16 +29,13 @@ import org.scalatest.{ FunSuite, Inside }
 class DeserializerSpec extends FunSuite with Inside with ByteBufAccess {
 
   @tailrec final def loop(bs: ByteBuf, d: Deserializer[ByteBuf])(f: RespType ⇒ Unit): Unit = {
-    if (byteBufAccess.isReadable(bs)) d(bs) match {
-      case e: ErrorType ⇒ f(e)
-      case x ⇒ {
-        f(x)
-        loop(bs, d)(f)
-      }
+    f(d(bs))
+    if (bs.isReadable) {
+      loop(bs, d)(f)
     }
   }
 
-  def compare(resp: String, expecteds: DataType*): Unit = {
+  def compare(resp: String, expecteds: RespType*): Unit = {
     val bytes = Unpooled.wrappedBuffer(resp.getBytes(Utf8))
     val d = new Deserializer[ByteBuf]
     val expectedsIterator = expecteds.iterator
@@ -49,10 +47,10 @@ class DeserializerSpec extends FunSuite with Inside with ByteBufAccess {
     }
   }
 
-  def compare(resp: String)(insidePf: PartialFunction[RespType, Unit]): Unit = {
+  def compare(resp: String)(insidePf: PartialFunction[Throwable, Unit]): Unit = {
     val d = new Deserializer[ByteBuf]
     val bytes = Unpooled.wrappedBuffer(resp.getBytes(Utf8))
-    inside(d(bytes))(insidePf)
+    try d(bytes) catch insidePf
   }
 
   // happy path behavior
@@ -197,8 +195,8 @@ class DeserializerSpec extends FunSuite with Inside with ByteBufAccess {
       val bb = bytes.duplicate()
       bb.writerIndex(i)
 
-      loop(bb, d) { actual ⇒
-        assert(actual == NotEnoughData)
+      intercept[NotEnoughData.type] {
+        loop(bb, d) { actual ⇒ fail("Should not have parsed anything") }
       }
     }
   }

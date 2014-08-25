@@ -18,7 +18,8 @@ package rx.redis.serialization
 
 import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
 
-import rx.redis.resp.{ ErrorType, NotEnoughData, RespType }
+import rx.redis.resp.RespType
+import rx.redis.serialization.Deserializer.NotEnoughData
 import rx.redis.util.Utf8
 
 import java.nio.charset.Charset
@@ -27,6 +28,8 @@ import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
 
 object ByteBufDeserializer {
+
+  case class ParseAllResult(data: immutable.Seq[RespType], hasRemainder: Boolean)
 
   private final val INSTANCE = new Deserializer[ByteBuf]()(ByteBufAccess)
 
@@ -47,46 +50,45 @@ object ByteBufDeserializer {
     apply(string, Utf8, alloc)
   }
 
-  def foreach(bb: ByteBuf)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
-    @tailrec def loop(): Option[NotEnoughData.type] =
-      if (!bb.isReadable) None
-      else INSTANCE(bb) match {
-        case NotEnoughData ⇒ Some(NotEnoughData)
-        case e: ErrorType ⇒
-          f(e)
-          None
-        case x ⇒
-          f(x)
-          loop()
+  def foreach(bb: ByteBuf)(f: RespType ⇒ Unit): Boolean = {
+    @tailrec def loop(): Boolean =
+      if (!bb.isReadable) false
+      else {
+        f(INSTANCE(bb))
+        loop()
       }
-    loop()
+    try {
+      loop()
+    } catch {
+      case NotEnoughData ⇒ true
+    }
   }
-  def foreach(bytes: Array[Byte], alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
+  def foreach(bytes: Array[Byte], alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Boolean = {
     val bb = alloc.buffer(bytes.length, bytes.length)
     bb.writeBytes(bytes)
     releaseAfterUse(bb)(foreach(bb)(f))
   }
-  def foreach(string: String, charset: Charset, alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
+  def foreach(string: String, charset: Charset, alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Boolean = {
     foreach(string.getBytes(charset), alloc)(f)
   }
-  def foreach(string: String, alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Option[NotEnoughData.type] = {
+  def foreach(string: String, alloc: ByteBufAllocator)(f: RespType ⇒ Unit): Boolean = {
     foreach(string, Utf8, alloc)(f)
   }
 
-  def parseAll(bb: ByteBuf): immutable.Seq[RespType] = {
+  def parseAll(bb: ByteBuf): ParseAllResult = {
     val lb = new ListBuffer[RespType]()
-    foreach(bb)(lb += _) foreach (lb += _)
-    lb.result()
+    val hasRemainder = foreach(bb)(lb += _)
+    ParseAllResult(lb.result(), hasRemainder)
   }
-  def parseAll(bytes: Array[Byte], alloc: ByteBufAllocator): immutable.Seq[RespType] = {
+  def parseAll(bytes: Array[Byte], alloc: ByteBufAllocator): ParseAllResult = {
     val bb = alloc.buffer(bytes.length, bytes.length)
     bb.writeBytes(bytes)
     releaseAfterUse(bb)(parseAll(bb))
   }
-  def parseAll(string: String, charset: Charset, alloc: ByteBufAllocator): immutable.Seq[RespType] = {
+  def parseAll(string: String, charset: Charset, alloc: ByteBufAllocator): ParseAllResult = {
     parseAll(string.getBytes(charset), alloc)
   }
-  def parseAll(string: String, alloc: ByteBufAllocator): immutable.Seq[RespType] = {
+  def parseAll(string: String, alloc: ByteBufAllocator): ParseAllResult = {
     parseAll(string, Utf8, alloc)
   }
 }

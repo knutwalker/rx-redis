@@ -16,7 +16,7 @@
 
 package rx.redis.pipeline
 
-import io.netty.buffer.{ ByteBuf, Unpooled }
+import io.netty.buffer.Unpooled
 import io.netty.channel.embedded.EmbeddedChannel
 
 import rx.redis.resp._
@@ -26,7 +26,7 @@ import org.scalatest.{ BeforeAndAfter, FunSuite }
 
 class RespCodecSpec extends FunSuite with BeforeAndAfter {
 
-  private def compare(in: DataType, out: String) = {
+  private def compare(in: RespType, out: String) = {
     val byteData = Unpooled.copiedBuffer(out, Utf8)
     assert(channel.writeOutbound(in))
     assert(channel.readOutbound() == byteData)
@@ -67,10 +67,10 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
 
   test("should fail on outbound writing for non data types ") {
     val ex = intercept[IllegalArgumentException] {
-      channel.writeOutbound(NotEnoughData)
+      channel.writeOutbound(new AnyRef)
     }
     assert(channel.readOutbound() == null)
-    assert(ex.getMessage == "msg is not a [rx.redis.resp.DataType].")
+    assert(ex.getMessage == "msg is not a [rx.redis.resp.RespType].")
   }
 
   test("should fail on inbound writing for non ByteBufs") {

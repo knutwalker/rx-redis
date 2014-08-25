@@ -20,11 +20,11 @@ import rx.Observable
 import rx.subjects.AsyncSubject
 
 import rx.redis.pipeline.NettyClient
-import rx.redis.resp.{ DataType, RespType }
+import rx.redis.resp.RespType
 
 private[redis] final class DefaultClient(protected val netty: NettyClient) extends RawClient {
 
-  def command(cmd: DataType): Observable[RespType] = {
+  def command(cmd: RespType): Observable[RespType] = {
     val s = AsyncSubject.create[RespType]()
     netty.send(cmd, s)
     s

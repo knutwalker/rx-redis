@@ -19,7 +19,6 @@ package rx.redis.japi;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.redis.clients.RawClient;
-import rx.redis.resp.DataType;
 import rx.redis.resp.RespType;
 import rx.redis.serialization.BytesFormat;
 import rx.redis.serialization.Writes;
@@ -62,7 +61,7 @@ public final class Client {
     return raw.disconnect().map(x -> null);
   }
 
-  public Observable<RespType> command(final DataType dataType) {
+  public Observable<RespType> command(final RespType dataType) {
     return raw.command(dataType);
   }
 

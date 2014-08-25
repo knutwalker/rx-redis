@@ -57,7 +57,7 @@ private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
     val needMore = ByteBufDeserializer.foreach(completeData) { resp ⇒
       ctx.fireChannelRead(resp)
     }
-    if (needMore.isDefined) {
+    if (needMore) {
       buffered = completeData
     } else {
       completeData.release()

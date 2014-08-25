@@ -22,7 +22,7 @@ import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
 import rx.redis.clients.RawClient
-import rx.redis.resp.{ DataType, RespType }
+import rx.redis.resp.RespType
 import rx.redis.serialization.BytesFormat
 
 final class Client(raw: RawClient) {
@@ -33,7 +33,7 @@ final class Client(raw: RawClient) {
   private[api] def disconnect(): Observable[Unit] =
     raw.disconnect()
 
-  def command(dt: DataType): Observable[RespType] =
+  def command(dt: RespType): Observable[RespType] =
     raw.command(dt)
 
   // ==============

@@ -18,7 +18,7 @@ package com.example;
 
 import rx.redis.japi.Client;
 import rx.redis.japi.RxRedis;
-import rx.redis.resp.DataType;
+import rx.redis.resp.RespType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,8 +31,8 @@ public final class AdvancedExample {
 
     final Client client = RxRedis.connect("localhost", 6379);
 
-    final DataType serverInfoCommand = RxRedis.command("INFO SERVER");
-    final DataType clientListCommand = RxRedis.command("CLIENT LIST");
+    final RespType serverInfoCommand = RxRedis.command("INFO SERVER");
+    final RespType clientListCommand = RxRedis.command("CLIENT LIST");
 
     final List<String> results =
         client.command(serverInfoCommand)

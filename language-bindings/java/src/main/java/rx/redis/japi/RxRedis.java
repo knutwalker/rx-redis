@@ -18,7 +18,7 @@ package rx.redis.japi;
 
 import rx.Observable;
 import rx.redis.clients.RawClient;
-import rx.redis.resp.DataType;
+import rx.redis.resp.RespType;
 import rx.redis.serialization.Writes;
 
 @SuppressWarnings("UnusedDeclaration")
@@ -42,7 +42,7 @@ public final class RxRedis {
     return connect(6379);
   }
 
-  public static DataType command(final String cmd) {
+  public static RespType command(final String cmd) {
     return Writes.DirectStringWrites$.MODULE$.write(cmd);
   }
 

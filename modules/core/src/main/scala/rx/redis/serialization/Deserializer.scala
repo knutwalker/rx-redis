@@ -22,13 +22,26 @@ import scala.collection.mutable.ArrayBuffer
 import rx.redis.resp._
 import rx.redis.util._
 
+import scala.util.control.NoStackTrace
+
+object Deserializer {
+  private[redis] final val NotEnoughData = new RuntimeException with NoStackTrace
+  private[redis] final case class ProtocolError(pos: Int, found: Char, expected: List[Byte])
+    extends RuntimeException(s"Protocol error at char $pos, expected [${expected mkString ", "}], but found [$found]")
+
+  object RespFailure {
+    def apply(t: Throwable): Boolean = t match {
+      case NotEnoughData | _: ProtocolError ⇒ true
+      case _                                ⇒ false
+    }
+    def unapply(t: Throwable): Option[Throwable] = if (apply(t)) Some(t) else None
+  }
+}
 final class Deserializer[A](implicit A: BytesAccess[A]) {
   import rx.redis.resp.Protocol._
 
-  private def notEnoughData(bytes: A) = {
-    A.resetReaderIndex(bytes)
-    NotEnoughData
-  }
+  private def notEnoughData(bytes: A) =
+    throw Deserializer.NotEnoughData
 
   private def unknownType(bytes: A) =
     expected(bytes, typeChars: _*)
@@ -36,8 +49,7 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
   private def expected(bytes: A, expected: Byte*) = {
     val pos = A.readerIndex(bytes)
     val found = A.getByteAt(bytes, pos).toChar
-    A.resetReaderIndex(bytes)
-    ProtocolError(pos, found, expected.toList)
+    throw Deserializer.ProtocolError(pos, found, expected.toList)
   }
 
   private def peek(bytes: A) =
@@ -52,34 +64,34 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
   private def requireLen(bytes: A, len: Int) =
     A.isReadable(bytes, len)
 
-  private def read(bytes: A, b: Byte): Option[ErrorType] = {
-    if (!A.isReadable(bytes)) Some(notEnoughData(bytes))
-    else if (peek(bytes) != b) Some(expected(bytes, b))
-    else {
-      skip(bytes)
-      None
-    }
+  private def read(bytes: A, b: Byte): Unit = {
+    if (!A.isReadable(bytes)) notEnoughData(bytes)
+    else if (peek(bytes) != b) expected(bytes, b)
+    else skip(bytes)
   }
 
-  private def andRequireCrLf(bytes: A, value: RespType) =
-    read(bytes, Cr).orElse(read(bytes, Lf)).getOrElse(value)
+  private def andRequireCrLf(bytes: A, value: RespType) = {
+    read(bytes, Cr)
+    read(bytes, Lf)
+    value
+  }
 
   private def parseLen(bytes: A) =
     parseNumInt(bytes)
 
-  private def parseInteger(bytes: A) = parseNumLong(bytes) match {
-    case Left(e)  ⇒ e
-    case Right(l) ⇒ RespInteger(l)
-  }
+  private def parseInteger(bytes: A) =
+    RespInteger(parseNumLong(bytes))
 
   @tailrec
-  private def parseNumInt(bytes: A, n: Int, neg: Int): Either[ErrorType, Int] = {
+  private def parseNumInt(bytes: A, n: Int, neg: Int): Int = {
     if (!A.isReadable(bytes)) {
-      Left(notEnoughData(bytes))
+      notEnoughData(bytes)
     } else {
       val current = read(bytes)
       current match {
-        case Cr    ⇒ read(bytes, Lf).toLeft(n * neg)
+        case Cr ⇒
+          read(bytes, Lf)
+          n * neg
         case Minus ⇒ parseNumInt(bytes, n, -1)
         case b     ⇒ parseNumInt(bytes, (n * 10) + (b - '0'), neg)
       }
@@ -87,26 +99,28 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
   }
 
   @tailrec
-  private def parseNumLong(bytes: A, n: Long, neg: Long): Either[ErrorType, Long] = {
+  private def parseNumLong(bytes: A, n: Long, neg: Long): Long = {
     if (!A.isReadable(bytes)) {
-      Left(notEnoughData(bytes))
+      notEnoughData(bytes)
     } else {
       val current = read(bytes)
       current match {
-        case Cr    ⇒ read(bytes, Lf).toLeft(n * neg)
+        case Cr ⇒
+          read(bytes, Lf)
+          n * neg
         case Minus ⇒ parseNumLong(bytes, n, -1)
         case b     ⇒ parseNumLong(bytes, (n * 10) + (b - '0'), neg)
       }
     }
   }
 
-  private def parseNumInt(bytes: A): Either[ErrorType, Int] =
+  private def parseNumInt(bytes: A): Int =
     parseNumInt(bytes, 0, 1)
 
-  private def parseNumLong(bytes: A): Either[ErrorType, Long] =
+  private def parseNumLong(bytes: A): Long =
     parseNumLong(bytes, 0L, 1L)
 
-  private def readStringOfLen(bytes: A, len: Int)(ct: A ⇒ DataType) = {
+  private def readStringOfLen(bytes: A, len: Int)(ct: A ⇒ RespType) = {
     if (!requireLen(bytes, len)) notEnoughData(bytes)
     else andRequireCrLf(bytes, ct(A.readBytes(bytes, len)))
   }
@@ -123,31 +137,25 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
     else readStringOfLen(bytes, len)(b ⇒ RespError(A.toString(b, Utf8)))
   }
 
-  private def parseBulkString(bytes: A) = parseLen(bytes) match {
-    case Left(ned) ⇒ ned
-    case Right(len) ⇒ {
-      if (len == -1) NullString
-      else readStringOfLen(bytes, len)(b ⇒ RespBytes(A.toByteArray(b)))
-    }
+  private def parseBulkString(bytes: A) = {
+    val len = parseLen(bytes)
+    if (len == -1) NullString
+    else readStringOfLen(bytes, len)(b ⇒ RespBytes(A.toByteArray(b)))
   }
 
-  private def parseArray(bytes: A) = parseLen(bytes) match {
-    case Left(ned) ⇒ ned
-    case Right(size) ⇒ {
-      if (size == -1) NullArray
-      else {
-        val lb = new ArrayBuffer[DataType](size)
-        @tailrec def loop(n: Int): RespType = {
-          if (n == 0) RespArray(lb.toArray)
-          else quickApply(bytes) match {
-            case dt: DataType ⇒
-              lb += dt
-              loop(n - 1)
-            case et: ErrorType ⇒ et
-          }
+  private def parseArray(bytes: A) = {
+    val size = parseLen(bytes)
+    if (size == -1) NullArray
+    else {
+      val lb = new ArrayBuffer[RespType](size)
+      @tailrec def loop(n: Int): RespType = {
+        if (n == 0) RespArray(lb.toArray)
+        else {
+          lb += quickApply(bytes)
+          loop(n - 1)
         }
-        loop(size)
       }
+      loop(size)
     }
   }
 
@@ -179,6 +187,12 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
 
   def apply(bytes: A): RespType = {
     A.markReaderIndex(bytes)
-    quickApply(bytes)
+    try {
+      quickApply(bytes)
+    } catch {
+      case Deserializer.RespFailure(ex) ⇒
+        A.resetReaderIndex(bytes)
+        throw ex
+    }
   }
 }
