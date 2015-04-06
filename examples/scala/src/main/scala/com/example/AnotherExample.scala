@@ -19,7 +19,6 @@ package com.example
 import rx.redis._
 import rx.redis.api.RxRedis
 
-
 object AnotherExample extends App {
 
   val client = RxRedis("localhost", 6379)
@@ -30,37 +29,37 @@ object AnotherExample extends App {
   val infoPart = "server"
   val SERVER_INFO = cmd"INFO $infoPart"
 
-  client.ping().toBlocking.foreach { r =>
+  client.ping().toBlocking.foreach { r ⇒
     println(s"first PING : $r")
   }
 
   println("after first PING")
 
-  client.ping().toBlocking.foreach { r =>
+  client.ping().toBlocking.foreach { r ⇒
     println(s"second PING : $r")
   }
 
   println("after second PING")
 
-  client.command(INFO).foreach { r =>
+  client.command(INFO).foreach { r ⇒
     println(s"INFO : ${preview(r)}")
   }
 
   println("after INFO")
 
-  client.ping().foreach { r =>
+  client.ping().foreach { r ⇒
     println(s"third PING : $r")
   }
 
   println("after third PING")
 
-  client.command(CLIENT_LIST).foreach { r =>
+  client.command(CLIENT_LIST).foreach { r ⇒
     println(s"CLIENT LIST : ${preview(r)}")
   }
 
   println("after CLIENT LIST")
 
-  client.command(SERVER_INFO).foreach { r =>
+  client.command(SERVER_INFO).foreach { r ⇒
     println(s"SERVER INFO: ${preview(r)}")
   }
 
@@ -71,13 +70,11 @@ object AnotherExample extends App {
 
   client.set("foo", "bar").foreach(println)
 
-
-  client.mget("foo", "bar", "baz").foreach { r =>
+  client.mget("foo", "bar", "baz").foreach { r ⇒
     println(s"MGET: $r")
   }
 
-
-  client.get("foo") foreach { getResult =>
+  client.get("foo") foreach { getResult ⇒
     println(s"GET foo: $getResult")
   }
 

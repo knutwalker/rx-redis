@@ -18,7 +18,6 @@ package com.example
 
 import rx.redis.api.RxRedis
 
-
 object Example extends App {
 
   val client = RxRedis("localhost", 6379)
@@ -39,13 +38,13 @@ object Example extends App {
     client.mget("foo1", "foo2", "foo4", "foo3", "foo5")
 
   gets.merge(mget).
-    foreach(r => println("GET or MGET = " + r))
+    foreach(r ⇒ println("GET or MGET = " + r))
 
   val mixed = client.ping() ++
     client.echo("42") ++
     client.incr("what?").map(_.toString)
 
-  mixed.foreach(r => println("mixed = " + r))
+  mixed.foreach(r ⇒ println("mixed = " + r))
 
   RxRedis.shutdown(client)
 }

@@ -20,5 +20,5 @@ import rx.redis.resp.RespType
 
 package object example {
 
-  val preview = (r: RespType) => r.toString.replaceAllLiterally("\r\n", "\\r\\n").take(50)
+  val preview = (r: RespType) ⇒ r.toString.replaceAllLiterally("\r\n", "\\r\\n").take(50)
 }
