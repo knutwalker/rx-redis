@@ -43,8 +43,8 @@ lazy val client = project in file("modules") / "client" enablePlugins AutomateHe
   name := "rx-redis-client",
   libraryDependencies ++= List(
     "io.netty"            % "netty-transport"  % nettyVersion.value withSources() withJavadoc(),
-    // "io.netty"            % "netty-buffer"     % nettyVersion.value withSources() withJavadoc(),
-    // "io.netty"            % "netty-common"     % nettyVersion.value withSources() withJavadoc(),
+    "io.netty"            % "netty-buffer"     % nettyVersion.value withSources() withJavadoc(),
+    "io.netty"            % "netty-common"     % nettyVersion.value withSources() withJavadoc(),
     "com.netflix.rxjava"  % "rxjava-core"      % rxJavaVersion.value withSources() withJavadoc(),
     "org.scalatest"      %% "scalatest"        % "2.2.2" % "it,test"))
 
@@ -83,7 +83,7 @@ lazy val buildSettings  = List(
   organizationHomepage := Some(url("http://knutwalker.de/")),
            description := "Reactive Extension for Redis",
           scalaVersion := "2.11.6",
-          nettyVersion := "4.0.23.Final",
+          nettyVersion := "4.0.27.Final",
          rxJavaVersion := "0.20.6")
 
 lazy val commonSettings = List(
