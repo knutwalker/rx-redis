@@ -20,10 +20,8 @@ lazy val parent = project in file(".") dependsOn (
 
 lazy val core = project in file("modules") / "core" enablePlugins AutomateHeaderPlugin settings (
   rxRedisSettings,
-  ivyConfigurations += CompileTimeOnly,
-  unmanagedClasspath in Compile ++= update.value.select(configurationFilter(CompileTimeOnly.name)),
   name := "rx-redis-core",
-  libraryDependencies += "org.scala-lang"  % "scala-reflect" % scalaVersion.value % "compileonly")
+  libraryDependencies += "org.scala-lang"  % "scala-reflect" % scalaVersion.value % "provided")
 
 lazy val commands = project in file("modules") / "commands" enablePlugins AutomateHeaderPlugin dependsOn core settings (
   rxRedisSettings,
@@ -195,7 +193,7 @@ lazy val publishSettings = releaseSettings ++ sonatypeSettings ++ List(
   pomPostProcess := { (node) =>
     val rewriteRule = new scala.xml.transform.RewriteRule {
       override def transform(n: scala.xml.Node): scala.xml.NodeSeq =
-        if (n.label == "dependency" && (n \ "groupId").text == "org.scoverage")
+        if (n.label == "dependency" && (n \ "scope").text == "provided" && ((n \ "groupId").text == "org.scoverage" || (n \ "artifactId").text == "scala-reflect"))
           scala.xml.NodeSeq.Empty
         else n
     }
@@ -257,8 +255,6 @@ lazy val rxJavaVersion = SettingKey[String]("Version of RxJava")
 lazy val rxScalaVersion = SettingKey[String]("Version of RxScala")
 
 lazy val RegressionTest = config("reg").extend(Test)
-lazy val CompileTimeOnly = config("compileonly").hide
-
 lazy val runIntegrationTest = runTestIn(IntegrationTest)
 lazy val runRegressionTest = runTestIn(RegressionTest)
 
