@@ -27,7 +27,7 @@ lazy val core = project in file("modules") / "core" enablePlugins AutomateHeader
   name := "rx-redis-core",
   libraryDependencies ++= List(
     "org.scala-lang"  % "scala-reflect" % scalaVersion.value % "compileonly",
-    "io.netty"        % "netty-buffer"  % nettyVersion.value % "test" withSources() withJavadoc(),
+    "io.netty"        % "netty-buffer"  % nettyVersion.value % "test",
     "org.scalatest"  %% "scalatest"     % "2.2.2"            % "test",
     "org.scalacheck" %% "scalacheck"    % "1.11.6"           % "test"))
 
@@ -42,17 +42,17 @@ lazy val client = project in file("modules") / "client" enablePlugins AutomateHe
   rxRedisSettings,
   name := "rx-redis-client",
   libraryDependencies ++= List(
-    "io.netty"            % "netty-transport"  % nettyVersion.value withSources() withJavadoc(),
-    "io.netty"            % "netty-buffer"     % nettyVersion.value withSources() withJavadoc(),
-    "io.netty"            % "netty-common"     % nettyVersion.value withSources() withJavadoc(),
-    "com.netflix.rxjava"  % "rxjava-core"      % rxJavaVersion.value withSources() withJavadoc(),
-    "org.scalatest"      %% "scalatest"        % "2.2.2" % "it,test"))
+    "io.netty"       % "netty-transport" % nettyVersion.value,
+    "io.netty"       % "netty-buffer"    % nettyVersion.value,
+    "io.netty"       % "netty-common"    % nettyVersion.value,
+    "io.reactivex"   % "rxjava"          % rxJavaVersion.value,
+    "org.scalatest" %% "scalatest"       % "2.2.2" % "it,test"))
 
 lazy val api = project in file("language-bindings") / "scala" enablePlugins AutomateHeaderPlugin dependsOn client settings (
   buildsUberJar,
   rxRedisSettings,
   name := "rx-redis-scala",
-  libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % rxJavaVersion.value exclude("org.scala-lang", "scala-library") withSources() withJavadoc())
+  libraryDependencies += "io.reactivex" %% "rxscala" % rxScalaVersion.value)
 
 lazy val japi = project in file("language-bindings") / "java" enablePlugins AutomateHeaderPlugin dependsOn client settings (
   buildsUberJar,
@@ -84,7 +84,8 @@ lazy val buildSettings  = List(
            description := "Reactive Extension for Redis",
           scalaVersion := "2.11.6",
           nettyVersion := "4.0.27.Final",
-         rxJavaVersion := "0.20.6")
+         rxJavaVersion := "1.0.7",
+        rxScalaVersion := "0.24.0")
 
 lazy val commonSettings = List(
   scalacOptions ++= List(
@@ -236,6 +237,7 @@ lazy val githubRepo = SettingKey[String]("Github repository")
 
 lazy val nettyVersion = SettingKey[String]("Version of Netty")
 lazy val rxJavaVersion = SettingKey[String]("Version of RxJava")
+lazy val rxScalaVersion = SettingKey[String]("Version of RxScala")
 
 lazy val RegressionTest = config("reg").extend(Test)
 lazy val CompileTimeOnly = config("compileonly").hide
