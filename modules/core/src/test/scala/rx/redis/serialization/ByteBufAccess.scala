@@ -66,7 +66,7 @@ trait ByteBufAccess {
       a.toString(charset)
 
     def writeByte(a: ByteBuf, b: Byte): Unit = {
-      a.writeByte(b)
+      a.writeByte(b.toInt)
     }
 
     def writeBytes(a: ByteBuf, bs: Array[Byte]): Unit = {

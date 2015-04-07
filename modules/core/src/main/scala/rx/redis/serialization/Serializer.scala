@@ -43,7 +43,7 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
   }
 
   private def writeArray(bb: A, items: Array[RespType]): Unit = {
-    val size = BytesFormat[Long].bytes(items.length)
+    val size = BytesFormat[Long].bytes(items.length.toLong)
     A.writeByte(bb, Asterisk)
     A.writeBytes(bb, size)
     A.writeBytes(bb, CrLf)
@@ -52,7 +52,7 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
 
   private def writeBytes(bb: A, bytes: Array[Byte]): Unit = {
     A.writeByte(bb, Dollar)
-    A.writeBytes(bb, BytesFormat[Long].bytes(bytes.length))
+    A.writeBytes(bb, BytesFormat[Long].bytes(bytes.length.toLong))
     A.writeBytes(bb, CrLf)
     A.writeBytes(bb, bytes)
     A.writeBytes(bb, CrLf)
