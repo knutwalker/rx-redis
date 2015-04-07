@@ -135,7 +135,7 @@ lazy val commonSettings = List(
     val name = Project.extract(state).currentRef.project
     (if (name == "parent") "" else name + " ") + "> "
   },
-  coverageExcludedPackages := "buildinfo",
+  coverageExcludedPackages := """com.example.*|rx.redis.util.pool.*|rx.redis.j?api.*""",
   headers := {
     val thisYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
     val years = List(startYear.value.getOrElse(thisYear), thisYear).distinct.mkString(" – ")
@@ -289,3 +289,5 @@ def runTestIn(conf: Configuration) = ReleaseStep(
 
 def regFilter(name: String): Boolean = name endsWith "RegressionSpec"
 def unitFilter(name: String): Boolean = (name endsWith "Spec") && !regFilter(name)
+
+addCommandAlias("travis", ";clean;coverage;test;it:test;coverageReport;coverageAggregate")

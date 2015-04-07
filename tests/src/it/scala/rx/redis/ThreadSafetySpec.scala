@@ -26,8 +26,8 @@ import org.scalatest.FunSuite
 
 class ThreadSafetySpec extends FunSuite {
 
-  val total = 20000
-  val threadCount = 25
+  val total = 10000
+  val threadCount = Runtime.getRuntime.availableProcessors() * 2
 
   private class TestThread(
       commandToSend: RespType,
