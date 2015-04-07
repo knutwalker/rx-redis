@@ -1,5 +1,6 @@
 import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import de.heikoseeberger.sbtheader.license.Apache2_0
+import pl.project13.scala.sbt.SbtJmh.JmhKeys.{outputTarget, generatorType, Jmh}
 import sbtrelease.ReleasePlugin.ReleaseKeys._
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleaseStep
@@ -71,6 +72,15 @@ lazy val tests = project enablePlugins AutomateHeaderPlugin configs (Integration
   libraryDependencies ++= List(
     "org.scalatest"  %% "scalatest"         % "2.2.4"  % "it,test",
     "org.scalacheck" %% "scalacheck"        % "1.12.2" % "test"))
+
+lazy val benchmarks = project enablePlugins AutomateHeaderPlugin dependsOn client settings (
+  rxRedisSettings,
+  doNotPublish,
+  jmhSettings,
+  name := "rx-redis-bechmarks",
+  outputTarget in Jmh := target.value / s"scala-${scalaBinaryVersion.value}",
+  version in Jmh := "1.6.3",
+  generatorType in Jmh := "asm")
 
 lazy val dist = project disablePlugins AssemblyPlugin settings (
   scalaVersion := "2.11.6",
