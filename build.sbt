@@ -43,7 +43,7 @@ lazy val api = project in file("language-bindings") / "scala" enablePlugins Auto
   buildsUberJar,
   rxRedisSettings,
   name := "rx-redis-scala",
-  libraryDependencies += "io.reactivex" %% "rxscala" % rxScalaVersion.value)
+  libraryDependencies += "io.reactivex" %% "rxscala" % rxScalaVersion.value exclude("org.scala-lang", "scala-library"))
 
 lazy val japi = project in file("language-bindings") / "java" enablePlugins AutomateHeaderPlugin dependsOn client settings (
   buildsUberJar,
