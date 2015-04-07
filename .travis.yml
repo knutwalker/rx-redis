@@ -7,11 +7,19 @@ jdk:
 scala:
   - 2.11.2
 
+cache:
+  directories:
+    - $HOME/.m2/repository
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+
 services:
   - redis
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION travis
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
 
 after_success:
   - sbt coveralls

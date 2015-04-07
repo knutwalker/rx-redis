@@ -1,6 +1,6 @@
 [![Travis CI](https://img.shields.io/travis/knutwalker/rx-redis/master.svg)](https://travis-ci.org/knutwalker/rx-redis)
 [![Coverage Status](https://img.shields.io/coveralls/knutwalker/rx-redis/master.svg)](https://coveralls.io/r/knutwalker/rx-redis)
-[![Maven](https://img.shields.io/maven-central/v/de.knutwalker/rx-redis_2.11.svg)](http://search.maven.org/#search|ga|1|g%3A%22de.knutwalker%22%20AND%20a%3Arx-redis-*_2.11)
+[![Maven](https://img.shields.io/maven-central/v/de.knutwalker/rx-redis-scala_2.11.svg)](http://search.maven.org/#search|ga|1|g%3A%22de.knutwalker%22%20AND%20a%3Arx-redis-*_2.11)
 [![Apache License](https://img.shields.io/badge/license-APACHE_2-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 RxRedis

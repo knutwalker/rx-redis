@@ -68,6 +68,10 @@ lazy val tests = project enablePlugins AutomateHeaderPlugin configs (Integration
   inConfig(IntegrationTest)(List(fork := true)),
   testOptions in Test := List(Tests.Filter(unitFilter)),
   testOptions in RegressionTest := List(Tests.Filter(regFilter)),
+  parallelExecution in Test := false,
+  parallelExecution in IntegrationTest := false,
+  scalacOptions in Test += "-Yrangepos",
+  scalacOptions in IntegrationTest += "-Yrangepos",
   name := "rx-redis-tests",
   libraryDependencies ++= List(
     "org.scalatest"  %% "scalatest"         % "2.2.4"  % "it,test",
@@ -129,7 +133,6 @@ lazy val commonSettings = List(
     "-Ywarn-numeric-widen",
     "-Ywarn-unused",
     "-Ywarn-unused-import"),
-  scalacOptions in Test += "-Yrangepos",
   scalacOptions in (Compile, console) ~= (_ filterNot (x ⇒ x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
   shellPrompt := { state ⇒
     val name = Project.extract(state).currentRef.project
