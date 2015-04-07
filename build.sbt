@@ -87,7 +87,7 @@ lazy val benchmarks = project enablePlugins AutomateHeaderPlugin dependsOn clien
   generatorType in Jmh := "asm")
 
 lazy val dist = project disablePlugins AssemblyPlugin settings (
-  scalaVersion := "2.11.6",
+  scalaVersion := "2.11.4",
   target := baseDirectory.value)
 
 // ====================================================================
@@ -100,7 +100,7 @@ lazy val buildSettings  = List(
           organization := "de.knutwalker",
   organizationHomepage := Some(url("http://knutwalker.de/")),
            description := "Reactive Extension for Redis",
-          scalaVersion := "2.11.6",
+          scalaVersion := "2.11.4",
           nettyVersion := "4.0.27.Final",
          rxJavaVersion := "1.0.7",
         rxScalaVersion := "0.24.0")
