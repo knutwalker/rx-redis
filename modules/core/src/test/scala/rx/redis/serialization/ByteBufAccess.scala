@@ -65,14 +65,12 @@ trait ByteBufAccess {
     def toString(a: ByteBuf, charset: Charset): String =
       a.toString(charset)
 
-    def writeByte(a: ByteBuf, b: Byte): BytesAccess[ByteBuf] = {
+    def writeByte(a: ByteBuf, b: Byte): Unit = {
       a.writeByte(b)
-      this
     }
 
-    def writeBytes(a: ByteBuf, bs: Array[Byte]): BytesAccess[ByteBuf] = {
+    def writeBytes(a: ByteBuf, bs: Array[Byte]): Unit = {
       a.writeBytes(bs)
-      this
     }
   }
 }

@@ -48,9 +48,9 @@ trait BytesAccess[A] {
 
   /////
 
-  def writeByte(a: A, b: Byte): BytesAccess[A]
+  def writeByte(a: A, b: Byte): Unit
 
-  def writeBytes(a: A, bs: Array[Byte]): BytesAccess[A]
+  def writeBytes(a: A, bs: Array[Byte]): Unit
 }
 
 object BytesAccess {

@@ -23,41 +23,51 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
 
   private def writeSimpleString(bb: A, data: String): Unit = {
     val content = BytesFormat[String].bytes(data)
-    A.writeByte(bb, Plus).writeBytes(bb, content).writeBytes(bb, CrLf)
+    A.writeByte(bb, Plus)
+    A.writeBytes(bb, content)
+    A.writeBytes(bb, CrLf)
   }
 
   private def writeError(bb: A, data: String): Unit = {
     val content = BytesFormat[String].bytes(data)
-    A.writeByte(bb, Minus).writeBytes(bb, content).writeBytes(bb, CrLf)
+    A.writeByte(bb, Minus)
+    A.writeBytes(bb, content)
+    A.writeBytes(bb, CrLf)
   }
 
   private def writeInteger(bb: A, data: Long): Unit = {
     val content = BytesFormat[Long].bytes(data)
-    A.writeByte(bb, Colon).writeBytes(bb, content).writeBytes(bb, CrLf)
+    A.writeByte(bb, Colon)
+    A.writeBytes(bb, content)
+    A.writeBytes(bb, CrLf)
   }
 
   private def writeArray(bb: A, items: Array[RespType]): Unit = {
     val size = BytesFormat[Long].bytes(items.length)
-    A.writeByte(bb, Asterisk).
-      writeBytes(bb, size).
-      writeBytes(bb, CrLf)
+    A.writeByte(bb, Asterisk)
+    A.writeBytes(bb, size)
+    A.writeBytes(bb, CrLf)
     items.foreach(item ⇒ quickApply(item, bb))
   }
 
   private def writeBytes(bb: A, bytes: Array[Byte]): Unit = {
-    A.writeByte(bb, Dollar).
-      writeBytes(bb, BytesFormat[Long].bytes(bytes.length)).
-      writeBytes(bb, CrLf).
-      writeBytes(bb, bytes).
-      writeBytes(bb, CrLf)
+    A.writeByte(bb, Dollar)
+    A.writeBytes(bb, BytesFormat[Long].bytes(bytes.length))
+    A.writeBytes(bb, CrLf)
+    A.writeBytes(bb, bytes)
+    A.writeBytes(bb, CrLf)
   }
 
   def writeNullString(bb: A): Unit = {
-    A.writeByte(bb, Dollar).writeBytes(bb, Nullary).writeBytes(bb, CrLf)
+    A.writeByte(bb, Dollar)
+    A.writeBytes(bb, Nullary)
+    A.writeBytes(bb, CrLf)
   }
 
   def writeNullArray(bb: A): Unit = {
-    A.writeByte(bb, Asterisk).writeBytes(bb, Nullary).writeBytes(bb, CrLf)
+    A.writeByte(bb, Asterisk)
+    A.writeBytes(bb, Nullary)
+    A.writeBytes(bb, CrLf)
   }
   private def quickApply(data: RespType, bb: A): Unit = data match {
     case RespString(s)  ⇒ writeSimpleString(bb, s)
