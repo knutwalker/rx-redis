@@ -28,13 +28,13 @@ lazy val core = project in file("modules") / "core" enablePlugins AutomateHeader
   libraryDependencies ++= List(
     "org.scala-lang"  % "scala-reflect" % scalaVersion.value % "compileonly",
     "io.netty"        % "netty-buffer"  % nettyVersion.value % "test",
-    "org.scalatest"  %% "scalatest"     % "2.2.2"            % "test",
-    "org.scalacheck" %% "scalacheck"    % "1.11.6"           % "test"))
+    "org.scalatest"  %% "scalatest"     % "2.2.4"            % "test",
+    "org.scalacheck" %% "scalacheck"    % "1.12.2"           % "test"))
 
 lazy val commands = project in file("modules") / "commands" enablePlugins AutomateHeaderPlugin dependsOn core settings (
   rxRedisSettings,
   name := "rx-redis-commands",
-  libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.2" % "test")
+  libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test")
 
 lazy val client = project in file("modules") / "client" enablePlugins AutomateHeaderPlugin dependsOn commands configs IntegrationTest settings (
   buildsUberJar,
@@ -46,7 +46,7 @@ lazy val client = project in file("modules") / "client" enablePlugins AutomateHe
     "io.netty"       % "netty-buffer"    % nettyVersion.value,
     "io.netty"       % "netty-common"    % nettyVersion.value,
     "io.reactivex"   % "rxjava"          % rxJavaVersion.value,
-    "org.scalatest" %% "scalatest"       % "2.2.2" % "it,test"))
+    "org.scalatest" %% "scalatest"       % "2.2.4" % "it,test"))
 
 lazy val api = project in file("language-bindings") / "scala" enablePlugins AutomateHeaderPlugin dependsOn client settings (
   buildsUberJar,
