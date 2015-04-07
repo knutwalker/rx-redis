@@ -26,7 +26,9 @@ import rx.redis.util._
 
 import org.scalatest.{ FunSuite, Inside }
 
-class DeserializerSpec extends FunSuite with Inside with ByteBufAccess {
+class DeserializerSpec extends FunSuite with Inside {
+
+  implicit val bytesAccess = ByteBufAccess
 
   @tailrec final def loop(bs: ByteBuf, d: Deserializer[ByteBuf])(f: RespType ⇒ Unit): Unit = {
     f(d(bs))

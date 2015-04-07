@@ -24,8 +24,10 @@ import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.PropertyChecks
 
-class CodecRegressionSpec extends FunSuite with PropertyChecks with ByteBufAccess {
+class CodecRegressionSpec extends FunSuite with PropertyChecks {
   import org.scalacheck.Arbitrary.arbitrary
+
+  implicit val bytesAccess = ByteBufAccess
 
   val genString = Gen.alphaStr suchThat (!_.contains("\r\n")) map RespString
   val genError = Gen.alphaStr suchThat (!_.contains("\r\n")) map RespError

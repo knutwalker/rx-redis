@@ -23,7 +23,9 @@ import rx.redis.util.Utf8
 
 import org.scalatest.{ FunSuite, Inside }
 
-class SerializerSpec extends FunSuite with Inside with ByteBufAccess {
+class SerializerSpec extends FunSuite with Inside {
+
+  implicit val bytesAccess = ByteBufAccess
 
   val alloc = UnpooledByteBufAllocator.DEFAULT
 

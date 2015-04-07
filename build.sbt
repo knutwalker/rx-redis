@@ -11,42 +11,32 @@ import xerial.sbt.Sonatype.SonatypeKeys.{profileName, sonatypeReleaseAll}
 
 lazy val parent = project in file(".") dependsOn (
   api, japi, client, commands, core) aggregate (
-  api, japi, client, commands, core, `java-examples`, `scala-examples`) settings (
+  api, japi, client, commands, core, `java-examples`, `scala-examples`, tests) settings (
   buildsUberJar,
   rxRedisSettings,
   doNotPublish,
   name := "rx-redis-parent")
 
-lazy val core = project in file("modules") / "core" enablePlugins AutomateHeaderPlugin configs RegressionTest settings (
-  mainRegSettings,
+lazy val core = project in file("modules") / "core" enablePlugins AutomateHeaderPlugin settings (
   rxRedisSettings,
   ivyConfigurations += CompileTimeOnly,
   unmanagedClasspath in Compile ++= update.value.select(configurationFilter(CompileTimeOnly.name)),
-  testOptions in Test := List(Tests.Filter(unitFilter)),
-  testOptions in RegressionTest := List(Tests.Filter(regFilter)),
   name := "rx-redis-core",
-  libraryDependencies ++= List(
-    "org.scala-lang"  % "scala-reflect" % scalaVersion.value % "compileonly",
-    "io.netty"        % "netty-buffer"  % nettyVersion.value % "test",
-    "org.scalatest"  %% "scalatest"     % "2.2.4"            % "test",
-    "org.scalacheck" %% "scalacheck"    % "1.12.2"           % "test"))
+  libraryDependencies += "org.scala-lang"  % "scala-reflect" % scalaVersion.value % "compileonly")
 
 lazy val commands = project in file("modules") / "commands" enablePlugins AutomateHeaderPlugin dependsOn core settings (
   rxRedisSettings,
-  name := "rx-redis-commands",
-  libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test")
+  name := "rx-redis-commands")
 
-lazy val client = project in file("modules") / "client" enablePlugins AutomateHeaderPlugin dependsOn commands configs IntegrationTest settings (
+lazy val client = project in file("modules") / "client" enablePlugins AutomateHeaderPlugin dependsOn commands settings (
   buildsUberJar,
-  mainItSettings,
   rxRedisSettings,
   name := "rx-redis-client",
   libraryDependencies ++= List(
     "io.netty"       % "netty-transport" % nettyVersion.value,
     "io.netty"       % "netty-buffer"    % nettyVersion.value,
     "io.netty"       % "netty-common"    % nettyVersion.value,
-    "io.reactivex"   % "rxjava"          % rxJavaVersion.value,
-    "org.scalatest" %% "scalatest"       % "2.2.4" % "it,test"))
+    "io.reactivex"   % "rxjava"          % rxJavaVersion.value))
 
 lazy val api = project in file("language-bindings") / "scala" enablePlugins AutomateHeaderPlugin dependsOn client settings (
   buildsUberJar,
@@ -67,6 +57,20 @@ lazy val `scala-examples` = project in file("examples") / "scala" enablePlugins 
 lazy val `java-examples` = project in file("examples") / "java" enablePlugins AutomateHeaderPlugin dependsOn japi settings (
   rxRedisSettings,
   name := "rx-redis-java-example")
+
+lazy val tests = project enablePlugins AutomateHeaderPlugin configs (IntegrationTest, RegressionTest) dependsOn (client, api, japi) settings (
+  rxRedisSettings,
+  doNotPublish,
+  Defaults.itSettings,
+  // Like to use testSettings, but IntelliJ doesn't get it right
+  inConfig(RegressionTest)(Defaults.testTasks),
+  inConfig(IntegrationTest)(List(fork := true)),
+  testOptions in Test := List(Tests.Filter(unitFilter)),
+  testOptions in RegressionTest := List(Tests.Filter(regFilter)),
+  name := "rx-redis-tests",
+  libraryDependencies ++= List(
+    "org.scalatest"  %% "scalatest"         % "2.2.4"  % "it,test",
+    "org.scalacheck" %% "scalacheck"        % "1.12.2" % "test"))
 
 lazy val dist = project disablePlugins AssemblyPlugin settings (
   scalaVersion := "2.11.6",
@@ -275,11 +279,3 @@ def runTestIn(conf: Configuration) = ReleaseStep(
 
 def regFilter(name: String): Boolean = name endsWith "RegressionSpec"
 def unitFilter(name: String): Boolean = (name endsWith "Spec") && !regFilter(name)
-
-// Like to use testSettings, but IntelliJ doesn't get it right
-lazy val mainRegSettings = inConfig(RegressionTest)(Defaults.testTasks)
-
-lazy val mainItSettings = Defaults.itSettings ++ inConfig(IntegrationTest)(List(
-  logBuffered := false,
-  fork := true
-))

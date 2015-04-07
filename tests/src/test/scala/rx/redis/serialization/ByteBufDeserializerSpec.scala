@@ -24,7 +24,7 @@ import rx.redis.util.Utf8
 
 import org.scalatest.{ FunSuite, Inside }
 
-class DeserializerSpec extends FunSuite with Inside {
+class ByteBufDeserializerSpec extends FunSuite with Inside {
 
   val alloc = UnpooledByteBufAllocator.DEFAULT
 
