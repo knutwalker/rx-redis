@@ -81,7 +81,6 @@ lazy val benchmarks = project enablePlugins AutomateHeaderPlugin dependsOn clien
   jmhSettings,
   name := "rx-redis-bechmarks",
   outputTarget in Jmh := target.value / s"scala-${scalaBinaryVersion.value}",
-  version in Jmh := "1.6.3",
   generatorType in Jmh := "asm")
 
 lazy val dist = project disablePlugins AssemblyPlugin settings (
