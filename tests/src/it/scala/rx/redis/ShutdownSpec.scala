@@ -17,20 +17,21 @@
 package rx.redis
 
 import rx.redis.clients.RawClient
+import rx.redis.util.{DefaultRedisHost, DefaultRedisPort}
 
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class ShutdownSpec extends FunSuite with BeforeAndAfter {
 
   private def execute(f: RawClient => Unit) = {
-    val client = RawClient("127.0.0.1", 6379)
+    val client = RawClient(DefaultRedisHost, DefaultRedisPort)
     client.command(cmd"FLUSHDB").toBlocking.single()
     f(client)
     client.disconnect().toBlocking.lastOrDefault(())
   }
 
   private def getFoo = {
-    val client = RawClient("127.0.0.1", 6379)
+    val client = RawClient(DefaultRedisHost, DefaultRedisPort)
     val single = client.get[Long]("foo").toBlocking.single()
     client.disconnect().toBlocking.lastOrDefault(())
     single.getOrElse(-1L)

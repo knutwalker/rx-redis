@@ -16,9 +16,30 @@
 
 package rx.redis
 
-import java.nio.charset.StandardCharsets
+import scala.util.{ Try, Properties }
+
+import java.nio.charset.{ Charset, StandardCharsets }
+import java.util.Locale
 
 package object util {
 
-  val Utf8 = StandardCharsets.UTF_8
+  val Utf8: Charset =
+    StandardCharsets.UTF_8
+
+  val RedisHost: Option[String] =
+    prop("rx.redis.host")
+
+  val RedisPort: Option[Int] =
+    prop("rx.redis.port").flatMap(p ⇒ Try(p.toInt).toOption)
+
+  val DefaultRedisHost: String =
+    RedisHost.getOrElse("127.0.0.1")
+
+  val DefaultRedisPort: Int =
+    RedisPort.getOrElse(6379)
+
+  def prop(name: String): Option[String] = {
+    def upper: String = name.split('.').map(_.toUpperCase(Locale.ENGLISH)).mkString("_")
+    Properties.propOrNone(name).orElse(Properties.envOrNone(upper))
+  }
 }

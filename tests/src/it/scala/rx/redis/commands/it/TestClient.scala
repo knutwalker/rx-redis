@@ -18,16 +18,17 @@ package rx.redis.commands.it
 
 import rx.redis._
 import rx.redis.clients.RawClient
+import rx.redis.util.{DefaultRedisHost, DefaultRedisPort}
 
 import org.scalatest.{BeforeAndAfter, Suite}
 
 
 trait TestClient extends BeforeAndAfter { this: Suite =>
 
-  private var _client: RawClient = _
+  private[this] var _client: RawClient = _
 
   before {
-    _client = RawClient("127.0.0.1", 6379)
+    _client = RawClient(DefaultRedisHost, DefaultRedisPort)
     _client.command(cmd"FLUSHDB").toBlocking.first()
   }
 
@@ -35,6 +36,6 @@ trait TestClient extends BeforeAndAfter { this: Suite =>
     _client.disconnect().toBlocking.lastOrDefault(())
   }
 
-  def client = _client
+  protected def client = _client
 
 }

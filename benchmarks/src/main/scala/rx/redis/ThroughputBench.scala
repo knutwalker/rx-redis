@@ -35,7 +35,7 @@ class ThroughputBench {
 
   @Setup(Level.Iteration)
   def prepare(): Unit = {
-    client = RawClient("127.0.0.1", 6379)
+    client = RawClient(util.DefaultRedisHost, util.DefaultRedisPort)
     client.command(cmd"FLUSHDB").toBlocking.single()
   }
 

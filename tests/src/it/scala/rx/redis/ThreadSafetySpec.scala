@@ -20,6 +20,7 @@ import rx.functions.Action1
 
 import rx.redis.clients.RawClient
 import rx.redis.resp.{RespBytes, RespType}
+import rx.redis.util.{DefaultRedisHost, DefaultRedisPort}
 
 import org.scalatest.FunSuite
 
@@ -64,7 +65,7 @@ class ThreadSafetySpec extends FunSuite {
 
   test("must not diverge when shared amongst threads") {
 
-    val client = RawClient("127.0.0.1", 6379)
+    val client = RawClient(DefaultRedisHost, DefaultRedisPort)
 
     def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, _ => ())
 
@@ -81,7 +82,7 @@ class ThreadSafetySpec extends FunSuite {
 
   test("must not diverge when used in isolation") {
 
-    def client = RawClient("127.0.0.1", 6379)
+    def client = RawClient(DefaultRedisHost, DefaultRedisPort)
 
     def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, { c =>
       c.disconnect().toBlocking.lastOrDefault(())
