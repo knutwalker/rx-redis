@@ -44,6 +44,8 @@ case class RespArray(elements: Array[RespType]) extends RespType {
       util.Arrays.equals(elements.asInstanceOf[Array[AnyRef]], other.asInstanceOf[Array[AnyRef]])
     case _ ⇒ super.equals(obj)
   }
+  override def hashCode(): Int =
+    util.Arrays.hashCode(elements.asInstanceOf[Array[AnyRef]])
 }
 
 case class RespBytes(bytes: Array[Byte]) extends RespType {
@@ -51,6 +53,9 @@ case class RespBytes(bytes: Array[Byte]) extends RespType {
     case RespBytes(bs) ⇒ util.Arrays.equals(bytes, bs)
     case _             ⇒ super.equals(obj)
   }
+
+  override def hashCode(): Int =
+    util.Arrays.hashCode(bytes)
 
   override def toString: String = new String(bytes, Utf8)
 
@@ -71,15 +76,3 @@ case object NullString extends RespType {
 case object NullArray extends RespType {
   override def toString: String = "NULL"
 }
-
-//sealed abstract class ErrorType extends RespType
-//
-//case object NotEnoughData extends ErrorType {
-//  override def toString: String = "[INCOMPLETE]"
-//}
-//case class ProtocolError(pos: Int, found: Char, expected: List[Byte]) extends ErrorType {
-//  override def toString: String = {
-//    val e = expected mkString ", "
-//    s"Protocol error at char $pos, expected [$e], but found [$found]"
-//  }
-//}
