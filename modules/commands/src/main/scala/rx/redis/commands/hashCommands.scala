@@ -16,16 +16,22 @@
 
 package rx.redis.commands
 
-import rx.redis.serialization.{ BytesFormat, Reads, Writes }
+import rx.redis.serialization.{ Id, BytesFormat, Reads, Writes }
 
 case class HGet(key: String, field: String)
 object HGet {
-  implicit val writes = Writes.writes[HGet]
-  implicit def readsFormat[A: BytesFormat] = Reads.opt[HGet, A]
+  implicit val writes: Writes[HGet] =
+    Writes.writes[HGet]
+
+  implicit def readsFormat[A: BytesFormat]: Reads[HGet, Id] { type R = Option[A] } =
+    Reads.opt[HGet, A]
 }
 
 case class HGetAll(key: String)
 object HGetAll {
-  implicit val writes = Writes.writes[HGetAll]
-  implicit def readsFormat[A: BytesFormat] = Reads.listPair[HGetAll, String, A]
+  implicit val writes: Writes[HGetAll] =
+    Writes.writes[HGetAll]
+
+  implicit def readsFormat[A: BytesFormat]: Reads[HGetAll, List] { type R = (String, A) } =
+    Reads.listPair[HGetAll, String, A]
 }

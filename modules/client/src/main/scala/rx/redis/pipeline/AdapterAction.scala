@@ -26,8 +26,8 @@ class AdapterAction private (private[this] val handle: Handle) {
   private[this] var _cmd: RespType = _
   private[this] var _sender: Observer[RespType] = _
 
-  def cmd = _cmd
-  def sender = _sender
+  def cmd: RespType = _cmd
+  def sender: Observer[RespType] = _sender
 
   private def update(cmd: RespType, sender: Observer[RespType]): Unit = {
     _cmd = cmd

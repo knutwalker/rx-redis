@@ -18,70 +18,103 @@ package rx.redis.commands
 
 import scala.concurrent.duration.FiniteDuration
 
-import rx.redis.serialization.{ BytesFormat, Reads, Writes }
+import rx.redis.serialization.{ Id, BytesFormat, Reads, Writes }
 
 case class Get(key: String)
 object Get {
-  implicit val writes = Writes.writes[Get]
-  implicit def readsFormat[A: BytesFormat] = Reads.opt[Get, A]
+  implicit val writes: Writes[Get] =
+    Writes.writes[Get]
+
+  implicit def readsFormat[A: BytesFormat]: Reads[Get, Id] { type R = Option[A] } =
+    Reads.opt[Get, A]
 }
 
 case class Set[A: BytesFormat](key: String, value: A)
 object Set {
-  implicit def writes[A: BytesFormat] = Writes.writes[Set[A]]
-  implicit val readsFormat = Reads.bool[Set[_]]
+  implicit def writes[A: BytesFormat]: Writes[Set[A]] =
+    Writes.writes[Set[A]]
+
+  implicit val readsFormat: Reads[Set[_], Id] { type R = Boolean } =
+    Reads.bool[Set[_]]
 }
 
 case class SetEx[A: BytesFormat](key: String, expires: FiniteDuration, value: A)
 object SetEx {
-  implicit def writes[A: BytesFormat] = Writes.writes[SetEx[A]]
-  implicit val readsFormat = Reads.bool[SetEx[_]]
+  implicit def writes[A: BytesFormat]: Writes[SetEx[A]] =
+    Writes.writes[SetEx[A]]
+
+  implicit val readsFormat: Reads[SetEx[_], Id] { type R = Boolean } =
+    Reads.bool[SetEx[_]]
 }
 
 case class SetNx[A: BytesFormat](key: String, value: A)
 object SetNx {
-  implicit def writes[A: BytesFormat] = Writes.writes[SetNx[A]]
-  implicit val readsFormat = Reads.bool[SetNx[_]]
+  implicit def writes[A: BytesFormat]: Writes[SetNx[A]] =
+    Writes.writes[SetNx[A]]
+
+  implicit val readsFormat: Reads[SetNx[_], Id] { type R = Boolean } =
+    Reads.bool[SetNx[_]]
 }
 
 case class Incr(key: String)
 object Incr {
-  implicit val writes = Writes.writes[Incr]
-  implicit val readsFormat = Reads.int[Incr]
+  implicit val writes: Writes[Incr] =
+    Writes.writes[Incr]
+
+  implicit val readsFormat: Reads[Incr, Id] { type R = Long } =
+    Reads.int[Incr]
 }
 
 case class Decr(key: String)
 object Decr {
-  implicit val writes = Writes.writes[Decr]
-  implicit val readsFormat = Reads.int[Decr]
+  implicit val writes: Writes[Decr] =
+    Writes.writes[Decr]
+
+  implicit val readsFormat: Reads[Decr, Id] { type R = Long } =
+    Reads.int[Decr]
 }
 
 case class IncrBy(key: String, amount: Long)
 object IncrBy {
-  implicit val writes = Writes.writes[IncrBy]
-  implicit val readsFormat = Reads.int[IncrBy]
+  implicit val writes: Writes[IncrBy] =
+    Writes.writes[IncrBy]
+
+  implicit val readsFormat: Reads[IncrBy, Id] { type R = Long } =
+    Reads.int[IncrBy]
 }
 
 case class DecrBy(key: String, amount: Long)
 object DecrBy {
-  implicit val writes = Writes.writes[DecrBy]
-  implicit val readsFormat = Reads.int[DecrBy]
+  implicit val writes: Writes[DecrBy] =
+    Writes.writes[DecrBy]
+
+  implicit val readsFormat: Reads[DecrBy, Id] { type R = Long } =
+    Reads.int[DecrBy]
 }
 
 case class MGet(keys: String*)
 object MGet {
-  implicit val writes = Writes.writes[MGet]
-  implicit def readsFormat[A: BytesFormat] = Reads.listOpt[MGet, A]
+  implicit val writes: Writes[MGet] =
+    Writes.writes[MGet]
+
+  implicit def readsFormat[A: BytesFormat]: Reads[MGet, List] { type R = Option[A] } =
+    Reads.listOpt[MGet, A]
 }
 
 case class MSet[A: BytesFormat](keys: (String, A)*)
 object MSet {
-  implicit def writes[A: BytesFormat] = Writes.writes[MSet[A]]
-  implicit val readsFormat = Reads.bool[MSet[_]]
+  implicit def writes[A: BytesFormat]: Writes[MSet[A]] =
+    Writes.writes[MSet[A]]
+
+  implicit val readsFormat: Reads[MSet[_], Id] { type R = Boolean } =
+    Reads.bool[MSet[_]]
 }
 
 case class StrLen(key: String)
 object StrLen {
-  implicit val writes = Writes.writes[StrLen]
-  implicit val readsFormat = Reads.int[StrLen]
+  implicit val writes: Writes[StrLen] =
+    Writes.writes[StrLen]
+
+  implicit val readsFormat: Reads[StrLen, Id] { type R = Long } =
+    Reads.int[StrLen]
 }
