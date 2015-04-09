@@ -93,7 +93,7 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
           read(bytes, Lf)
           n * neg
         case Minus ⇒ parseNumInt(bytes, n, -1)
-        case b     ⇒ parseNumInt(bytes, (n * 10) + (b - '0'), neg)
+        case _     ⇒ parseNumInt(bytes, (n * 10) + (current - '0'), neg)
       }
     }
   }
@@ -109,7 +109,7 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
           read(bytes, Lf)
           n * neg
         case Minus ⇒ parseNumLong(bytes, n, -1)
-        case b     ⇒ parseNumLong(bytes, (n * 10) + (b - '0'), neg)
+        case _     ⇒ parseNumLong(bytes, (n * 10) + (current - '0'), neg)
       }
     }
   }
