@@ -43,7 +43,7 @@ class KeyCommandsSpec extends ItCommandsSuite {
     client.expire("foo", 2.seconds)
     Thread.sleep(1000)
     assert(client.exists("foo").synch)
-    Thread.sleep(1001)
+    Thread.sleep(2000)
     assert(!client.exists("foo").synch)
   }
 
