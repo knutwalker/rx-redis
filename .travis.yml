@@ -12,6 +12,7 @@ cache:
     - $HOME/.m2/repository
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
+    - $HOME/.sbt/launchers/
 
 services:
   - redis
