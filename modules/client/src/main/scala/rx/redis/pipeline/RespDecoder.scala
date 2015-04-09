@@ -76,14 +76,22 @@ private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
   }
 
   private[this] final def ensureSize(alloc: ByteBufAllocator, size: Int): ByteBuf = {
-    var newBuf = buffered
-    if (newBuf.writerIndex > newBuf.maxCapacity - size) {
-      val buf = alloc.buffer(newBuf.readableBytes + size)
-      buf.writeBytes(newBuf)
-      newBuf.release()
-      newBuf = buf
-    }
+    val current = buffered
+    val newBuf =
+      if (current.writerIndex > current.maxCapacity - size) {
+        resizeBuffer(alloc, size, current)
+      } else {
+        current
+      }
+
     buffered = null
     newBuf
+  }
+
+  private[this] final def resizeBuffer(alloc: ByteBufAllocator, size: Int, old: ByteBuf): ByteBuf = {
+    val buf = alloc.buffer(old.readableBytes + size)
+    buf.writeBytes(old)
+    old.release()
+    buf
   }
 }
