@@ -16,3 +16,5 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 benchmarks/jmh-result.scsv
+benchmarks/finagle/jmh-result.scsv
+benchmarks/scala-redis-nb/jmh-result.scsv

@@ -81,7 +81,30 @@ lazy val benchmarks = project enablePlugins AutomateHeaderPlugin dependsOn clien
   jmhSettings,
   outputTarget in Jmh := target.value / s"scala-${scalaBinaryVersion.value}",
   generatorType in Jmh := "asm",
-  mainClass in (Compile, run) := Some("rx.redis.Main"))
+  mainClass in (Compile, run) := Some("rx.redis.Main"),
+  libraryDependencies ++= List(
+    "redis.clients"  % "jedis"       % "2.7.0",
+    "org.redisson"   % "redisson"    % "1.2.1",
+    "net.debasishg" %% "redisclient" % "2.15"))
+
+lazy val `benchmarks-finagle` = project in file("benchmarks") / "finagle" enablePlugins AutomateHeaderPlugin settings (
+  rxRedisSettings,
+  doNotPublish,
+  scalaVersion := "2.10.4",
+  jmhSettings,
+  outputTarget in Jmh := target.value / s"scala-${scalaBinaryVersion.value}",
+  generatorType in Jmh := "asm",
+  mainClass in (Compile, run) := Some("rx.redis.Main"),
+  libraryDependencies += "com.twitter" %% "finagle-redis" % "6.24.0")
+
+lazy val `benchmarks-scala-redis-nb` = project in file("benchmarks") / "scala-redis-nb" enablePlugins AutomateHeaderPlugin dependsOn core settings (
+  rxRedisSettings,
+  doNotPublish,
+  jmhSettings,
+  outputTarget in Jmh := target.value / s"scala-${scalaBinaryVersion.value}",
+  generatorType in Jmh := "asm",
+  mainClass in (Compile, run) := Some("rx.redis.Main"),
+  libraryDependencies += "net.debasishg" %% "redisreact"  % "0.7")
 
 lazy val dist = project disablePlugins AssemblyPlugin settings (
   scalaVersion := "2.11.4",
@@ -103,33 +126,35 @@ lazy val buildSettings  = List(
         rxScalaVersion := "0.24.0")
 
 lazy val commonSettings = List(
-  scalacOptions ++= List(
-    "-deprecation",
-    "-encoding",  "UTF-8",
-    "-feature",
-    "-language:existentials",
-    "-language:higherKinds",
-    "-language:implicitConversions",
-    "-language:postfixOps",
-    "-unchecked",
-    "-target:jvm-1.7",
-    "-Xcheckinit",
-    "-Xfatal-warnings",
-    "-Xfuture",
-    "-Xlint:_",
-    "-Yclosure-elim",
-    "-Yconst-opt",
-    "-Ydead-code",
-    "-Yno-adapted-args",
-    "-Ywarn-adapted-args",
-    "-Ywarn-dead-code",
-    "-Ywarn-inaccessible",
-    "-Ywarn-infer-any",
-    "-Ywarn-nullary-override",
-    "-Ywarn-nullary-unit",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-unused",
-    "-Ywarn-unused-import"),
+  scalacOptions ++= {
+    val crossOpts = scalaBinaryVersion.value match {
+      case "2.11" ⇒ List(
+        "-Xlint:_", "-Yconst-opt", "-Ywarn-infer-any",
+        "-Ywarn-unused", "-Ywarn-unused-import")
+      case _      ⇒ List("-Xlint")
+    }
+    crossOpts ++ List(
+      "-deprecation",
+      "-encoding",  "UTF-8",
+      "-feature",
+      "-language:existentials",
+      "-language:higherKinds",
+      "-language:implicitConversions",
+      "-language:postfixOps",
+      "-unchecked",
+      "-target:jvm-1.7",
+      "-Xcheckinit",
+      "-Xfatal-warnings",
+      "-Xfuture",
+      "-Yclosure-elim",
+      "-Ydead-code",
+      "-Yno-adapted-args",
+      "-Ywarn-adapted-args",
+      "-Ywarn-dead-code",
+      "-Ywarn-inaccessible",
+      "-Ywarn-nullary-override",
+      "-Ywarn-nullary-unit",
+      "-Ywarn-numeric-widen")},
   scalacOptions in (Compile, console) ~= (_ filterNot (x ⇒ x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
   shellPrompt := { state ⇒
     val name = Project.extract(state).currentRef.project
@@ -289,3 +314,4 @@ def regFilter(name: String): Boolean = name endsWith "RegressionSpec"
 def unitFilter(name: String): Boolean = (name endsWith "Spec") && !regFilter(name)
 
 addCommandAlias("travis", ";clean;coverage;test;it:test;coverageReport;coverageAggregate")
+addCommandAlias("ping-benchmark", ";benchmarks/clean;benchmarks-finagle/clean;benchmarks-scala-redis-nb/clean;benchmarks/run Ping;benchmarks-finagle/run Ping;benchmarks-scala-redis-nb/run Ping")
