@@ -31,9 +31,9 @@ object ByteBufDeserializer {
 
   case class ParseAllResult(data: immutable.Seq[RespType], hasRemainder: Boolean)
 
-  private final val INSTANCE = new Deserializer[ByteBuf]()(ByteBufAccess)
+  private[this] final val INSTANCE = new Deserializer[ByteBuf]()(ByteBufAccess)
 
-  private def releaseAfterUse[A](bb: ByteBuf)(f: ⇒ A): A =
+  private[this] def releaseAfterUse[A](bb: ByteBuf)(f: ⇒ A): A =
     try f finally bb.release()
 
   def apply(bb: ByteBuf): RespType = INSTANCE(bb)

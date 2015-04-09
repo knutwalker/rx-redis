@@ -31,36 +31,36 @@ trait Reads[-A, M[_]] {
 object Reads {
   @inline def apply[A, M[_]](implicit A: Reads[A, M]): Reads[A, M] = A
 
-  private val boolPf: PartialFunction[RespType, Boolean] = {
+  private[this] val boolPf: PartialFunction[RespType, Boolean] = {
     case RespString(s) if s == "OK" ⇒ true
     case RespInteger(i)             ⇒ i > 0
   }
 
-  private val intPf: PartialFunction[RespType, Long] = {
+  private[this] val intPf: PartialFunction[RespType, Long] = {
     case RespInteger(l) ⇒ l
   }
 
-  private def optPf[T](implicit T: BytesFormat[T]): PartialFunction[RespType, Option[T]] = {
+  private[this] def optPf[T](implicit T: BytesFormat[T]): PartialFunction[RespType, Option[T]] = {
     case RespBytes(b) ⇒ Some(T.value(b))
     case NullString   ⇒ None
   }
 
-  private def valuePf[T](implicit T: BytesFormat[T]): PartialFunction[RespType, T] = {
+  private[this] def valuePf[T](implicit T: BytesFormat[T]): PartialFunction[RespType, T] = {
     case RespBytes(b)  ⇒ T.value(b)
     case RespString(s) ⇒ T.value(BytesFormat[String].bytes(s))
   }
 
-  private def listPf[T: BytesFormat]: PartialFunction[RespType, List[T]] = {
+  private[this] def listPf[T: BytesFormat]: PartialFunction[RespType, List[T]] = {
     case RespArray(items) ⇒
       items.collect(valuePf[T])(collection.breakOut)
   }
 
-  private def listOptPf[T: BytesFormat]: PartialFunction[RespType, List[Option[T]]] = {
+  private[this] def listOptPf[T: BytesFormat]: PartialFunction[RespType, List[Option[T]]] = {
     case RespArray(items) ⇒
       items.collect(optPf[T])(collection.breakOut)
   }
 
-  private def pairPf[T, U](T: PartialFunction[RespType, T], U: PartialFunction[RespType, U]): PartialFunction[RespType, List[(T, U)]] = {
+  private[this] def pairPf[T, U](T: PartialFunction[RespType, T], U: PartialFunction[RespType, U]): PartialFunction[RespType, List[(T, U)]] = {
     case RespArray(items) ⇒
       items.grouped(2).collect {
         case Array(t, u) if T.isDefinedAt(t) && U.isDefinedAt(u) ⇒
@@ -68,7 +68,7 @@ object Reads {
       }.toList
   }
 
-  private def pairPf[T: BytesFormat, U: BytesFormat]: PartialFunction[RespType, List[(T, U)]] = {
+  private[this] def pairPf[T: BytesFormat, U: BytesFormat]: PartialFunction[RespType, List[(T, U)]] = {
     val tPf = valuePf[T]
     val uPf = valuePf[U]
     pairPf(tPf, uPf)

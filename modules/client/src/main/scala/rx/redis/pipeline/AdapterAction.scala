@@ -23,11 +23,16 @@ import io.netty.util.Recycler.Handle
 import rx.redis.resp.RespType
 
 class AdapterAction private (private val handle: Handle) {
-  private var _cmd: RespType = _
-  private var _sender: Observer[RespType] = _
+  private[this] var _cmd: RespType = _
+  private[this] var _sender: Observer[RespType] = _
 
   def cmd = _cmd
   def sender = _sender
+
+  def update(cmd: RespType, sender: Observer[RespType]): Unit = {
+    _cmd = cmd
+    _sender = sender
+  }
 
   def recycle(): Unit = {
     _cmd = null
@@ -43,8 +48,7 @@ object AdapterAction {
 
   def apply(cmd: RespType, sender: Observer[RespType]): AdapterAction = {
     val adapterAction = InstanceRecycler.get()
-    adapterAction._cmd = cmd
-    adapterAction._sender = sender
+    adapterAction.update(cmd, sender)
     adapterAction
   }
 }

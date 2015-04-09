@@ -21,28 +21,28 @@ import rx.redis.resp._
 final class Serializer[A](implicit A: BytesAccess[A]) {
   import rx.redis.resp.Protocol._
 
-  private def writeSimpleString(bb: A, data: String): Unit = {
+  private[this] def writeSimpleString(bb: A, data: String): Unit = {
     val content = BytesFormat[String].bytes(data)
     A.writeByte(bb, Plus)
     A.writeBytes(bb, content)
     A.writeBytes(bb, CrLf)
   }
 
-  private def writeError(bb: A, data: String): Unit = {
+  private[this] def writeError(bb: A, data: String): Unit = {
     val content = BytesFormat[String].bytes(data)
     A.writeByte(bb, Minus)
     A.writeBytes(bb, content)
     A.writeBytes(bb, CrLf)
   }
 
-  private def writeInteger(bb: A, data: Long): Unit = {
+  private[this] def writeInteger(bb: A, data: Long): Unit = {
     val content = BytesFormat[Long].bytes(data)
     A.writeByte(bb, Colon)
     A.writeBytes(bb, content)
     A.writeBytes(bb, CrLf)
   }
 
-  private def writeArray(bb: A, items: Array[RespType]): Unit = {
+  private[this] def writeArray(bb: A, items: Array[RespType]): Unit = {
     val size = BytesFormat[Long].bytes(items.length.toLong)
     A.writeByte(bb, Asterisk)
     A.writeBytes(bb, size)
@@ -50,7 +50,7 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
     items.foreach(item ⇒ quickApply(item, bb))
   }
 
-  private def writeBytes(bb: A, bytes: Array[Byte]): Unit = {
+  private[this] def writeBytes(bb: A, bytes: Array[Byte]): Unit = {
     A.writeByte(bb, Dollar)
     A.writeBytes(bb, BytesFormat[Long].bytes(bytes.length.toLong))
     A.writeBytes(bb, CrLf)
@@ -69,7 +69,7 @@ final class Serializer[A](implicit A: BytesAccess[A]) {
     A.writeBytes(bb, Nullary)
     A.writeBytes(bb, CrLf)
   }
-  private def quickApply(data: RespType, bb: A): Unit = data match {
+  private[this] def quickApply(data: RespType, bb: A): Unit = data match {
     case RespString(s)  ⇒ writeSimpleString(bb, s)
     case RespError(e)   ⇒ writeError(bb, e)
     case RespInteger(l) ⇒ writeInteger(bb, l)

@@ -30,8 +30,8 @@ import rx.redis.resp.RespType
 import scala.language.implicitConversions
 
 object RxNettyClient {
-  private final val threadFactory = new DefaultThreadFactory("rx-redis", true)
-  private final val eventLoopGroup = new SharedNioEventLoopGroup(0, threadFactory)
+  private[this] final val threadFactory = new DefaultThreadFactory("rx-redis", true)
+  private[this] final val eventLoopGroup = new SharedNioEventLoopGroup(0, threadFactory)
 
   def apply(host: String, port: Int): NettyClient = {
     val channelInitializer = new RxChannelInitializer(optimizeForThroughput = true)
@@ -51,27 +51,30 @@ object RxNettyClient {
     new RxNettyClient(channel)
   }
 
-  private final class ChannelCloseSubscribe(channel: Channel) extends OnSubscribe[Unit] {
+  private def channelClose(channel: Channel): OnSubscribe[Unit] =
+    new ChannelCloseSubscribe(channel)
+
+  private[this] final class ChannelCloseSubscribe(channel: Channel) extends OnSubscribe[Unit] {
     def call(subscriber: Subscriber[_ >: Unit]): Unit =
       channel.close().addListener(
         new ChannelCloseListener(subscriber, channel.eventLoop.parent))
   }
 
-  private final class ChannelCloseListener[S <: Subscriber[_ >: Unit]](subscriber: S, eventLoopGroup: EventLoopGroup) extends ChannelFutureListener {
+  private[this] final class ChannelCloseListener[S <: Subscriber[_ >: Unit]](subscriber: S, eventLoopGroup: EventLoopGroup) extends ChannelFutureListener {
     def operationComplete(future: ChannelFuture): Unit =
       futureSubscription(
         future, subscriber,
         eventLoopGroup.shutdownGracefully().addListener(new ShutdownListener(subscriber)))
   }
 
-  private final class ShutdownListener[F <: Future[_], S <: Subscriber[_ >: Unit]](subscriber: S) extends GenericFutureListener[F] {
+  private[this] final class ShutdownListener[F <: Future[_], S <: Subscriber[_ >: Unit]](subscriber: S) extends GenericFutureListener[F] {
     def operationComplete(future: F): Unit =
       futureSubscription(
         future, subscriber,
         subscriber.onCompleted())
   }
 
-  private final def futureSubscription[F <: Future[_], S <: Subscriber[_ >: Unit]](future: F, subscriber: S, onNext: ⇒ Unit): Unit =
+  private[this] final def futureSubscription[F <: Future[_], S <: Subscriber[_ >: Unit]](future: F, subscriber: S, onNext: ⇒ Unit): Unit =
     if (subscriber.isUnsubscribed) {
       future.cancel(true)
     } else if (future.isCancelled) {
@@ -86,15 +89,15 @@ object RxNettyClient {
 
 private[redis] class RxNettyClient(channel: Channel) extends NettyClient {
   @inline
-  private final implicit def writeToRunnable(f: ⇒ ChannelFuture): Runnable = new Runnable {
+  private[this] final implicit def writeToRunnable(f: ⇒ ChannelFuture): Runnable = new Runnable {
     def run(): Unit = f
   }
 
-  private final val eventLoop = channel.eventLoop()
-  private final val pipeline = channel.pipeline()
+  private[this] final val eventLoop = channel.eventLoop()
+  private[this] final val pipeline = channel.pipeline()
 
-  private final val emptyPromise = channel.voidPromise()
-  private final val flushTask = new Runnable {
+  private[this] final val emptyPromise = channel.voidPromise()
+  private[this] final val flushTask = new Runnable {
     def run(): Unit = pipeline.flush()
   }
 
@@ -113,6 +116,6 @@ private[redis] class RxNettyClient(channel: Channel) extends NettyClient {
   }
 
   def close(): Observable[Unit] = {
-    Observable.create(new RxNettyClient.ChannelCloseSubscribe(channel)).cache()
+    Observable.create(RxNettyClient.channelClose(channel)).cache()
   }
 }

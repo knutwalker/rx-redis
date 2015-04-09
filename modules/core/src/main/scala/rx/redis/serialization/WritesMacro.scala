@@ -27,38 +27,38 @@ class WritesMacro(val c: blackbox.Context) {
 
   def writes[A: c.WeakTypeTag]: c.Tree = macroImpl[A, BytesFormat, Writes]
 
-  private def fail(msg: String) =
+  private[this] def fail(msg: String) =
     c.abort(c.enclosingPosition, "\n" + msg)
 
-  private val ra = q"rx.redis.resp.RespArray"
-  private val rb = q"rx.redis.resp.RespBytes"
+  private[this] val ra = q"rx.redis.resp.RespArray"
+  private[this] val rb = q"rx.redis.resp.RespBytes"
 
-  private class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
-    private val proper: Type = field.infoIn(tpe).resultType
-    private val access = q"value.${field.name}"
+  private[this] class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
+    private[this] val proper: Type = field.infoIn(tpe).resultType
+    private[this] val access = q"value.${field.name}"
 
-    private val isRepeated =
+    private[this] val isRepeated =
       proper.resultType.typeSymbol == definitions.RepeatedParamClass
 
-    private val neededTypeClassType: Type =
+    private[this] val neededTypeClassType: Type =
       if (!isRepeated) proper
       else proper.typeArgs.head
 
-    private val isTupleType =
+    private[this] val isTupleType =
       neededTypeClassType.typeArgs.nonEmpty &&
         definitions.TupleClass.seq.exists(t ⇒ neededTypeClassType.baseType(t) != NoType)
 
-    private val tupleSize =
+    private[this] val tupleSize =
       if (!isTupleType) q"1"
       else q"${neededTypeClassType.typeArgs.size}"
 
-    private val neededTypeClasses: List[Type] =
+    private[this] val neededTypeClasses: List[Type] =
       if (!isTupleType)
         List(appliedType(tc.typeConstructor, neededTypeClassType :: Nil))
       else
         neededTypeClassType.typeArgs.map(t ⇒ appliedType(tc.typeConstructor, t :: Nil))
 
-    private def resolvedOneTypeClass(tc: Type): c.Tree = {
+    private[this] def resolvedOneTypeClass(tc: Type): c.Tree = {
       val paramWrites = c.inferImplicitValue(tc)
       if (paramWrites == EmptyTree) {
         fail(
@@ -68,18 +68,18 @@ class WritesMacro(val c: blackbox.Context) {
       paramWrites
     }
 
-    private val resolvedTypeClasses: List[c.Tree] = {
+    private[this] val resolvedTypeClasses: List[c.Tree] = {
       neededTypeClasses.map(resolvedOneTypeClass)
     }
 
-    private def generateSingleArg(value: c.Tree, tc: c.Tree): c.Tree = {
+    private[this] def generateSingleArg(value: c.Tree, tc: c.Tree): c.Tree = {
       q"buf += $rb($tc.bytes($value))"
     }
 
-    private def generateSimpleArg(value: c.Tree): c.Tree =
+    private[this] def generateSimpleArg(value: c.Tree): c.Tree =
       generateSingleArg(value, resolvedTypeClasses.head)
 
-    private def generateTupleArg(value: c.Tree): c.Tree = {
+    private[this] def generateTupleArg(value: c.Tree): c.Tree = {
       val tuples =
         resolvedTypeClasses.zipWithIndex map {
           case (tcls, i) ⇒
@@ -89,7 +89,7 @@ class WritesMacro(val c: blackbox.Context) {
       q"..$tuples"
     }
 
-    private def generateRepeatedArgs(): c.Tree = {
+    private[this] def generateRepeatedArgs(): c.Tree = {
       val items = fq"x <- $access"
       val singleArg = generateSimpleArg(q"x")
       q"""
@@ -99,7 +99,7 @@ class WritesMacro(val c: blackbox.Context) {
       """
     }
 
-    private def generateRepeatedTupleArgs(): c.Tree = {
+    private[this] def generateRepeatedTupleArgs(): c.Tree = {
       val items = fq"x <- $access"
       val tupleArgs = generateTupleArg(q"x")
       q"""
@@ -127,7 +127,7 @@ class WritesMacro(val c: blackbox.Context) {
       else Some(q"$tupleSize * $access.size")
   }
 
-  private def sizeHeader(args: List[ArgType]): c.Tree = {
+  private[this] def sizeHeader(args: List[ArgType]): c.Tree = {
     val argsSize = args.size
     val argSizeTrees = args flatMap (_.sizeHint)
     val definiteSize = q"${1 + (argsSize - argSizeTrees.size)}"
@@ -136,12 +136,12 @@ class WritesMacro(val c: blackbox.Context) {
     }
   }
 
-  private def nameHeader(name: String): c.Tree = {
+  private[this] def nameHeader(name: String): c.Tree = {
     val header = name.toUpperCase(Locale.ROOT).getBytes(Utf8)
     q"$header"
   }
 
-  private def macroImpl[A, TC[_], M[_]](implicit aTag: c.WeakTypeTag[A], tcaTag: c.WeakTypeTag[TC[A]], maTag: c.WeakTypeTag[M[A]]): c.Tree = {
+  private[this] def macroImpl[A, TC[_], M[_]](implicit aTag: c.WeakTypeTag[A], tcaTag: c.WeakTypeTag[TC[A]], maTag: c.WeakTypeTag[M[A]]): c.Tree = {
 
     val tpe = aTag.tpe
 

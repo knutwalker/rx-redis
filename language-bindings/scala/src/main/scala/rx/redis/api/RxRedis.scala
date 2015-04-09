@@ -19,7 +19,7 @@ package rx.redis.api
 import rx.lang.scala.Observable
 
 import rx.redis.clients.RawClient
-import rx.redis.util.{DefaultRedisHost, DefaultRedisPort}
+import rx.redis.util.{ DefaultRedisHost, DefaultRedisPort }
 
 object RxRedis {
   def apply(host: String = DefaultRedisHost, port: Int = DefaultRedisPort): Client = {

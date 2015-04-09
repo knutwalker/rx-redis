@@ -87,8 +87,8 @@ abstract class RawClient {
   //  Closing
   // =========
 
-  private val isClosed = new AtomicBoolean(false)
-  private val alreadyClosed: Observable[Unit] =
+  private[this] val isClosed = new AtomicBoolean(false)
+  private[this] val alreadyClosed: Observable[Unit] =
     Observable.error(new IllegalStateException("Client has already shutdown.") with NoStackTrace)
 
   protected def closeClient(): Observable[Unit]
@@ -110,7 +110,7 @@ abstract class RawClient {
   def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] =
     command(A.write(cmd))
 
-  private def withError[A](o: Observable[A]): Observable[A] = {
+  private[this] def withError[A](o: Observable[A]): Observable[A] = {
     o.onErrorResumeNext(new Func1[Throwable, Observable[A]] {
       def call(t1: Throwable): Observable[A] = {
         Observable.error(
@@ -119,13 +119,13 @@ abstract class RawClient {
     })
   }
 
-  private def single[A](cmd: A)(implicit A: Writes[A], R: Reads[A, Id]): Observable[R.R] = withError {
+  private[this] def single[A](cmd: A)(implicit A: Writes[A], R: Reads[A, Id]): Observable[R.R] = withError {
     command(A.write(cmd)).map[R.R](new Func1[RespType, R.R] {
       def call(t1: RespType): R.R = R.read(t1)
     })
   }
 
-  private def multiple[A](cmd: A)(implicit A: Writes[A], R: Reads[A, List]): Observable[R.R] = withError {
+  private[this] def multiple[A](cmd: A)(implicit A: Writes[A], R: Reads[A, List]): Observable[R.R] = withError {
     command(A.write(cmd)).flatMap[R.R](new Func1[RespType, Observable[R.R]] {
       def call(t1: RespType): Observable[R.R] = Observable.from(R.read(t1).asJava)
     })

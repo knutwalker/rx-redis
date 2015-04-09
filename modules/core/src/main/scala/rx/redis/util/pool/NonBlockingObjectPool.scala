@@ -21,8 +21,8 @@ import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 
 private class NonBlockingObjectPool[A: PooledObject](settings: PoolSettings) extends ObjectPoolBase[A](settings) {
-  private final val queue = new AtomicReference[Queue[A]](Queue.empty[A])
-  private final val currentSize = new AtomicInteger(0)
+  private[this] final val queue = new AtomicReference[Queue[A]](Queue.empty[A])
+  private[this] final val currentSize = new AtomicInteger(0)
 
   @tailrec
   protected final def pull(): Option[A] = {

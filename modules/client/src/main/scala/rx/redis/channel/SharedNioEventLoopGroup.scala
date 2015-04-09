@@ -28,8 +28,8 @@ import java.util.function.Consumer
 
 final class SharedNioEventLoopGroup(threadCount: Int, threadFactory: ThreadFactory) extends NioEventLoopGroup(threadCount, threadFactory) with ReferenceCounted {
 
-  private val refs = new AtomicInteger(1)
-  private def newFuture = new DefaultPromise[Void](GlobalEventExecutor.INSTANCE)
+  private[this] val refs = new AtomicInteger(1)
+  private[this] def newFuture = new DefaultPromise[Void](GlobalEventExecutor.INSTANCE)
 
   sys.addShutdownHook {
     refs.set(0)

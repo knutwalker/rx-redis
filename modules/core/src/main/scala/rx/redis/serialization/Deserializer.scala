@@ -40,50 +40,50 @@ object Deserializer {
 final class Deserializer[A](implicit A: BytesAccess[A]) {
   import rx.redis.resp.Protocol._
 
-  private def notEnoughData(bytes: A) =
+  private[this] def notEnoughData(bytes: A) =
     throw Deserializer.NotEnoughData
 
-  private def unknownType(bytes: A) =
+  private[this] def unknownType(bytes: A) =
     expected(bytes, typeChars: _*)
 
-  private def expected(bytes: A, expected: Byte*) = {
+  private[this] def expected(bytes: A, expected: Byte*) = {
     val pos = A.readerIndex(bytes)
     val found = A.getByteAt(bytes, pos).toChar
     throw Deserializer.ProtocolError(pos, found, expected.toList)
   }
 
-  private def peek(bytes: A) =
+  private[this] def peek(bytes: A) =
     A.getByteAt(bytes, A.readerIndex(bytes))
 
-  private def read(bytes: A) =
+  private[this] def read(bytes: A) =
     A.readNextByte(bytes)
 
-  private def skip(bytes: A) =
+  private[this] def skip(bytes: A) =
     A.skipBytes(bytes, 1)
 
-  private def requireLen(bytes: A, len: Int) =
+  private[this] def requireLen(bytes: A, len: Int) =
     A.isReadable(bytes, len)
 
-  private def read(bytes: A, b: Byte): Unit = {
+  private[this] def read(bytes: A, b: Byte): Unit = {
     if (!A.isReadable(bytes)) notEnoughData(bytes)
     else if (peek(bytes) != b) expected(bytes, b)
     else skip(bytes)
   }
 
-  private def andRequireCrLf(bytes: A, value: RespType) = {
+  private[this] def andRequireCrLf(bytes: A, value: RespType) = {
     read(bytes, Cr)
     read(bytes, Lf)
     value
   }
 
-  private def parseLen(bytes: A) =
+  private[this] def parseLen(bytes: A) =
     parseNumInt(bytes)
 
-  private def parseInteger(bytes: A) =
+  private[this] def parseInteger(bytes: A) =
     RespInteger(parseNumLong(bytes))
 
   @tailrec
-  private def parseNumInt(bytes: A, n: Int, neg: Int): Int = {
+  private[this] def parseNumInt(bytes: A, n: Int, neg: Int): Int = {
     if (!A.isReadable(bytes)) {
       notEnoughData(bytes)
     } else {
@@ -99,7 +99,7 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
   }
 
   @tailrec
-  private def parseNumLong(bytes: A, n: Long, neg: Long): Long = {
+  private[this] def parseNumLong(bytes: A, n: Long, neg: Long): Long = {
     if (!A.isReadable(bytes)) {
       notEnoughData(bytes)
     } else {
@@ -114,36 +114,36 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
     }
   }
 
-  private def parseNumInt(bytes: A): Int =
+  private[this] def parseNumInt(bytes: A): Int =
     parseNumInt(bytes, 0, 1)
 
-  private def parseNumLong(bytes: A): Long =
+  private[this] def parseNumLong(bytes: A): Long =
     parseNumLong(bytes, 0L, 1L)
 
-  private def readStringOfLen(bytes: A, len: Int)(ct: A ⇒ RespType) = {
+  private[this] def readStringOfLen(bytes: A, len: Int)(ct: A ⇒ RespType) = {
     if (!requireLen(bytes, len)) notEnoughData(bytes)
     else andRequireCrLf(bytes, ct(A.readBytes(bytes, len)))
   }
 
-  private def parseSimpleString(bytes: A) = {
+  private[this] def parseSimpleString(bytes: A) = {
     val len = A.bytesBefore(bytes, Cr)
     if (len == -1) notEnoughData(bytes)
     else readStringOfLen(bytes, len)(b ⇒ RespString(A.toString(b, Utf8)))
   }
 
-  private def parseError(bytes: A) = {
+  private[this] def parseError(bytes: A) = {
     val len = A.bytesBefore(bytes, Cr)
     if (len == -1) notEnoughData(bytes)
     else readStringOfLen(bytes, len)(b ⇒ RespError(A.toString(b, Utf8)))
   }
 
-  private def parseBulkString(bytes: A) = {
+  private[this] def parseBulkString(bytes: A) = {
     val len = parseLen(bytes)
     if (len == -1) NullString
     else readStringOfLen(bytes, len)(b ⇒ RespBytes(A.toByteArray(b)))
   }
 
-  private def parseArray(bytes: A) = {
+  private[this] def parseArray(bytes: A) = {
     val size = parseLen(bytes)
     if (size == -1) NullArray
     else {
@@ -159,7 +159,7 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
     }
   }
 
-  private def quickApply(bytes: A): RespType = {
+  private[this] def quickApply(bytes: A): RespType = {
     if (!A.isReadable(bytes)) notEnoughData(bytes)
     else {
       val firstByte = peek(bytes)

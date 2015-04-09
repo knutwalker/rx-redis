@@ -27,13 +27,13 @@ import scala.util.control.NoStackTrace
 
 private[redis] class RxCloser(queue: util.Queue[Observer[RespType]]) extends ChannelDuplexHandler {
 
-  private final var canWrite = true
-  private final var closePromise: ChannelPromise = _
-  private final val ChannelClosedException = new IllegalStateException("Channel already closed") with NoStackTrace
+  private[this] final var canWrite = true
+  private[this] final var closePromise: ChannelPromise = _
+  private[this] final val ChannelClosedException = new IllegalStateException("Channel already closed") with NoStackTrace
 
-  private def canClose = !canWrite && (closePromise ne null)
+  private[this] def canClose = !canWrite && (closePromise ne null)
 
-  private def closeChannel(ctx: ChannelHandlerContext): Unit = {
+  private[this] def closeChannel(ctx: ChannelHandlerContext): Unit = {
     val promise = closePromise
     closePromise = null
     ctx.close(promise)

@@ -46,13 +46,13 @@ private abstract class ObjectPoolBase[A](settings: PoolSettings)(implicit A: Poo
     }
   }
 
-  private def activate(obj: A): A = A.activate(obj)
+  private[this] def activate(obj: A): A = A.activate(obj)
 
-  private def validate(obj: A): Boolean = A.validate(obj)
+  private[this] def validate(obj: A): Boolean = A.validate(obj)
 
-  private def passivate(obj: A): A = A.passivate(obj)
+  private[this] def passivate(obj: A): A = A.passivate(obj)
 
-  private def destroy(obj: A): Unit = {
+  private[this] def destroy(obj: A): Unit = {
     decrementPoolSize()
     A.destroy(obj)
   }

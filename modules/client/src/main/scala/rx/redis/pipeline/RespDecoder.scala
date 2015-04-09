@@ -23,7 +23,7 @@ import rx.redis.serialization.ByteBufDeserializer
 
 private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
 
-  private final var buffered: ByteBuf = null
+  private[this] final var buffered: ByteBuf = null
 
   final override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = msg match {
     case in: ByteBuf ⇒
@@ -48,12 +48,12 @@ private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
     ctx.fireChannelInactive()
   }
 
-  private final def decode(ctx: ChannelHandlerContext, data: ByteBuf): Unit = {
+  private[this] final def decode(ctx: ChannelHandlerContext, data: ByteBuf): Unit = {
     val completeData = mergeFrames(ctx.alloc(), data)
     decode0(ctx, completeData)
   }
 
-  private final def decode0(ctx: ChannelHandlerContext, completeData: ByteBuf): Unit = {
+  private[this] final def decode0(ctx: ChannelHandlerContext, completeData: ByteBuf): Unit = {
     val needMore = ByteBufDeserializer.foreach(completeData) { resp ⇒
       ctx.fireChannelRead(resp)
     }
@@ -64,7 +64,7 @@ private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
     }
   }
 
-  private final def mergeFrames(alloc: ByteBufAllocator, frame: ByteBuf): ByteBuf = {
+  private[this] final def mergeFrames(alloc: ByteBufAllocator, frame: ByteBuf): ByteBuf = {
     if (buffered eq null) {
       frame
     } else {
@@ -75,7 +75,7 @@ private[redis] trait RespDecoder { this: ChannelInboundHandler ⇒
     }
   }
 
-  private final def ensureSize(alloc: ByteBufAllocator, size: Int): ByteBuf = {
+  private[this] final def ensureSize(alloc: ByteBufAllocator, size: Int): ByteBuf = {
     var newBuf = buffered
     if (newBuf.writerIndex > newBuf.maxCapacity - size) {
       val buf = alloc.buffer(newBuf.readableBytes + size)
