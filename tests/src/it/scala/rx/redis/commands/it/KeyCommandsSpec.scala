@@ -89,7 +89,7 @@ class KeyCommandsSpec extends ItCommandsSuite {
     assert(client.ttl("foo").synch == 2)
     Thread.sleep(1000)
     assert(client.ttl("foo").synch == 1)
-    Thread.sleep(1001)
+    Thread.sleep(2000)
     assert(client.ttl("foo").synch == -2)
   }
 }
