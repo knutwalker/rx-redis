@@ -22,14 +22,14 @@ import io.netty.util.Recycler.Handle
 
 import rx.redis.resp.RespType
 
-class AdapterAction private (private val handle: Handle) {
+class AdapterAction private (private[this] val handle: Handle) {
   private[this] var _cmd: RespType = _
   private[this] var _sender: Observer[RespType] = _
 
   def cmd = _cmd
   def sender = _sender
 
-  def update(cmd: RespType, sender: Observer[RespType]): Unit = {
+  private def update(cmd: RespType, sender: Observer[RespType]): Unit = {
     _cmd = cmd
     _sender = sender
   }

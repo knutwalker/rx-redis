@@ -31,7 +31,7 @@ private abstract class ObjectPoolBase[A](settings: PoolSettings)(implicit A: Poo
   }
 
   @tailrec
-  private def create(): Option[A] = {
+  private[this] def create(): Option[A] = {
     val current = poolSize
     if (current >= settings.max) {
       None

@@ -33,7 +33,7 @@ private[redis] trait RespEncoder { this: ChannelOutboundHandler ⇒
       promise.setFailure(new IllegalArgumentException(s"msg is not a [${classOf[RespType].getName}]."))
   }
 
-  private final def encode(ctx: ChannelHandlerContext, promise: ChannelPromise, data: RespType): Unit = {
+  private[this] final def encode(ctx: ChannelHandlerContext, promise: ChannelPromise, data: RespType): Unit = {
     val buf = ctx.alloc.ioBuffer
     try {
       ByteBufSerializer(data, buf)

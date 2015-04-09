@@ -23,7 +23,7 @@ import rx.redis.resp.RespType
 import java.nio.charset.Charset
 
 object ByteBufSerializer {
-  private final val INSTANCE = new Serializer[ByteBuf]()(ByteBufAccess)
+  private[this] final val INSTANCE = new Serializer[ByteBuf]()(ByteBufAccess)
 
   def apply(dt: RespType, bb: ByteBuf): ByteBuf = INSTANCE(dt, bb)
 
