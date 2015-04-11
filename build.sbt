@@ -157,8 +157,18 @@ lazy val commonSettings = List(
       "-Ywarn-numeric-widen")},
   scalacOptions in (Compile, console) ~= (_ filterNot (x ⇒ x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
   shellPrompt := { state ⇒
+    import scala.Console._
     val name = Project.extract(state).currentRef.project
-    (if (name == "parent") "" else name + " ") + "> "
+    val color = name match {
+      case "core" | "commands" | "client"  ⇒ GREEN
+      case "api"  | "scala-examples"       ⇒ CYAN
+      case "japi" | "java-examples"        ⇒ MAGENTA
+      case "shapeless"                     ⇒ YELLOW
+      case "tests"                         ⇒ BLUE
+      case x if x.startsWith("benchmarks") ⇒ RED
+      case _                               ⇒ WHITE
+    }
+    (if (name == "parent") "" else s"[$color$name$RESET] ") + "> "
   },
   coverageExcludedPackages := """com.example.*|rx.redis.util.pool.*|rx.redis.j?api.*""",
   headers := {
