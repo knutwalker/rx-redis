@@ -34,7 +34,7 @@ object Writes {
 
   implicit object DirectStringWrites extends Writes[String] {
     def write(value: String): RespType = {
-      val items: Array[RespType] = value.split(' ').map(RespBytes(_))(collection.breakOut)
+      val items: Vector[RespType] = value.split(' ').map(RespBytes(_))(collection.breakOut)
       RespArray(items)
     }
   }

@@ -16,8 +16,8 @@
 
 package rx.redis.serialization
 
+import collection.immutable.VectorBuilder
 import scala.annotation.tailrec
-import scala.collection.mutable.ArrayBuffer
 
 import rx.redis.resp._
 import rx.redis.util._
@@ -147,9 +147,10 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
     val size = parseLen(bytes)
     if (size == -1) NullArray
     else {
-      val lb = new ArrayBuffer[RespType](size)
+      val lb = new VectorBuilder[RespType]()
+      lb.sizeHint(size)
       @tailrec def loop(n: Int): RespType = {
-        if (n == 0) RespArray(lb.toArray)
+        if (n == 0) RespArray(lb.result())
         else {
           lb += quickApply(bytes)
           loop(n - 1)

@@ -63,7 +63,7 @@ object Reads {
   private[this] def pairPf[T, U](T: PartialFunction[RespType, T], U: PartialFunction[RespType, U]): PartialFunction[RespType, List[(T, U)]] = {
     case RespArray(items) ⇒
       items.grouped(2).collect {
-        case Array(t, u) if T.isDefinedAt(t) && U.isDefinedAt(u) ⇒
+        case Vector(t, u) if T.isDefinedAt(t) && U.isDefinedAt(u) ⇒
           T(t) -> U(u)
       }.toList
   }

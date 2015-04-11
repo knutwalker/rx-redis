@@ -62,7 +62,7 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("should handle arrays") {
-    compare(RespArray(Array(RespString("foo"), RespBytes("bar"))), "*2\r\n+foo\r\n$3\r\nbar\r\n")
+    compare(RespArray(RespString("foo"), RespBytes("bar")), "*2\r\n+foo\r\n$3\r\nbar\r\n")
   }
 
   test("should fail on outbound writing for non data types ") {

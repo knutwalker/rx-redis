@@ -36,5 +36,5 @@ class CommandsSuite extends FunSuite {
   }
 
   protected def sers[A: Writes](c: A, expectedParts: String*) =
-    ser(c, RespArray(expectedParts.map(RespBytes(_)).toArray))
+    ser(c, RespArray(expectedParts.map(RespBytes(_)).toVector))
 }

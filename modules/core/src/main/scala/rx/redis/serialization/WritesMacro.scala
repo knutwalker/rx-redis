@@ -158,10 +158,11 @@ class WritesMacro(val c: blackbox.Context) {
     val generated = q"""
     object $objectName extends $finalTpe {
       def write(value: $tpe): $dt = {
-        val buf = new scala.collection.mutable.ArrayBuffer[$dt](${sizeHeader(arguments)})
+        val buf = new scala.collection.immutable.VectorBuilder[$dt]()
+        buf.sizeHint(${sizeHeader(arguments)})
         buf += $rb(${nameHeader(typeName)})
         ..$argumentTrees
-        $ra(buf.toArray)
+        $ra(buf.result())
       }
     }
     $objectName

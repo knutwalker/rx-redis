@@ -102,26 +102,26 @@ class DeserializerSpec extends FunSuite with Inside {
   }
 
   test("deserialize arrays") {
-    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(Array(RespBytes("foo"), RespBytes("bar"))))
+    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(RespBytes("foo"), RespBytes("bar")))
   }
 
   test("deserialize integer arrays") {
-    compare("*3\r\n:1\r\n:2\r\n:3\r\n", RespArray(Array(RespInteger(1), RespInteger(2), RespInteger(3))))
+    compare("*3\r\n:1\r\n:2\r\n:3\r\n", RespArray(RespInteger(1), RespInteger(2), RespInteger(3)))
   }
 
   test("deserialize mixed arrays") {
     compare("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nfoobar\r\n",
-      RespArray(Array(
+      RespArray(
         RespInteger(1),
         RespInteger(2),
         RespInteger(3),
         RespInteger(4),
         RespBytes("foobar")
-      )))
+      ))
   }
 
   test("deserialize an empty array") {
-    compare("*0\r\n", RespArray(Array()))
+    compare("*0\r\n", RespArray.empty)
   }
 
   test("deserialize the null array") {
@@ -130,17 +130,17 @@ class DeserializerSpec extends FunSuite with Inside {
 
   test("deserialize nested arrays") {
     compare("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n",
-      RespArray(Array(
-        RespArray(Array(
+      RespArray(
+        RespArray(
           RespInteger(1),
           RespInteger(2),
           RespInteger(3)
-        )),
-        RespArray(Array(
+        ),
+        RespArray(
           RespString("Foo"),
           RespError("Bar")
-        ))
-      ))
+        )
+      )
     )
   }
 
@@ -174,7 +174,7 @@ class DeserializerSpec extends FunSuite with Inside {
   }
 
   test("size underflow in arrays") {
-    compare("*1\r\n:1\r\n:2\r\n", RespArray(Array(RespInteger(1))))
+    compare("*1\r\n:1\r\n:2\r\n", RespArray(RespInteger(1)))
   }
 
   test("missing type marker") {

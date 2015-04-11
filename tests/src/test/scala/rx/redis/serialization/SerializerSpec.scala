@@ -69,28 +69,28 @@ class SerializerSpec extends FunSuite with Inside {
   }
 
   test("serialize arrays") {
-    compare(RespArray(Array(RespBytes("foo"), RespBytes("bar"))), "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n")
+    compare(RespArray(RespBytes("foo"), RespBytes("bar")), "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n")
   }
 
   test("serialize integer arrays") {
-    compare(RespArray(Array(RespInteger(1), RespInteger(2), RespInteger(3))), "*3\r\n:1\r\n:2\r\n:3\r\n")
+    compare(RespArray(RespInteger(1), RespInteger(2), RespInteger(3)), "*3\r\n:1\r\n:2\r\n:3\r\n")
   }
 
   test("serialize mixed arrays") {
     compare(
-      RespArray(Array(
+      RespArray(
         RespInteger(1),
         RespInteger(2),
         RespInteger(3),
         RespInteger(4),
         RespBytes("foobar")
-      )),
+      ),
       "*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nfoobar\r\n"
     )
   }
 
   test("serialize an empty array") {
-    compare(RespArray(Array()), "*0\r\n")
+    compare(RespArray.empty, "*0\r\n")
   }
 
   test("serialize the null array") {
@@ -99,17 +99,17 @@ class SerializerSpec extends FunSuite with Inside {
 
   test("serialize nested arrays") {
     compare(
-      RespArray(Array(
-        RespArray(Array(
+      RespArray(
+        RespArray(
           RespInteger(1),
           RespInteger(2),
           RespInteger(3)
-        )),
-        RespArray(Array(
+        ),
+        RespArray(
           RespString("Foo"),
           RespError("Bar")
-        ))
-      )),
+        )
+      ),
       "*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n"
     )
   }

@@ -36,16 +36,19 @@ case class RespInteger(value: Long) extends RespType {
   override def toString: String = value.toString
 }
 
-case class RespArray(elements: Array[RespType]) extends RespType {
+case class RespArray(elements: Vector[RespType]) extends RespType {
   override def toString: String = elements.map(_.toString).mkString("[", ", ", "]")
 
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case RespArray(other) ⇒
-      util.Arrays.equals(elements.asInstanceOf[Array[AnyRef]], other.asInstanceOf[Array[AnyRef]])
-    case _ ⇒ super.equals(obj)
-  }
-  override def hashCode(): Int =
-    util.Arrays.hashCode(elements.asInstanceOf[Array[AnyRef]])
+  def :+(x: RespType): RespArray = RespArray(elements :+ x)
+  def +:(x: RespType): RespArray = RespArray(x +: elements)
+  def ++(xs: RespArray): RespArray = RespArray(elements ++ xs.elements)
+  def ++(xs: RespType*): RespArray = RespArray(elements ++ xs)
+}
+object RespArray {
+  val empty = RespArray(Vector.empty)
+
+  def apply(x: RespType, xs: RespType*): RespArray =
+    RespArray(x +: xs.toVector)
 }
 
 case class RespBytes(bytes: Array[Byte]) extends RespType {
