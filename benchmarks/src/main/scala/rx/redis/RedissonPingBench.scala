@@ -18,15 +18,13 @@ package rx.redis
 
 import rx.redis.util._
 
-import com.lambdaworks.redis.codec.Utf8StringCodec
-import com.lambdaworks.redis.protocol.{ CommandHandler, Command }
 import com.lambdaworks.redis.{ RedisAsyncConnection, RedisClient, RedisConnection }
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.util.concurrent
 import org.openjdk.jmh.annotations._
 
-import java.util.concurrent.{ LinkedBlockingQueue, TimeUnit }
+import java.util.concurrent.TimeUnit
 
 @Threads(value = 1)
 @Fork(value = 1)
@@ -84,8 +82,7 @@ object RedissonPingBench {
     def prepare(): Unit = {
       eventLoopGroup = new NioEventLoopGroup()
       client = new RedisClient(eventLoopGroup, DefaultRedisHost, DefaultRedisPort, 60000)
-      connectAsync()
-      //      asyncConnection = client.connectAsync()
+      asyncConnection = client.connectAsync()
     }
 
     @TearDown(Level.Iteration)
@@ -93,19 +90,6 @@ object RedissonPingBench {
       asyncConnection.close()
       client.shutdown()
       eventLoopGroup.shutdownGracefully().sync().get()
-    }
-
-    // reflection stuff because method is private
-    // but need to provide a smaller queue that would otherwise
-    // lead to IO errors (Too many open files in system)
-    def connectAsync(): Unit = {
-      val codec = new Utf8StringCodec
-      val queue = new LinkedBlockingQueue[Command[String, String, _]](256 * 256)
-      val handler = new CommandHandler[String, String](queue)
-      val connection = new RedisAsyncConnection[String, String](client, queue, codec, 60, TimeUnit.SECONDS, eventLoopGroup)
-      val method = client.getClass.getDeclaredMethod("connect", handler.getClass, connection.getClass)
-      method.setAccessible(true)
-      asyncConnection = method.invoke(client, handler, connection).asInstanceOf[RedisAsyncConnection[String, String]]
     }
   }
 }

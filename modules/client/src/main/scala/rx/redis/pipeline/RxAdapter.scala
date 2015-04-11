@@ -42,7 +42,7 @@ private[redis] class RxAdapter(queue: util.Queue[Observer[RespType]]) extends Ch
   override def write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise): Unit = {
     try {
       val aa = msg.asInstanceOf[AdapterAction]
-      queue.offer(aa.sender)
+      queue.offer(aa.sender) // TODO: offer may fail, check result
       ctx.write(aa.cmd, promise)
       aa.recycle()
     } catch {
