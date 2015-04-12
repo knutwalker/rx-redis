@@ -77,11 +77,56 @@ object Main {
         case None ⇒ x match {
           case "-host" ⇒ loop(xs, Some(opts.withHost), opts)
           case "-port" ⇒ loop(xs, Some(opts.withPort), opts)
+          case "-mem"  ⇒ loop(xs, Some(opts.withMemory), opts)
           case "-gc"   ⇒ loop(xs, None, opts.copy(enableProf = true))
           case unknown ⇒ loop(xs, None, opts.withArg(unknown))
         }
       }
     }
+  }
+
+  case class OptionsParser(
+      remaining: Vector[String] = Vector(),
+      enableProf: Boolean = false,
+      host: Option[String] = None,
+      port: Option[Int] = None,
+      memory: String = "4g") {
+
+    def withHost(h: String): OptionsParser =
+      copy(host = Some(h))
+
+    def withPort(p: String): OptionsParser =
+      copy(port = Try(p.toInt).toOption)
+
+    def withMemory(m: String): OptionsParser =
+      copy(memory = m)
+
+    def withArg(x: String): OptionsParser =
+      copy(remaining = remaining :+ x)
+
+    def run(): Try[CustomOptions] = {
+      Try(new CommandLineOptions(remaining: _*)).map { cmdOptions ⇒
+        val jvmArgs = List(s"-Xmx$memory", s"-Xms$memory") ++ toJmh
+
+        val builder = new OptionsBuilder()
+          .parent(cmdOptions)
+          .resultFormat(ResultFormatType.SCSV)
+          .shouldDoGC(true)
+          .jvmArgsAppend(jvmArgs: _*)
+
+        if (enableProf) {
+          builder.addProfiler(classOf[GCProfiler])
+        }
+
+        val options = builder.build()
+        CustomOptions(options, cmdOptions)
+      }
+    }
+
+    private def toJmh = List(
+      host.map(h ⇒ s"-Drx.redis.host=$h").toList,
+      port.map(p ⇒ s"-Drx.redis.port=$p").toList
+    ).flatten
   }
 
   case class CustomOptions(options: Options, cmdOptions: CommandLineOptions) {
@@ -94,6 +139,8 @@ object Main {
              |
              |  -host <string>              The redis host to connect to.
              |  -port <int>                 The redis port to connect to.
+             |  -mem <string>               Set JVM memory options
+             |                              (min and max, default is 4g)
              |  -gc                         Enable GC profiling.
            """.stripMargin)
         NoAction
@@ -108,46 +155,5 @@ object Main {
       } else {
         RunBenchmarks(options)
       }
-  }
-
-  case class OptionsParser(
-      remaining: Vector[String] = Vector(),
-      enableProf: Boolean = false,
-      host: Option[String] = None,
-      port: Option[Int] = None) {
-
-    def withHost(h: String): OptionsParser =
-      copy(host = Some(h))
-
-    def withPort(p: String): OptionsParser =
-      copy(port = Try(p.toInt).toOption)
-
-    def withArg(x: String): OptionsParser =
-      copy(remaining = remaining :+ x)
-
-    def run(): Try[CustomOptions] = {
-      Try(new CommandLineOptions(remaining: _*)).map { cmdOptions ⇒
-        val builder = new OptionsBuilder()
-          .parent(cmdOptions)
-          .resultFormat(ResultFormatType.SCSV)
-          .shouldDoGC(true)
-
-        if (enableProf) {
-          builder.addProfiler(classOf[GCProfiler])
-        }
-
-        if (host.isDefined || port.isDefined) {
-          builder.jvmArgsAppend(toJmh: _*)
-        }
-
-        val options = builder.build()
-        CustomOptions(options, cmdOptions)
-      }
-    }
-
-    private def toJmh = List(
-      host.map(h ⇒ s"-Drx.redis.host=$h").toList,
-      port.map(p ⇒ s"-Drx.redis.port=$p").toList
-    ).flatten
   }
 }
