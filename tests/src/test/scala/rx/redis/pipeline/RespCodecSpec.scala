@@ -16,23 +16,21 @@
 
 package rx.redis.pipeline
 
-import io.netty.buffer.Unpooled
-import io.netty.channel.embedded.EmbeddedChannel
-
 import rx.redis.resp._
 import rx.redis.util.Utf8
 
+import io.netty.buffer.Unpooled
+import io.netty.channel.embedded.EmbeddedChannel
 import org.scalatest.{ BeforeAndAfter, FunSuite }
 
 class RespCodecSpec extends FunSuite with BeforeAndAfter {
 
   private def compare(in: RespType, out: String) = {
     val byteData = Unpooled.copiedBuffer(out, Utf8)
-    assert(channel.writeOutbound(in))
-    assert(channel.readOutbound() == byteData)
 
     assert(channel.writeInbound(byteData))
-    assert(channel.readInbound() == in)
+    val backWritten: RespType = channel.readInbound().asInstanceOf[RespType]
+    assert(backWritten == in)
   }
 
   private var channel: EmbeddedChannel = _
@@ -58,11 +56,11 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
   }
 
   test("should handle byte strings") {
-    compare(RespBytes("foo\r\nbar"), "$8\r\nfoo\r\nbar\r\n")
+    compare(respBytes("foo\r\nbar"), "$8\r\nfoo\r\nbar\r\n")
   }
 
   test("should handle arrays") {
-    compare(RespArray(RespString("foo"), RespBytes("bar")), "*2\r\n+foo\r\n$3\r\nbar\r\n")
+    compare(RespArray(RespString("foo"), respBytes("bar")), "*2\r\n+foo\r\n$3\r\nbar\r\n")
   }
 
   test("should fail on outbound writing for non data types ") {
@@ -70,7 +68,7 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
       channel.writeOutbound(new AnyRef)
     }
     assert(channel.readOutbound() == null)
-    assert(ex.getMessage == "msg is not a [rx.redis.resp.RespType].")
+    assert(ex.getMessage == "msg is not a [io.netty.buffer.ByteBuf].")
   }
 
   test("should fail on inbound writing for non ByteBufs") {
@@ -95,8 +93,8 @@ class RespCodecSpec extends FunSuite with BeforeAndAfter {
     assert(channel.writeInbound(Unpooled.copiedBuffer(resp, Utf8)))
     assert(channel.readInbound() == RespString("Foo"))
     assert(channel.readInbound() == RespString("Bar"))
-    assert(channel.readInbound() == RespBytes("baz"))
-    assert(channel.readInbound() == RespBytes("qux"))
+    assert(channel.readInbound() == respBytes("baz"))
+    assert(channel.readInbound() == respBytes("qux"))
     assert(channel.readInbound() == null)
   }
 }

@@ -28,9 +28,7 @@ import org.scalatest.{ FunSuite, Inside }
 
 class DeserializerSpec extends FunSuite with Inside {
 
-  implicit val bytesAccess = ByteBufAccess
-
-  @tailrec final def loop(bs: ByteBuf, d: Deserializer[ByteBuf])(f: RespType ⇒ Unit): Unit = {
+  @tailrec final def loop(bs: ByteBuf, d: Deserializer)(f: RespType ⇒ Unit): Unit = {
     f(d(bs))
     if (bs.isReadable) {
       loop(bs, d)(f)
@@ -39,7 +37,7 @@ class DeserializerSpec extends FunSuite with Inside {
 
   def compare(resp: String, expecteds: RespType*): Unit = {
     val bytes = Unpooled.wrappedBuffer(resp.getBytes(Utf8))
-    val d = new Deserializer[ByteBuf]
+    val d = new Deserializer
     val expectedsIterator = expecteds.iterator
     loop(bytes, d) { actual ⇒
       if (expectedsIterator.hasNext) {
@@ -50,7 +48,7 @@ class DeserializerSpec extends FunSuite with Inside {
   }
 
   def compare(resp: String)(insidePf: PartialFunction[Throwable, Unit]): Unit = {
-    val d = new Deserializer[ByteBuf]
+    val d = new Deserializer
     val bytes = Unpooled.wrappedBuffer(resp.getBytes(Utf8))
     try d(bytes) catch insidePf
   }
@@ -82,19 +80,19 @@ class DeserializerSpec extends FunSuite with Inside {
   }
 
   test("deserialize bulk strings") {
-    compare("$6\r\nfoobar\r\n", RespBytes("foobar"))
+    compare("$6\r\nfoobar\r\n", respBytes("foobar"))
   }
 
   test("allow new lines in bulk strings") {
-    compare("$8\r\nfoo\r\nbar\r\n", RespBytes("foo\r\nbar"))
+    compare("$8\r\nfoo\r\nbar\r\n", respBytes("foo\r\nbar"))
   }
 
   test("deserialize multiple bulk strings") {
-    compare("$6\r\nfoobar\r\n$4\r\n1337\r\n", RespBytes("foobar"), RespBytes("1337"))
+    compare("$6\r\nfoobar\r\n$4\r\n1337\r\n", respBytes("foobar"), respBytes("1337"))
   }
 
   test("deserialize an empty string") {
-    compare("$0\r\n\r\n", RespBytes(""))
+    compare("$0\r\n\r\n", respBytes(""))
   }
 
   test("deserialize the null string") {
@@ -102,7 +100,7 @@ class DeserializerSpec extends FunSuite with Inside {
   }
 
   test("deserialize arrays") {
-    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(RespBytes("foo"), RespBytes("bar")))
+    compare("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n", RespArray(respBytes("foo"), respBytes("bar")))
   }
 
   test("deserialize integer arrays") {
@@ -116,7 +114,7 @@ class DeserializerSpec extends FunSuite with Inside {
         RespInteger(2),
         RespInteger(3),
         RespInteger(4),
-        RespBytes("foobar")
+        respBytes("foobar")
       ))
   }
 
@@ -191,7 +189,7 @@ class DeserializerSpec extends FunSuite with Inside {
     val bytesArray = resp.getBytes(Utf8)
     val bytes = Unpooled.wrappedBuffer(bytesArray)
 
-    val d = new Deserializer[ByteBuf]
+    val d = new Deserializer
 
     for (i ← bytesArray.indices) {
       val bb = bytes.duplicate()

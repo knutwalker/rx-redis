@@ -16,12 +16,12 @@
 
 package rx.redis.commands
 
-import java.nio.charset.StandardCharsets
+import rx.redis.serialization._
 
-import rx.redis.resp.{ RespType, RespArray, RespBytes }
-import rx.redis.serialization.Writes
-
+import io.netty.buffer.{ ByteBuf, Unpooled }
 import org.scalatest.FunSuite
+
+import java.nio.charset.StandardCharsets
 
 class CommandsSuite extends FunSuite {
 
@@ -30,11 +30,11 @@ class CommandsSuite extends FunSuite {
   protected def pretty(s: String, snip: Option[Int] = None) =
     Some(s.replaceAllLiterally("\r\n", "\\r\\n")).map(s ⇒ snip.fold(s)(s.take)).get
 
-  protected def ser[A: Writes](c: A, expected: RespType) = {
-    val buf = Writes[A].write(c)
-    assert(buf == expected)
+  protected def ser[A: Writes](c: A, expectedBuf: ByteBuf): Unit = {
+    val actualBuf = Writes[A].write(Unpooled.buffer(), c)
+    assert(actualBuf == expectedBuf)
   }
 
   protected def sers[A: Writes](c: A, expectedParts: String*) =
-    ser(c, RespArray(expectedParts.map(RespBytes(_)).toVector))
+    ser(c, rx.redis.RedisCommand(expectedParts.mkString(" ")))
 }

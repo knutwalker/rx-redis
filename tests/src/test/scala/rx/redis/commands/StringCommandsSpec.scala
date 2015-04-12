@@ -19,6 +19,7 @@ package rx.redis.commands
 import scala.concurrent.duration._
 
 import rx.redis._
+import rx.redis.serialization._
 
 class StringCommandsSpec extends CommandsSuite {
 

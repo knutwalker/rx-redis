@@ -20,7 +20,7 @@ import rx.Observable.OnSubscribe
 import rx.redis.channel.SharedNioEventLoopGroup
 import rx.{ Observable, Subscriber, Observer }
 import io.netty.bootstrap.Bootstrap
-import io.netty.buffer.PooledByteBufAllocator
+import io.netty.buffer.{ ByteBuf, ByteBufAllocator, PooledByteBufAllocator }
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.channel.{ EventLoopGroup, Channel, ChannelFuture, ChannelFutureListener, ChannelOption }
 import io.netty.util.concurrent.{ GenericFutureListener, Future, DefaultThreadFactory }
@@ -93,6 +93,8 @@ private[redis] class RxNettyClient(channel: Channel) extends NettyClient {
     def run(): Unit = f
   }
 
+  val alloc: ByteBufAllocator = channel.alloc()
+
   private[this] final val eventLoop = channel.eventLoop()
   private[this] final val pipeline = channel.pipeline()
 
@@ -101,12 +103,12 @@ private[redis] class RxNettyClient(channel: Channel) extends NettyClient {
     def run(): Unit = pipeline.flush()
   }
 
-  def send(data: RespType, receiver: Observer[RespType]): Unit = {
-    eventLoop.execute(pipeline.writeAndFlush(AdapterAction(data, receiver), emptyPromise))
+  def send(bb: ByteBuf, receiver: Observer[RespType]): Unit = {
+    eventLoop.execute(pipeline.writeAndFlush(AdapterAction(bb, receiver), emptyPromise))
   }
 
   def buffer(data: RespType, receiver: Observer[RespType]): Unit = {
-    eventLoop.execute(pipeline.write(AdapterAction(data, receiver), emptyPromise))
+    //    eventLoop.execute(pipeline.write(AdapterAction(data, receiver), emptyPromise))
   }
 
   def flush(): ChannelFuture = {

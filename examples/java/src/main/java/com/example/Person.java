@@ -16,16 +16,10 @@
 
 package com.example;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import rx.redis.serialization.BytesFormat;
+import rx.redis.japi.BytesFormat;
+import rx.redis.japi.DefaultBytes;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-
-public class Person {
+public final class Person {
 
   private final String name;
   private final int age;
@@ -33,6 +27,10 @@ public class Person {
   public Person(final String name, final int age) {
     this.name = name;
     this.age = age;
+  }
+
+  public static Person of(final int age, final String name) {
+    return new Person(name, age);
   }
 
   public String getName() {
@@ -65,36 +63,7 @@ public class Person {
     return String.format("Person(%s, %d)", name, age);
   }
 
-  public static final BytesFormat<Person> BYTES_FORMAT = PersonBytesFormat.INSTANCE;
-
-  private static enum PersonBytesFormat implements BytesFormat<Person> {
-    INSTANCE;
-
-    private static final ByteBufAllocator ALLOC = PooledByteBufAllocator.DEFAULT;
-    private static final Charset charset = StandardCharsets.UTF_8;
-
-    @Override
-    public byte[] bytes(final Person value) {
-      final byte[] nameBytes = value.getName().getBytes(charset);
-      final int capacity = nameBytes.length + 2 * Integer.BYTES;
-      final ByteBuf buffer = ALLOC.heapBuffer(capacity, capacity);
-      buffer.writeInt(nameBytes.length);
-      buffer.writeBytes(nameBytes);
-      buffer.writeInt(value.getAge());
-      final byte[] bytes = buffer.array();
-      buffer.release();
-      return bytes;
-    }
-
-    @Override
-    public Person value(final byte[] bytes) {
-      final ByteBuf buffer = Unpooled.wrappedBuffer(bytes);
-      final int length = buffer.readInt();
-      final byte[] nameBytes = new byte[length];
-      buffer.readBytes(nameBytes);
-      final int age = buffer.readInt();
-      buffer.release();
-      return new Person(new String(nameBytes, charset), age);
-    }
-  }
+  public static final BytesFormat<Person> BYTES_FORMAT =
+      DefaultBytes.INT.and(DefaultBytes.STRING)
+          .xmap(Person::of, Person::getAge, Person::getName);
 }

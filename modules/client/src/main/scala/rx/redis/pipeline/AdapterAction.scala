@@ -16,20 +16,22 @@
 
 package rx.redis.pipeline
 
+import rx.redis.resp.RespType
+
 import rx.Observer
+
+import io.netty.buffer.ByteBuf
 import io.netty.util.Recycler
 import io.netty.util.Recycler.Handle
 
-import rx.redis.resp.RespType
-
 class AdapterAction private (private[this] val handle: Handle) {
-  private[this] var _cmd: RespType = _
+  private[this] var _cmd: ByteBuf = _
   private[this] var _sender: Observer[RespType] = _
 
-  def cmd: RespType = _cmd
+  def cmd: ByteBuf = _cmd
   def sender: Observer[RespType] = _sender
 
-  private def update(cmd: RespType, sender: Observer[RespType]): Unit = {
+  private def update(cmd: ByteBuf, sender: Observer[RespType]): Unit = {
     _cmd = cmd
     _sender = sender
   }
@@ -46,7 +48,7 @@ object AdapterAction {
     def newObject(handle: Handle): AdapterAction = new AdapterAction(handle)
   }
 
-  def apply(cmd: RespType, sender: Observer[RespType]): AdapterAction = {
+  def apply(cmd: ByteBuf, sender: Observer[RespType]): AdapterAction = {
     val adapterAction = InstanceRecycler.get()
     adapterAction.update(cmd, sender)
     adapterAction

@@ -17,6 +17,7 @@
 package rx.redis.commands
 
 import rx.redis._
+import rx.redis.serialization._
 
 class HashCommandsSpec extends CommandsSuite {
 

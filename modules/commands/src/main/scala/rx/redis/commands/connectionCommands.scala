@@ -16,7 +16,7 @@
 
 package rx.redis.commands
 
-import rx.redis.serialization.{ Id, BytesFormat, Reads, Writes }
+import rx.redis.serialization.{ ByteBufFormat, ByteBufReader, ByteBufWriter, Id, Reads, Writes }
 
 case object Ping {
   implicit val writes: Writes[Ping.type] =
@@ -26,11 +26,11 @@ case object Ping {
     Reads.value[Ping.type, String]
 }
 
-case class Echo[A: BytesFormat](value: A)
+case class Echo[A: ByteBufFormat](value: A)
 object Echo {
-  implicit def writes[A: BytesFormat]: Writes[Echo[A]] =
+  implicit def writes[A: ByteBufWriter]: Writes[Echo[A]] =
     Writes.writes[Echo[A]]
 
-  implicit def readsFormat[A: BytesFormat]: Reads[Echo[A], Id] { type R = A } =
+  implicit def readsFormat[A: ByteBufReader]: Reads[Echo[A], Id] { type R = A } =
     Reads.value[Echo[A], A]
 }

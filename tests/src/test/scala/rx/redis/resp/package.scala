@@ -14,23 +14,14 @@
  * limitations under the License.
  */
 
-package rx.redis.serialization
+package rx.redis
 
-import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
+import util._
 
-import rx.redis.resp.RespType
+import io.netty.buffer.Unpooled
 
-import java.nio.charset.Charset
+package object resp {
 
-object ByteBufSerializer {
-  private[this] final val INSTANCE = new Serializer[ByteBuf]()(ByteBufAccess)
-
-  def apply(dt: RespType, bb: ByteBuf): ByteBuf = INSTANCE(dt, bb)
-
-  def apply(dt: RespType, alloc: ByteBufAllocator): ByteBuf = {
-    INSTANCE(dt, alloc.buffer())
-  }
-  def apply(dt: RespType, charset: Charset, alloc: ByteBufAllocator): String = {
-    apply(dt, alloc).toString(charset)
-  }
+  def respBytes(s: String): RespBytes =
+    RespBytes.wrap(Unpooled.copiedBuffer(s, Utf8))
 }

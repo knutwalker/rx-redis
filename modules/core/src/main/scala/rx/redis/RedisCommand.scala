@@ -16,7 +16,10 @@
 
 package rx.redis
 
-package object serialization {
+sealed trait RedisCommand
 
-  type Id[A] = A
+private[redis] object RedisCommand {
+
+  def apply(s: String): String with RedisCommand =
+    s.asInstanceOf[String with RedisCommand]
 }

@@ -11,8 +11,8 @@ import xerial.sbt.Sonatype.SonatypeKeys.{profileName, sonatypeReleaseAll}
 
 
 lazy val parent = project in file(".") dependsOn (
-  api, japi, client, commands, core) aggregate (
-  api, japi, client, commands, core, `java-examples`, `scala-examples`, tests) settings (
+  api, japi, client, commands, serialization, core) aggregate (
+  api, japi, client, commands, serialization, core, `java-examples`, `scala-examples`, tests) settings (
   buildsUberJar,
   rxRedisSettings,
   doNotPublish,
@@ -21,9 +21,14 @@ lazy val parent = project in file(".") dependsOn (
 lazy val core = project in file("modules") / "core" enablePlugins AutomateHeaderPlugin settings (
   rxRedisSettings,
   name := "rx-redis-core",
-  libraryDependencies += "org.scala-lang"  % "scala-reflect" % scalaVersion.value % "provided")
+  libraryDependencies += "io.netty" % "netty-buffer" % nettyVersion.value)
 
-lazy val commands = project in file("modules") / "commands" enablePlugins AutomateHeaderPlugin dependsOn core settings (
+lazy val serialization = project in file("modules") / "serialization" enablePlugins AutomateHeaderPlugin dependsOn core settings (
+  rxRedisSettings,
+  name := "rx-redis-serialization",
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
+
+lazy val commands = project in file("modules") / "commands" enablePlugins AutomateHeaderPlugin dependsOn serialization settings (
   rxRedisSettings,
   name := "rx-redis-commands")
 
@@ -32,10 +37,8 @@ lazy val client = project in file("modules") / "client" enablePlugins AutomateHe
   rxRedisSettings,
   name := "rx-redis-client",
   libraryDependencies ++= List(
-    "io.netty"       % "netty-transport" % nettyVersion.value,
-    "io.netty"       % "netty-buffer"    % nettyVersion.value,
-    "io.netty"       % "netty-common"    % nettyVersion.value,
-    "io.reactivex"   % "rxjava"          % rxJavaVersion.value))
+    "io.netty"     % "netty-transport" % nettyVersion.value,
+    "io.reactivex" % "rxjava"          % rxJavaVersion.value))
 
 lazy val api = project in file("language-bindings") / "scala" enablePlugins AutomateHeaderPlugin dependsOn client settings (
   buildsUberJar,
@@ -46,7 +49,8 @@ lazy val api = project in file("language-bindings") / "scala" enablePlugins Auto
 lazy val japi = project in file("language-bindings") / "java" enablePlugins AutomateHeaderPlugin dependsOn client settings (
   buildsUberJar,
   rxRedisSettings,
-  name := "rx-redis-java")
+  name := "rx-redis-java",
+  libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "0.3.0")
 
 lazy val `scala-examples` = project in file("examples") / "scala" enablePlugins AutomateHeaderPlugin dependsOn api settings (
   Revolver.settings,
@@ -57,17 +61,13 @@ lazy val `java-examples` = project in file("examples") / "java" enablePlugins Au
   rxRedisSettings,
   name := "rx-redis-java-example")
 
-lazy val tests = project enablePlugins AutomateHeaderPlugin configs (IntegrationTest, RegressionTest) dependsOn (client, api, japi) settings (
+lazy val tests = project enablePlugins AutomateHeaderPlugin configs IntegrationTest dependsOn (client, api, japi) settings (
   rxRedisSettings,
   doNotPublish,
   Defaults.itSettings,
-  // Like to use testSettings, but IntelliJ doesn't get it right
-  inConfig(RegressionTest)(Defaults.testTasks),
   inConfig(IntegrationTest)(List(fork := true)),
-  testOptions in Test := List(Tests.Filter(unitFilter)),
-  testOptions in RegressionTest := List(Tests.Filter(regFilter)),
-  parallelExecution in Test := false,
-  parallelExecution in IntegrationTest := false,
+  parallelExecution in Test := true,
+  parallelExecution in IntegrationTest := true,
   scalacOptions in Test += "-Yrangepos",
   scalacOptions in IntegrationTest += "-Yrangepos",
   name := "rx-redis-tests",
@@ -122,8 +122,8 @@ lazy val buildSettings  = List(
            description := "Reactive Extension for Redis",
           scalaVersion := "2.11.6",
           nettyVersion := "4.0.27.Final",
-         rxJavaVersion := "1.0.7",
-        rxScalaVersion := "0.24.0")
+         rxJavaVersion := "1.0.8",
+        rxScalaVersion := "0.24.1")
 
 lazy val commonSettings = List(
   scalacOptions ++= {
@@ -239,7 +239,6 @@ lazy val publishSettings = releaseSettings ++ sonatypeSettings ++ List(
     inquireVersions,
     runClean,
     runTest,
-    runRegressionTest,
     runIntegrationTest,
     setReleaseVersion,
     commitReleaseVersion,
@@ -288,9 +287,16 @@ lazy val nettyVersion = SettingKey[String]("Version of Netty")
 lazy val rxJavaVersion = SettingKey[String]("Version of RxJava")
 lazy val rxScalaVersion = SettingKey[String]("Version of RxScala")
 
-lazy val RegressionTest = config("reg").extend(Test)
-lazy val runIntegrationTest = runTestIn(IntegrationTest)
-lazy val runRegressionTest = runTestIn(RegressionTest)
+lazy val runIntegrationTest = ReleaseStep(
+  action = { state =>
+    val shouldSkipTests = state get skipTests getOrElse false
+    if (!shouldSkipTests) {
+      val extracted = Project extract state
+      val ref = extracted get thisProjectRef
+      extracted.runAggregated(test in IntegrationTest in ref, state)
+    } else state
+  },
+  enableCrossBuild = true)
 
 lazy val publishSignedArtifacts = publishArtifacts.copy(
   action = { state =>
@@ -307,21 +313,6 @@ lazy val releaseToCentral = ReleaseStep(
     extracted.runAggregated(sonatypeReleaseAll in Global in ref, state)
   },
   enableCrossBuild = true)
-
-
-def runTestIn(conf: Configuration) = ReleaseStep(
-  action = { state =>
-    val shouldSkipTests = state get skipTests getOrElse false
-    if (!shouldSkipTests) {
-      val extracted = Project extract state
-      val ref = extracted get thisProjectRef
-      extracted.runAggregated(test in conf in ref, state)
-    } else state
-  },
-  enableCrossBuild = true)
-
-def regFilter(name: String): Boolean = name endsWith "RegressionSpec"
-def unitFilter(name: String): Boolean = (name endsWith "Spec") && !regFilter(name)
 
 addCommandAlias("travis", ";clean;coverage;test;it:test;coverageReport;coverageAggregate")
 addCommandAlias("ping-benchmark", ";benchmarks/clean;benchmarks-finagle/clean;benchmarks-scala-redis-nb/clean;benchmarks/run Ping;benchmarks-finagle/run Ping;benchmarks-scala-redis-nb/run Ping")

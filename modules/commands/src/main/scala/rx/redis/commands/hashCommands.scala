@@ -16,14 +16,14 @@
 
 package rx.redis.commands
 
-import rx.redis.serialization.{ Id, BytesFormat, Reads, Writes }
+import rx.redis.serialization.{ ByteBufReader, Id, Reads, Writes }
 
 case class HGet(key: String, field: String)
 object HGet {
   implicit val writes: Writes[HGet] =
     Writes.writes[HGet]
 
-  implicit def readsFormat[A: BytesFormat]: Reads[HGet, Id] { type R = Option[A] } =
+  implicit def readsFormat[A: ByteBufReader]: Reads[HGet, Id] { type R = Option[A] } =
     Reads.opt[HGet, A]
 }
 
@@ -32,6 +32,6 @@ object HGetAll {
   implicit val writes: Writes[HGetAll] =
     Writes.writes[HGetAll]
 
-  implicit def readsFormat[A: BytesFormat]: Reads[HGetAll, List] { type R = (String, A) } =
+  implicit def readsFormat[A: ByteBufReader]: Reads[HGetAll, List] { type R = (String, A) } =
     Reads.listPair[HGetAll, String, A]
 }

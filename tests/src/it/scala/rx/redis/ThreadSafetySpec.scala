@@ -16,12 +16,14 @@
 
 package rx.redis
 
-import rx.functions.Action1
-
 import rx.redis.clients.RawClient
 import rx.redis.resp.{RespBytes, RespType}
-import rx.redis.util.{DefaultRedisHost, DefaultRedisPort}
+import rx.redis.serialization._
+import rx.redis.util.{DefaultRedisHost, DefaultRedisPort, Utf8}
 
+import rx.functions.Action1
+
+import io.netty.buffer.{ByteBuf, Unpooled}
 import org.scalatest.FunSuite
 
 
@@ -31,7 +33,7 @@ class ThreadSafetySpec extends FunSuite {
   val threadCount = 2
 
   private class TestThread(
-      commandToSend: RespType,
+      commandToSend: () ⇒ ByteBuf,
       expected: RespType,
       getClient: => RawClient,
       shutdown: RawClient => Unit)
@@ -51,9 +53,9 @@ class ThreadSafetySpec extends FunSuite {
 
     override def run(): Unit = {
       for (n <- 1 until total) {
-        client.command(commandToSend).forEach(action)
+        client.command(commandToSend()).forEach(action)
       }
-      val last = client.command(commandToSend)
+      val last = client.command(commandToSend())
       last.toBlocking.forEach(action)
 
       shutdown(client)
@@ -67,7 +69,7 @@ class ThreadSafetySpec extends FunSuite {
 
     val client = RawClient(DefaultRedisHost, DefaultRedisPort)
 
-    def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, _ => ())
+    def createThread(n: Int) = new TestThread(() ⇒ cmd"ECHO ${n.toString}", RespBytes(n.toString), client, _ => ())
 
     val threads = List.tabulate(threadCount)(createThread)
 
@@ -84,7 +86,7 @@ class ThreadSafetySpec extends FunSuite {
 
     def client = RawClient(DefaultRedisHost, DefaultRedisPort)
 
-    def createThread(n: Int) = new TestThread(cmd"ECHO ${n.toString}", RespBytes(n.toString), client, { c =>
+    def createThread(n: Int) = new TestThread(() ⇒ cmd"ECHO ${n.toString}", RespBytes(n.toString), client, { c =>
       c.disconnect().toBlocking.lastOrDefault(())
     })
 
@@ -98,4 +100,7 @@ class ThreadSafetySpec extends FunSuite {
       assert(t.incorrect == 0)
     }
   }
+
+  def RespBytes(s: String): RespBytes =
+    rx.redis.resp.RespBytes.wrap(Unpooled.copiedBuffer(s, Utf8))
 }

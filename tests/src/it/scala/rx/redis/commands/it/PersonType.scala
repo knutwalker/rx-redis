@@ -16,8 +16,7 @@
 
 package rx.redis.commands.it
 
-import rx.redis.serialization.BytesFormat
-import rx.redis.util._
+import rx.redis.serialization.ByteBufFormat
 
 trait PersonType {
 
@@ -30,12 +29,7 @@ trait PersonType {
       apply(name, age.toInt)
     }
   }
-  implicit val PersonFormat = new BytesFormat[Person] {
-    def bytes(value: Person): Array[Byte] =
-      value.redisString.getBytes(Utf8)
-
-    def value(bytes: Array[Byte]): Person =
-      Person(new String(bytes, Utf8))
-  }
+  implicit val PersonFormat =
+    ByteBufFormat.of[String].xmap(Person.apply)(_.redisString)
 
 }

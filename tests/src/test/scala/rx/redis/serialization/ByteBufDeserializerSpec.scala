@@ -16,12 +16,11 @@
 
 package rx.redis.serialization
 
-import io.netty.buffer.UnpooledByteBufAllocator
-
-import rx.redis.resp.RespBytes
+import rx.redis.resp.respBytes
 import rx.redis.serialization.ByteBufDeserializer.ParseAllResult
 import rx.redis.util.Utf8
 
+import io.netty.buffer.UnpooledByteBufAllocator
 import org.scalatest.{ FunSuite, Inside }
 
 class ByteBufDeserializerSpec extends FunSuite with Inside {
@@ -31,12 +30,12 @@ class ByteBufDeserializerSpec extends FunSuite with Inside {
   test("apply should parse only one item") {
     val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n"
     val result = ByteBufDeserializer(resp, Utf8, alloc)
-    assert(result == RespBytes("foo"))
+    assert(result == respBytes("foo"))
   }
 
   test("foreach should execute an callback for each item") {
     val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n"
-    val expected = Iterator(RespBytes("foo"), RespBytes("bar"))
+    val expected = Iterator(respBytes("foo"), respBytes("bar"))
     ByteBufDeserializer.foreach(resp, Utf8, alloc) {
       actual ⇒ assert(actual == expected.next())
     }
@@ -55,12 +54,12 @@ class ByteBufDeserializerSpec extends FunSuite with Inside {
   test("parseAll should parse all items") {
     val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n"
     val result = ByteBufDeserializer.parseAll(resp, Utf8, alloc)
-    assert(result == ParseAllResult(List(RespBytes("foo"), RespBytes("bar")), hasRemainder = false))
+    assert(result == ParseAllResult(List(respBytes("foo"), respBytes("bar")), hasRemainder = false))
   }
 
   test("parseAll should also include whether there is data left") {
     val resp = "$3\r\nfoo\r\n$3\r\nbar\r\n$2\r"
     val result = ByteBufDeserializer.parseAll(resp, Utf8, alloc)
-    assert(result == ParseAllResult(List(RespBytes("foo"), RespBytes("bar")), hasRemainder = true))
+    assert(result == ParseAllResult(List(respBytes("foo"), respBytes("bar")), hasRemainder = true))
   }
 }

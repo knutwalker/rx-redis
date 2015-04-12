@@ -16,12 +16,11 @@
 
 package rx.redis.japi;
 
+import io.netty.buffer.ByteBuf;
 import rx.Observable;
 import rx.redis.clients.RawClient;
-import rx.redis.resp.RespType;
-import rx.redis.serialization.Writes;
+import rx.redis.serialization.package$;
 
-@SuppressWarnings("UnusedDeclaration")
 public final class RxRedis {
 
   private RxRedis() {}
@@ -42,8 +41,8 @@ public final class RxRedis {
     return connect(6379);
   }
 
-  public static RespType command(final String cmd) {
-    return Writes.DirectStringWrites$.MODULE$.write(cmd);
+  public static ByteBuf command(final String cmd) {
+    return package$.MODULE$.writeStringAsRedisCommand(cmd);
   }
 
   public static Observable<Void> disconnect(final Client client) {

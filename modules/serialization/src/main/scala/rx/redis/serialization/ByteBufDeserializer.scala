@@ -16,22 +16,23 @@
 
 package rx.redis.serialization
 
-import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
-
 import rx.redis.resp.RespType
 import rx.redis.serialization.Deserializer.NotEnoughData
 import rx.redis.util.Utf8
 
-import java.nio.charset.Charset
+import io.netty.buffer.{ ByteBuf, ByteBufAllocator }
+
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
+
+import java.nio.charset.Charset
 
 object ByteBufDeserializer {
 
   case class ParseAllResult(data: immutable.Seq[RespType], hasRemainder: Boolean)
 
-  private[this] final val INSTANCE = new Deserializer[ByteBuf]()(ByteBufAccess)
+  private[this] final val INSTANCE = new Deserializer
 
   private[this] def releaseAfterUse[A](bb: ByteBuf)(f: ⇒ A): A =
     try f finally bb.release()
@@ -50,15 +51,16 @@ object ByteBufDeserializer {
     apply(string, Utf8, alloc)
   }
 
+  @tailrec def iterate(bb: ByteBuf, f: RespType ⇒ Unit): Boolean =
+    if (!bb.isReadable) false
+    else {
+      f(INSTANCE(bb))
+      iterate(bb, f)
+    }
+
   def foreach(bb: ByteBuf)(f: RespType ⇒ Unit): Boolean = {
-    @tailrec def loop(): Boolean =
-      if (!bb.isReadable) false
-      else {
-        f(INSTANCE(bb))
-        loop()
-      }
     try {
-      loop()
+      iterate(bb, f)
     } catch {
       case NotEnoughData ⇒ true
     }

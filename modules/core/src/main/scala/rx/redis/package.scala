@@ -16,12 +16,10 @@
 
 package rx
 
-import rx.redis.resp.RespType
-import rx.redis.serialization.Writes
-
 package object redis {
+
   implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
-    def cmd(args: String*): RespType = {
+    def cmd(args: String*): String with RedisCommand = {
       val strings = ctx.parts.iterator
       val expressions = args.iterator
       val result = strings.
@@ -30,7 +28,7 @@ package object redis {
         foldLeft("")(_ + _).
         replaceAllLiterally("\\r\\n", "\r\n")
 
-      Writes[String].write(result)
+      RedisCommand(result)
     }
   }
 }

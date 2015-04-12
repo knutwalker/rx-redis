@@ -16,18 +16,22 @@
 
 package rx.redis.serialization
 
-import collection.immutable.VectorBuilder
-import scala.annotation.tailrec
-
 import rx.redis.resp._
+import rx.redis.resp.Protocol._
 import rx.redis.util._
 
+import io.netty.buffer.ByteBuf
+
+import collection.immutable.VectorBuilder
+import scala.annotation.tailrec
 import scala.util.control.NoStackTrace
 
 object Deserializer {
-  private[redis] final val NotEnoughData = new RuntimeException with NoStackTrace
-  private[redis] final case class ProtocolError(pos: Int, found: Char, expected: List[Byte])
-    extends RuntimeException(s"Protocol error at char $pos, expected [${expected mkString ", "}], but found [$found]")
+  sealed trait RespFailure
+
+  private[redis] final val NotEnoughData = new RuntimeException with NoStackTrace with RespFailure
+  private[redis] final case class ProtocolError(pos: Int, found: Char, expected: List[Byte]) extends RuntimeException(
+    s"Protocol error at char $pos, expected [${expected mkString ", "}], but found [$found]") with RespFailure
 
   object RespFailure {
     def apply(t: Throwable): Boolean = t match {
@@ -37,54 +41,53 @@ object Deserializer {
     def unapply(t: Throwable): Option[Throwable] = if (apply(t)) Some(t) else None
   }
 }
-final class Deserializer[A](implicit A: BytesAccess[A]) {
-  import rx.redis.resp.Protocol._
+final class Deserializer {
 
-  private[this] def notEnoughData(bytes: A) =
+  private[this] def notEnoughData(bytes: ByteBuf) =
     throw Deserializer.NotEnoughData
 
-  private[this] def unknownType(bytes: A) =
+  private[this] def unknownType(bytes: ByteBuf) =
     expected(bytes, typeChars: _*)
 
-  private[this] def expected(bytes: A, expected: Byte*) = {
-    val pos = A.readerIndex(bytes)
-    val found = A.getByteAt(bytes, pos).toChar
+  private[this] def expected(bytes: ByteBuf, expected: Byte*) = {
+    val pos = bytes.readerIndex()
+    val found = bytes.getByte(pos).toChar
     throw Deserializer.ProtocolError(pos, found, expected.toList)
   }
 
-  private[this] def peek(bytes: A) =
-    A.getByteAt(bytes, A.readerIndex(bytes))
+  private[this] def peek(bytes: ByteBuf) =
+    bytes.getByte(bytes.readerIndex())
 
-  private[this] def read(bytes: A) =
-    A.readNextByte(bytes)
+  private[this] def read(bytes: ByteBuf) =
+    bytes.readByte()
 
-  private[this] def skip(bytes: A) =
-    A.skipBytes(bytes, 1)
+  private[this] def skip(bytes: ByteBuf) =
+    bytes.skipBytes(1)
 
-  private[this] def requireLen(bytes: A, len: Int) =
-    A.isReadable(bytes, len)
+  private[this] def requireLen(bytes: ByteBuf, len: Int) =
+    bytes.isReadable(len)
 
-  private[this] def read(bytes: A, b: Byte): Unit = {
-    if (!A.isReadable(bytes)) notEnoughData(bytes)
+  private[this] def read(bytes: ByteBuf, b: Byte): Unit = {
+    if (!bytes.isReadable) notEnoughData(bytes)
     else if (peek(bytes) != b) expected(bytes, b)
     else skip(bytes)
   }
 
-  private[this] def andRequireCrLf(bytes: A, value: RespType) = {
+  private[this] def andRequireCrLf(bytes: ByteBuf, value: RespType) = {
     read(bytes, Cr)
     read(bytes, Lf)
     value
   }
 
-  private[this] def parseLen(bytes: A) =
+  private[this] def parseLen(bytes: ByteBuf) =
     parseNumInt(bytes)
 
-  private[this] def parseInteger(bytes: A) =
+  private[this] def parseInteger(bytes: ByteBuf) =
     RespInteger(parseNumLong(bytes))
 
   @tailrec
-  private[this] def parseNumInt(bytes: A, n: Int, neg: Int): Int = {
-    if (!A.isReadable(bytes)) {
+  private[this] def parseNumInt(bytes: ByteBuf, n: Int, neg: Int): Int = {
+    if (!bytes.isReadable) {
       notEnoughData(bytes)
     } else {
       val current = read(bytes)
@@ -99,8 +102,8 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
   }
 
   @tailrec
-  private[this] def parseNumLong(bytes: A, n: Long, neg: Long): Long = {
-    if (!A.isReadable(bytes)) {
+  private[this] def parseNumLong(bytes: ByteBuf, n: Long, neg: Long): Long = {
+    if (!bytes.isReadable) {
       notEnoughData(bytes)
     } else {
       val current = read(bytes)
@@ -114,36 +117,37 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
     }
   }
 
-  private[this] def parseNumInt(bytes: A): Int =
+  private[this] def parseNumInt(bytes: ByteBuf): Int =
     parseNumInt(bytes, 0, 1)
 
-  private[this] def parseNumLong(bytes: A): Long =
+  private[this] def parseNumLong(bytes: ByteBuf): Long =
     parseNumLong(bytes, 0L, 1L)
 
-  private[this] def readStringOfLen(bytes: A, len: Int)(ct: A ⇒ RespType) = {
+  private[this] def readStringOfLen(bytes: ByteBuf, len: Int)(ct: ByteBuf ⇒ RespType) = {
     if (!requireLen(bytes, len)) notEnoughData(bytes)
-    else andRequireCrLf(bytes, ct(A.readBytes(bytes, len)))
+    else andRequireCrLf(bytes, ct(bytes.readBytes(len)))
   }
 
-  private[this] def parseSimpleString(bytes: A) = {
-    val len = A.bytesBefore(bytes, Cr)
+  private[this] def parseSimpleString(bytes: ByteBuf) = {
+    val len = bytes.bytesBefore(Cr)
     if (len == -1) notEnoughData(bytes)
-    else readStringOfLen(bytes, len)(b ⇒ RespString(A.toString(b, Utf8)))
+    else readStringOfLen(bytes, len)(b ⇒ RespString(b.toString(Utf8)))
   }
 
-  private[this] def parseError(bytes: A) = {
-    val len = A.bytesBefore(bytes, Cr)
+  private[this] def parseError(bytes: ByteBuf) = {
+    val len = bytes.bytesBefore(Cr)
     if (len == -1) notEnoughData(bytes)
-    else readStringOfLen(bytes, len)(b ⇒ RespError(A.toString(b, Utf8)))
+    else readStringOfLen(bytes, len)(b ⇒ RespError(b.toString(Utf8)))
   }
 
-  private[this] def parseBulkString(bytes: A) = {
+  private[this] def parseBulkString(bytes: ByteBuf) = {
     val len = parseLen(bytes)
     if (len == -1) NullString
-    else readStringOfLen(bytes, len)(b ⇒ RespBytes(A.toByteArray(b)))
+    // TODO: Do we need to retain or can we ignore this? Maybe use b directly without slice
+    else readStringOfLen(bytes, len)(b ⇒ RespBytes.wrap(b.slice().retain()))
   }
 
-  private[this] def parseArray(bytes: A) = {
+  private[this] def parseArray(bytes: ByteBuf) = {
     val size = parseLen(bytes)
     if (size == -1) NullArray
     else {
@@ -160,25 +164,25 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
     }
   }
 
-  private[this] def quickApply(bytes: A): RespType = {
-    if (!A.isReadable(bytes)) notEnoughData(bytes)
+  private[this] def quickApply(bytes: ByteBuf): RespType = {
+    if (!bytes.isReadable) notEnoughData(bytes)
     else {
       val firstByte = peek(bytes)
       firstByte match {
         case Plus ⇒
-          A.skipBytes(bytes, 1)
+          bytes.skipBytes(1)
           parseSimpleString(bytes)
         case Minus ⇒
-          A.skipBytes(bytes, 1)
+          bytes.skipBytes(1)
           parseError(bytes)
         case Colon ⇒
-          A.skipBytes(bytes, 1)
+          bytes.skipBytes(1)
           parseInteger(bytes)
         case Dollar ⇒
-          A.skipBytes(bytes, 1)
+          bytes.skipBytes(1)
           parseBulkString(bytes)
         case Asterisk ⇒
-          A.skipBytes(bytes, 1)
+          bytes.skipBytes(1)
           parseArray(bytes)
         case _ ⇒
           unknownType(bytes)
@@ -186,13 +190,13 @@ final class Deserializer[A](implicit A: BytesAccess[A]) {
     }
   }
 
-  def apply(bytes: A): RespType = {
-    A.markReaderIndex(bytes)
+  def apply(bytes: ByteBuf): RespType = {
+    bytes.markReaderIndex()
     try {
       quickApply(bytes)
     } catch {
       case Deserializer.RespFailure(ex) ⇒
-        A.resetReaderIndex(bytes)
+        bytes.resetReaderIndex()
         throw ex
     }
   }

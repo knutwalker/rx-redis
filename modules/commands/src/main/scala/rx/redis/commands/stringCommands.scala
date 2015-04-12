@@ -16,40 +16,40 @@
 
 package rx.redis.commands
 
-import scala.concurrent.duration.FiniteDuration
+import rx.redis.serialization.{ ByteBufReader, ByteBufWriter, Id, Reads, Writes }
 
-import rx.redis.serialization.{ Id, BytesFormat, Reads, Writes }
+import scala.concurrent.duration.FiniteDuration
 
 case class Get(key: String)
 object Get {
   implicit val writes: Writes[Get] =
     Writes.writes[Get]
 
-  implicit def readsFormat[A: BytesFormat]: Reads[Get, Id] { type R = Option[A] } =
+  implicit def readsFormat[A: ByteBufReader]: Reads[Get, Id] { type R = Option[A] } =
     Reads.opt[Get, A]
 }
 
-case class Set[A: BytesFormat](key: String, value: A)
+case class Set[A: ByteBufWriter](key: String, value: A)
 object Set {
-  implicit def writes[A: BytesFormat]: Writes[Set[A]] =
+  implicit def writes[A: ByteBufWriter]: Writes[Set[A]] =
     Writes.writes[Set[A]]
 
   implicit val readsFormat: Reads[Set[_], Id] { type R = Boolean } =
     Reads.bool[Set[_]]
 }
 
-case class SetEx[A: BytesFormat](key: String, expires: FiniteDuration, value: A)
+case class SetEx[A: ByteBufWriter](key: String, expires: FiniteDuration, value: A)
 object SetEx {
-  implicit def writes[A: BytesFormat]: Writes[SetEx[A]] =
+  implicit def writes[A: ByteBufWriter]: Writes[SetEx[A]] =
     Writes.writes[SetEx[A]]
 
   implicit val readsFormat: Reads[SetEx[_], Id] { type R = Boolean } =
     Reads.bool[SetEx[_]]
 }
 
-case class SetNx[A: BytesFormat](key: String, value: A)
+case class SetNx[A: ByteBufWriter](key: String, value: A)
 object SetNx {
-  implicit def writes[A: BytesFormat]: Writes[SetNx[A]] =
+  implicit def writes[A: ByteBufWriter]: Writes[SetNx[A]] =
     Writes.writes[SetNx[A]]
 
   implicit val readsFormat: Reads[SetNx[_], Id] { type R = Boolean } =
@@ -97,13 +97,13 @@ object MGet {
   implicit val writes: Writes[MGet] =
     Writes.writes[MGet]
 
-  implicit def readsFormat[A: BytesFormat]: Reads[MGet, List] { type R = Option[A] } =
+  implicit def readsFormat[A: ByteBufReader]: Reads[MGet, List] { type R = Option[A] } =
     Reads.listOpt[MGet, A]
 }
 
-case class MSet[A: BytesFormat](keys: (String, A)*)
+case class MSet[A: ByteBufWriter](keys: (String, A)*)
 object MSet {
-  implicit def writes[A: BytesFormat]: Writes[MSet[A]] =
+  implicit def writes[A: ByteBufWriter]: Writes[MSet[A]] =
     Writes.writes[MSet[A]]
 
   implicit val readsFormat: Reads[MSet[_], Id] { type R = Boolean } =

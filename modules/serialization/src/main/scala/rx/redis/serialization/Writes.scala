@@ -16,26 +16,19 @@
 
 package rx.redis.serialization
 
+import io.netty.buffer.ByteBuf
+
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
-
-import rx.redis.resp.{ RespType, RespArray, RespBytes }
 
 @implicitNotFound("Cannot find a Writes of ${A}. You have to implement an rx.redis.serialization.Writes[${A}] in order to send ${A} as a command.")
 trait Writes[A] {
 
-  def write(value: A): RespType
+  def write(bb: ByteBuf, value: A): ByteBuf
 }
 
 object Writes {
   @inline def apply[A](implicit A: Writes[A]): Writes[A] = A
 
   def writes[A]: Writes[A] = macro WritesMacro.writes[A]
-
-  implicit object DirectStringWrites extends Writes[String] {
-    def write(value: String): RespType = {
-      val items: Vector[RespType] = value.split(' ').map(RespBytes(_))(collection.breakOut)
-      RespArray(items)
-    }
-  }
 }

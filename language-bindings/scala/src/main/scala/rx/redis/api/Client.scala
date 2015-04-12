@@ -16,6 +16,8 @@
 
 package rx.redis.api
 
+import io.netty.buffer.ByteBuf
+
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
 import rx.lang.scala.JavaConversions._
@@ -23,7 +25,7 @@ import rx.lang.scala.Observable
 
 import rx.redis.clients.RawClient
 import rx.redis.resp.RespType
-import rx.redis.serialization.BytesFormat
+import rx.redis.serialization.{ ByteBufFormat, ByteBufReader, ByteBufWriter }
 
 final class Client(raw: RawClient) {
   @deprecated("Use disconnect", "0.4.0")
@@ -33,7 +35,7 @@ final class Client(raw: RawClient) {
   private[api] def disconnect(): Observable[Unit] =
     raw.disconnect()
 
-  def command(dt: RespType): Observable[RespType] =
+  def command(dt: ByteBuf): Observable[RespType] =
     raw.command(dt)
 
   // ==============
@@ -65,7 +67,7 @@ final class Client(raw: RawClient) {
   // String Commands
   // ================
 
-  def getAs[A: BytesFormat](key: String): Observable[Option[A]] =
+  def getAs[A: ByteBufReader](key: String): Observable[Option[A]] =
     raw.get[A](key)
 
   def get(key: String): Observable[Option[String]] =
@@ -74,7 +76,7 @@ final class Client(raw: RawClient) {
   def getBytes(key: String): Observable[Option[Array[Byte]]] =
     raw.get[Array[Byte]](key)
 
-  def setAs[A: BytesFormat](key: String, value: A): Observable[Boolean] =
+  def setAs[A: ByteBufWriter](key: String, value: A): Observable[Boolean] =
     raw.set[A](key: String, value)
 
   def set(key: String, value: String): Observable[Boolean] =
@@ -83,10 +85,10 @@ final class Client(raw: RawClient) {
   def set(key: String, value: Array[Byte]): Observable[Boolean] =
     raw.set[Array[Byte]](key, value)
 
-  def setEx[A: BytesFormat](key: String, value: A, expires: FiniteDuration): Observable[Boolean] =
+  def setEx[A: ByteBufWriter](key: String, value: A, expires: FiniteDuration): Observable[Boolean] =
     raw.setEx[A](key, value, expires)
 
-  def setNx[A: BytesFormat](key: String, value: A): Observable[Boolean] =
+  def setNx[A: ByteBufWriter](key: String, value: A): Observable[Boolean] =
     raw.setNx[A](key, value)
 
   def incr(key: String): Observable[Long] =
@@ -101,7 +103,7 @@ final class Client(raw: RawClient) {
   def decrBy(key: String, amount: Long): Observable[Long] =
     raw.decrBy(key, amount)
 
-  def mgetAs[A: BytesFormat](keys: String*): Observable[Option[A]] =
+  def mgetAs[A: ByteBufReader](keys: String*): Observable[Option[A]] =
     raw.mget[A](keys: _*)
 
   def mget(keys: String*): Observable[Option[String]] =
@@ -110,7 +112,7 @@ final class Client(raw: RawClient) {
   def mgetBytes(keys: String*): Observable[Option[Array[Byte]]] =
     raw.mget[Array[Byte]](keys: _*)
 
-  def msetAs[A: BytesFormat](items: (String, A)*): Observable[Boolean] =
+  def msetAs[A: ByteBufWriter](items: (String, A)*): Observable[Boolean] =
     raw.mset[A](items: _*)
 
   def mset(items: (String, String)*): Observable[Boolean] =
@@ -126,7 +128,7 @@ final class Client(raw: RawClient) {
   //  Hash Commands
   // ===============
 
-  def hgetAs[A: BytesFormat](key: String, field: String): Observable[Option[A]] =
+  def hgetAs[A: ByteBufReader](key: String, field: String): Observable[Option[A]] =
     raw.hget[A](key, field)
 
   def hget(key: String, field: String): Observable[Option[String]] =
@@ -135,7 +137,7 @@ final class Client(raw: RawClient) {
   def hgetBytes(key: String, field: String): Observable[Option[Array[Byte]]] =
     raw.hget[Array[Byte]](key, field)
 
-  def hgetAllAs[A: BytesFormat](key: String): Observable[(String, A)] =
+  def hgetAllAs[A: ByteBufReader](key: String): Observable[(String, A)] =
     raw.hgetAll[A](key)
 
   def hgetAll(key: String): Observable[(String, String)] =
@@ -151,6 +153,6 @@ final class Client(raw: RawClient) {
   def ping(): Observable[String] =
     raw.ping()
 
-  def echo[A: BytesFormat](msg: A): Observable[A] =
+  def echo[A: ByteBufFormat](msg: A): Observable[A] =
     raw.echo[A](msg)
 }

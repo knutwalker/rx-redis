@@ -16,10 +16,11 @@
 
 package rx.redis.pipeline
 
-import rx.Observer
-import io.netty.channel.{ ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise }
-
 import rx.redis.resp.RespType
+
+import rx.Observer
+
+import io.netty.channel.{ ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise }
 
 import java.util
 
@@ -33,7 +34,7 @@ private[redis] class RxAdapter(queue: util.Queue[Observer[RespType]]) extends Ch
         sender.onCompleted()
       } catch {
         case cc: ClassCastException ⇒
-          sender.onError(new RuntimeException("msg is not a RespType"))
+          sender.onError(new RuntimeException("msg is not a [rx.redis.resp.RespType]"))
       }
     }
     ctx.fireChannelRead(msg)

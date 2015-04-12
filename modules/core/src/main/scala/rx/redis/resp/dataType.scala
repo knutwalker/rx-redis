@@ -16,10 +16,11 @@
 
 package rx.redis.resp
 
-import java.nio.charset.Charset
-import java.util
-
 import rx.redis.util.Utf8
+
+import io.netty.buffer.{ ByteBuf, Unpooled }
+
+import java.nio.charset.Charset
 
 sealed abstract class RespType
 
@@ -51,25 +52,15 @@ object RespArray {
     RespArray(x +: xs.toVector)
 }
 
-case class RespBytes(bytes: Array[Byte]) extends RespType {
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case RespBytes(bs) ⇒ util.Arrays.equals(bytes, bs)
-    case _             ⇒ super.equals(obj)
-  }
+case class RespBytes private (bb: ByteBuf) extends RespType {
 
-  override def hashCode(): Int =
-    util.Arrays.hashCode(bytes)
+  override def toString: String = bb.toString(Utf8)
 
-  override def toString: String = new String(bytes, Utf8)
-
-  def toString(charset: Charset): String = new String(bytes, charset)
+  def toString(charset: Charset): String = bb.toString(charset)
 }
 object RespBytes {
-  def apply(s: String, charset: Charset): RespBytes =
-    apply(s.getBytes(charset))
-
-  def apply(s: String): RespBytes =
-    apply(s, Utf8)
+  def wrap(bb: ByteBuf): RespBytes =
+    new RespBytes(Unpooled.unmodifiableBuffer(bb))
 }
 
 case object NullString extends RespType {
