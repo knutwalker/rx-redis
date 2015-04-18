@@ -48,20 +48,31 @@ class FinaglePingBench {
   }
 
   @Benchmark
-  def async(): Future[String] =
-    client.doRequest(FinaglePingBench.Ping) {
-      case BulkReply(message) ⇒ Future.value(message.toString(Utf8))
-    }
+  @OperationsPerInvocation(100000)
+  def async_100000(): String = {
+    (1 until 100000).foreach(_ ⇒ FinaglePingBench.ping(client))
+    Await.result(FinaglePingBench.ping(client))
+  }
+
+  @Benchmark
+  @OperationsPerInvocation(10000)
+  def async_10000(): String = {
+    (1 until 10000).foreach(_ ⇒ FinaglePingBench.ping(client))
+    Await.result(FinaglePingBench.ping(client))
+  }
 
   @Benchmark
   def sync(): String =
-    Await.result(client.doRequest(FinaglePingBench.Ping) {
-      case StatusReply(message) ⇒ Future.value(message)
-    })
+    Await.result(FinaglePingBench.ping(client))
 }
 object FinaglePingBench {
   object Ping extends Command {
     val command = "PING"
     val toChannelBuffer = RedisCodec.toUnifiedFormat(Seq(StringToChannelBuffer("PING")))
+  }
+
+  def ping(client: Client): Future[String] = client.doRequest(Ping) {
+    case StatusReply(message) ⇒ Future.value(message)
+    case BulkReply(message)   ⇒ Future.value(message.toString(Utf8))
   }
 }

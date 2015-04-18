@@ -57,10 +57,20 @@ class ScalaRedisNbPingBench {
   }
 
   @Benchmark
-  def async(): Future[Ping.Ret] =
-    client.ping()
+  @OperationsPerInvocation(100000)
+  def async_100000(): Boolean = {
+    (1 until 100000).foreach(_ ⇒ client.ping())
+    Await.result(client.ping(), Duration.Inf)
+  }
 
   @Benchmark
-  def sync(): Ping.Ret =
+  @OperationsPerInvocation(10000)
+  def async_10000(): Boolean = {
+    (1 until 10000).foreach(_ ⇒ client.ping())
+    Await.result(client.ping(), Duration.Inf)
+  }
+
+  @Benchmark
+  def sync(): Boolean =
     Await.result(client.ping(), Duration.Inf)
 }

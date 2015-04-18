@@ -36,8 +36,18 @@ import java.util.concurrent.TimeUnit
 class RedissonPingBench {
 
   @Benchmark
-  def async(s: RedissonPingBench.AsyncState): concurrent.Future[String] =
-    s.conn.ping()
+  @OperationsPerInvocation(10000)
+  def async_10000(s: RedissonPingBench.AsyncState): Boolean = {
+    (1 until 10000).foreach(_ ⇒ s.conn.ping())
+    s.conn.ping().await(1, TimeUnit.MINUTES)
+  }
+
+  @Benchmark
+  @OperationsPerInvocation(100000)
+  def async_100000(s: RedissonPingBench.AsyncState): Boolean = {
+    (1 until 100000).foreach(_ ⇒ s.conn.ping())
+    s.conn.ping().await(1, TimeUnit.MINUTES)
+  }
 
   @Benchmark
   def sync(s: RedissonPingBench.SyncState): String =

@@ -46,8 +46,17 @@ class RxPingBench {
   }
 
   @Benchmark
-  def async(): Observable[String] = {
-    client.ping()
+  @OperationsPerInvocation(100000)
+  def async_100000(): String = {
+    (1 until 100000).foreach(_ ⇒ client.ping())
+    client.ping().toBlocking.single()
+  }
+
+  @Benchmark
+  @OperationsPerInvocation(10000)
+  def async_10000(): String = {
+    (1 until 10000).foreach(_ ⇒ client.ping())
+    client.ping().toBlocking.single()
   }
 
   @Benchmark
