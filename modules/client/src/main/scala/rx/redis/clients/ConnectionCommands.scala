@@ -16,24 +16,17 @@
 
 package rx.redis.clients
 
-import rx.redis.pipeline.NettyClient
-import rx.redis.resp.RespType
+import rx.redis.commands.{ Echo, Ping }
+import rx.redis.serialization.ByteBufFormat
 
 import rx.Observable
-import rx.subjects.AsyncSubject
 
-import io.netty.buffer.ByteBuf
+trait ConnectionCommands { this: GenericClient ⇒
 
-private[redis] final class DefaultClient(protected val netty: NettyClient) extends RawClient {
+  final def echo[A: ByteBufFormat](msg: A): Observable[A] =
+    run(Echo(msg))
 
-  def command(bb: ByteBuf): Observable[RespType] = {
-    val s = AsyncSubject.create[RespType]()
-    netty.send(bb, s)
-    s
-  }
-
-  protected def closeClient(): Observable[Unit] = {
-    eagerObservable(netty.close())
-  }
+  final def ping(): Observable[String] =
+    run(Ping)
 
 }
