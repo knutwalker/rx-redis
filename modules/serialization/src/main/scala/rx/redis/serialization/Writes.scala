@@ -16,7 +16,9 @@
 
 package rx.redis.serialization
 
-import io.netty.buffer.ByteBuf
+import rx.redis.util.Utf8
+
+import io.netty.buffer.{ Unpooled, ByteBuf }
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
@@ -31,4 +33,21 @@ object Writes {
   @inline def apply[A](implicit A: Writes[A]): Writes[A] = A
 
   def writes[A]: Writes[A] = macro WritesMacro.writes[A]
+
+  final implicit class WritesSyntax[A](val x: A) extends AnyVal {
+
+    def writeTo(bb: ByteBuf)(implicit A: Writes[A]): ByteBuf =
+      A.write(bb, x)
+
+    def writeToUnpooled(implicit A: Writes[A]): ByteBuf =
+      A.write(Unpooled.buffer(), x)
+
+    def writeToString(implicit A: Writes[A]): String = {
+      val buf = Unpooled.buffer()
+      val res = A.write(buf, x).toString(Utf8)
+      buf.release()
+      res
+    }
+
+  }
 }
