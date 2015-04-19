@@ -19,7 +19,7 @@ package rx.redis.japi;
 import io.netty.buffer.ByteBuf;
 import rx.Observable;
 import rx.functions.Func1;
-import rx.redis.clients.RawClient;
+import rx.redis.clients.GenericClient;
 import rx.redis.japi.format.BytesFormat;
 import rx.redis.japi.format.BytesReader;
 import rx.redis.japi.format.BytesWriter;
@@ -43,10 +43,10 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public final class Client {
 
-  private final RawClient raw;
+  private final GenericClient underlying;
 
-  Client(final RawClient raw) {
-    this.raw = raw;
+  Client(final GenericClient underlying) {
+    this.underlying = underlying;
   }
 
   public static <T, U> Tuple2<T, U> pair(final T t, final U u) {
@@ -62,15 +62,15 @@ public final class Client {
   }
 
   Observable<Void> disconnect() {
-    return raw.disconnect().map(x -> null);
+    return underlying.disconnect().map(x -> null);
   }
 
   public Observable<RespType> command(final ByteBuf cmd) {
-    return raw.command(cmd);
+    return underlying.command(cmd);
   }
 
   public <A> Observable<RespType> command(final A cmd, final Writes<A> A) {
-    return raw.command(cmd, A);
+    return underlying.command(cmd, A);
   }
 
   // ==============
@@ -79,31 +79,31 @@ public final class Client {
 
 
   public Observable<Long> del(final String... keys) {
-    return raw.del(tsToSeq(keys)).map(toJLong);
+    return underlying.del(tsToSeq(keys)).map(toJLong);
   }
 
   public Observable<Boolean> exists(final String key) {
-    return raw.exists(key).map(toJBool);
+    return underlying.exists(key).map(toJBool);
   }
 
   public Observable<Boolean> expire(final String key, final FiniteDuration expires) {
-    return raw.expire(key, expires).map(toJBool);
+    return underlying.expire(key, expires).map(toJBool);
   }
 
   public Observable<Boolean> expireAt(final String key, final Deadline deadline) {
-    return raw.expireAt(key, deadline).map(toJBool);
+    return underlying.expireAt(key, deadline).map(toJBool);
   }
 
   public Observable<String> keys(final String pattern) {
-    return raw.keys(pattern);
+    return underlying.keys(pattern);
   }
 
   public Observable<Optional<String>> randomKey() {
-    return raw.randomKey().map(optionFunc());
+    return underlying.randomKey().map(optionFunc());
   }
 
   public Observable<Long> ttl(final String key) {
-    return raw.ttl(key).map(toJLong);
+    return underlying.ttl(key).map(toJLong);
   }
 
   // ================
@@ -111,7 +111,7 @@ public final class Client {
   // ================
 
   public <T> Observable<Optional<T>> getAs(final String key, final BytesReader<T> bytesReader) {
-    return raw.get(key,
+    return underlying.get(key,
         Objects.requireNonNull(bytesReader, "bytesReader must not be null")
             .asScalaReader()).map(optionFunc());
   }
@@ -125,7 +125,7 @@ public final class Client {
   }
 
   public <T> Observable<Boolean> setAs(final String key, final T value, final BytesWriter<T> bytesWriter) {
-    return raw.set(key, value,
+    return underlying.set(key, value,
         Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
             .asScalaWriter()).map(toJBool);
   }
@@ -139,35 +139,35 @@ public final class Client {
   }
 
   public <T> Observable<Boolean> setEx(final String key, final T value, final FiniteDuration expires, final BytesWriter<T> bytesWriter) {
-    return raw.setEx(key, value, expires,
+    return underlying.setEx(key, value, expires,
         Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
             .asScalaWriter()).map(toJBool);
   }
 
   public <T> Observable<Boolean> setNx(final String key, final T value, final BytesWriter<T> bytesWriter) {
-    return raw.setNx(key, value,
+    return underlying.setNx(key, value,
         Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
             .asScalaWriter()).map(toJBool);
   }
 
   public Observable<Long> incr(final String key) {
-    return raw.incr(key).map(toJLong);
+    return underlying.incr(key).map(toJLong);
   }
 
   public Observable<Long> incrBy(final String key, final long amount) {
-    return raw.incrBy(key, amount).map(toJLong);
+    return underlying.incrBy(key, amount).map(toJLong);
   }
 
   public Observable<Long> decr(final String key) {
-    return raw.decr(key).map(toJLong);
+    return underlying.decr(key).map(toJLong);
   }
 
   public Observable<Long> decrBy(final String key, final long amount) {
-    return raw.decrBy(key, amount).map(toJLong);
+    return underlying.decrBy(key, amount).map(toJLong);
   }
 
   public <T> Observable<Optional<T>> mgetAs(final BytesReader<T> bytesReader, final String... keys) {
-    return raw.mget(tsToSeq(keys),
+    return underlying.mget(tsToSeq(keys),
         Objects.requireNonNull(bytesReader, "bytesReader must not be null")
             .asScalaReader()).map(optionFunc());
   }
@@ -182,14 +182,14 @@ public final class Client {
 
   @SafeVarargs
   public final <T> Observable<Boolean> msetAs(final BytesWriter<T> bytesWriter, final Map.Entry<String, T>... items) {
-    return raw.mset(tsMapToSeq(x -> Tuple2.apply(x.getKey(), x.getValue()), items),
+    return underlying.mset(tsMapToSeq(x -> Tuple2.apply(x.getKey(), x.getValue()), items),
         Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
             .asScalaWriter()).map(toJBool);
   }
 
   @SafeVarargs
   public final <T> Observable<Boolean> msetAs(final BytesWriter<T> bytesWriter, final Tuple2<String, T>... items) {
-    return raw.mset(tsToSeq(items),
+    return underlying.mset(tsToSeq(items),
         Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
             .asScalaWriter()).map(toJBool);
   }
@@ -233,7 +233,7 @@ public final class Client {
   }
 
   public Observable<Long> strLen(final String key) {
-    return raw.strLen(key).map(toJLong);
+    return underlying.strLen(key).map(toJLong);
   }
 
   // ===============
@@ -241,7 +241,7 @@ public final class Client {
   // ===============
 
   public <A> Observable<Optional<A>> hgetAs(final String key, final String field, final BytesReader<A> bytesReader) {
-    return raw.hget(key, field,
+    return underlying.hget(key, field,
         Objects.requireNonNull(bytesReader, "bytesReader must not be null")
             .asScalaReader()).map(optionFunc());
   }
@@ -255,17 +255,17 @@ public final class Client {
   }
 
   public <A> Observable<Tuple2<String, A>> hgetAllAs(final String key, final BytesReader<A> bytesReader) {
-    return raw.hgetAll(key,
+    return underlying.hgetAll(key,
         Objects.requireNonNull(bytesReader, "bytesReader must not be null")
             .asScalaReader());
   }
 
   public Observable<Map.Entry<String, String>> hgetAll(final String key) {
-    return raw.hgetAll(key, DefaultBytes.STRING.asScalaReader()).map(entryFunc());
+    return underlying.hgetAll(key, DefaultBytes.STRING.asScalaReader()).map(entryFunc());
   }
 
   public Observable<Map.Entry<String, byte[]>> hgetAllBytes(final String key) {
-    return raw.hgetAll(key, DefaultBytes.BYTES.asScala()).map(entryFunc());
+    return underlying.hgetAll(key, DefaultBytes.BYTES.asScala()).map(entryFunc());
   }
 
 
@@ -274,11 +274,11 @@ public final class Client {
   // =====================
 
   public Observable<String> ping() {
-    return raw.ping();
+    return underlying.ping();
   }
 
   public <T> Observable<T> echo(final T message, final BytesFormat<T> bytesFormat) {
-    return raw.echo(message, Objects.requireNonNull(bytesFormat, "bytesFormat must not be null").asScala());
+    return underlying.echo(message, Objects.requireNonNull(bytesFormat, "bytesFormat must not be null").asScala());
   }
 
   public Observable<String> echo(final String message) {

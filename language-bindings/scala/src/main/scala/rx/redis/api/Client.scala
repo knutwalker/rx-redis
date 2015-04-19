@@ -23,136 +23,136 @@ import scala.concurrent.duration.{ Deadline, FiniteDuration }
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
-import rx.redis.clients.RawClient
+import rx.redis.clients.GenericClient
 import rx.redis.resp.RespType
 import rx.redis.serialization.{ ByteBufFormat, ByteBufReader, ByteBufWriter }
 
-final class Client(raw: RawClient) {
+final class Client(underlying: GenericClient) {
   @deprecated("Use disconnect", "0.4.0")
   def shutdown(): Observable[Unit] =
     disconnect()
 
   private[api] def disconnect(): Observable[Unit] =
-    raw.disconnect()
+    underlying.disconnect()
 
   def command(dt: ByteBuf): Observable[RespType] =
-    raw.command(dt)
+    underlying.command(dt)
 
   // ==============
   //  Key Commands
   // ==============
 
   def del(keys: String*): Observable[Long] =
-    raw.del(keys: _*)
+    underlying.del(keys: _*)
 
   def exists(key: String): Observable[Boolean] =
-    raw.exists(key)
+    underlying.exists(key)
 
   def expire(key: String, expires: FiniteDuration): Observable[Boolean] =
-    raw.expire(key, expires)
+    underlying.expire(key, expires)
 
   def expireAt(key: String, deadline: Deadline): Observable[Boolean] =
-    raw.expireAt(key, deadline)
+    underlying.expireAt(key, deadline)
 
   def keys(pattern: String): Observable[String] =
-    raw.keys(pattern)
+    underlying.keys(pattern)
 
   def randomKey(): Observable[Option[String]] =
-    raw.randomKey()
+    underlying.randomKey()
 
   def ttl(key: String): Observable[Long] =
-    raw.ttl(key)
+    underlying.ttl(key)
 
   // ================
   // String Commands
   // ================
 
   def getAs[A: ByteBufReader](key: String): Observable[Option[A]] =
-    raw.get[A](key)
+    underlying.get[A](key)
 
   def get(key: String): Observable[Option[String]] =
-    raw.get[String](key)
+    underlying.get[String](key)
 
   def getBytes(key: String): Observable[Option[Array[Byte]]] =
-    raw.get[Array[Byte]](key)
+    underlying.get[Array[Byte]](key)
 
   def setAs[A: ByteBufWriter](key: String, value: A): Observable[Boolean] =
-    raw.set[A](key: String, value)
+    underlying.set[A](key: String, value)
 
   def set(key: String, value: String): Observable[Boolean] =
-    raw.set[String](key, value)
+    underlying.set[String](key, value)
 
   def set(key: String, value: Array[Byte]): Observable[Boolean] =
-    raw.set[Array[Byte]](key, value)
+    underlying.set[Array[Byte]](key, value)
 
   def setEx[A: ByteBufWriter](key: String, value: A, expires: FiniteDuration): Observable[Boolean] =
-    raw.setEx[A](key, value, expires)
+    underlying.setEx[A](key, value, expires)
 
   def setNx[A: ByteBufWriter](key: String, value: A): Observable[Boolean] =
-    raw.setNx[A](key, value)
+    underlying.setNx[A](key, value)
 
   def incr(key: String): Observable[Long] =
-    raw.incr(key)
+    underlying.incr(key)
 
   def incrBy(key: String, amount: Long): Observable[Long] =
-    raw.incrBy(key, amount)
+    underlying.incrBy(key, amount)
 
   def decr(key: String): Observable[Long] =
-    raw.decr(key)
+    underlying.decr(key)
 
   def decrBy(key: String, amount: Long): Observable[Long] =
-    raw.decrBy(key, amount)
+    underlying.decrBy(key, amount)
 
   def mgetAs[A: ByteBufReader](keys: String*): Observable[Option[A]] =
-    raw.mget[A](keys: _*)
+    underlying.mget[A](keys: _*)
 
   def mget(keys: String*): Observable[Option[String]] =
-    raw.mget[String](keys: _*)
+    underlying.mget[String](keys: _*)
 
   def mgetBytes(keys: String*): Observable[Option[Array[Byte]]] =
-    raw.mget[Array[Byte]](keys: _*)
+    underlying.mget[Array[Byte]](keys: _*)
 
   def msetAs[A: ByteBufWriter](items: (String, A)*): Observable[Boolean] =
-    raw.mset[A](items: _*)
+    underlying.mset[A](items: _*)
 
   def mset(items: (String, String)*): Observable[Boolean] =
-    raw.mset[String](items: _*)
+    underlying.mset[String](items: _*)
 
   def msetBytes(items: (String, Array[Byte])*): Observable[Boolean] =
-    raw.mset[Array[Byte]](items: _*)
+    underlying.mset[Array[Byte]](items: _*)
 
   def strLen(key: String): Observable[Long] =
-    raw.strLen(key)
+    underlying.strLen(key)
 
   // ===============
   //  Hash Commands
   // ===============
 
   def hgetAs[A: ByteBufReader](key: String, field: String): Observable[Option[A]] =
-    raw.hget[A](key, field)
+    underlying.hget[A](key, field)
 
   def hget(key: String, field: String): Observable[Option[String]] =
-    raw.hget[String](key, field)
+    underlying.hget[String](key, field)
 
   def hgetBytes(key: String, field: String): Observable[Option[Array[Byte]]] =
-    raw.hget[Array[Byte]](key, field)
+    underlying.hget[Array[Byte]](key, field)
 
   def hgetAllAs[A: ByteBufReader](key: String): Observable[(String, A)] =
-    raw.hgetAll[A](key)
+    underlying.hgetAll[A](key)
 
   def hgetAll(key: String): Observable[(String, String)] =
-    raw.hgetAll[String](key)
+    underlying.hgetAll[String](key)
 
   def hgetAllBytes(key: String): Observable[(String, Array[Byte])] =
-    raw.hgetAll[Array[Byte]](key)
+    underlying.hgetAll[Array[Byte]](key)
 
   // =====================
   //  Connection Commands
   // =====================
 
   def ping(): Observable[String] =
-    raw.ping()
+    underlying.ping()
 
   def echo[A: ByteBufFormat](msg: A): Observable[A] =
-    raw.echo[A](msg)
+    underlying.echo[A](msg)
 }
