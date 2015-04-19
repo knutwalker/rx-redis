@@ -16,6 +16,8 @@
 
 package rx.redis.japi;
 
+import rx.redis.japi.format.BytesFormat;
+import rx.redis.japi.format.BytesWriter;
 import rx.redis.serialization.ByteBufFormat$;
 import rx.redis.serialization.ByteBufWriter$;
 import scala.concurrent.duration.Deadline;

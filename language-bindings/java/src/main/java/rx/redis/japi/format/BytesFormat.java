@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.japi;
+package rx.redis.japi.format;
 
 import io.netty.buffer.ByteBuf;
 import rx.redis.serialization.ByteBufFormat;
@@ -23,6 +23,7 @@ import rx.redis.serialization.ByteBufReader;
 import rx.redis.serialization.ByteBufWriter;
 import scala.util.Either;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 import static scala.collection.JavaConverters.iterableAsScalaIterableConverter;
@@ -76,12 +77,12 @@ public interface BytesFormat<T> extends BytesReader<T>, BytesWriter<T> {
     private final ByteBufFormat<T> delegate;
 
     FromScalaFormat(final ByteBufFormat<T> delegate) {
-      this.delegate = delegate;
+      this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
     }
 
     @Override
     public T fromByteBuf(final ByteBuf bb) {
-      return delegate.fromByteBuf(bb).right().get();
+      return delegate.fromByteBuf(bb);
     }
 
     @Override

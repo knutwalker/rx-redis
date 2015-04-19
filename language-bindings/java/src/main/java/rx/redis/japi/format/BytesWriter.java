@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.japi;
+package rx.redis.japi.format;
 
 import io.netty.buffer.ByteBuf;
 import rx.redis.serialization.ByteBufWriter;

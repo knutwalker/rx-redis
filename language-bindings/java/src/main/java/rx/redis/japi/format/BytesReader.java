@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.japi;
+package rx.redis.japi.format;
 
 import io.netty.buffer.ByteBuf;
 import rx.redis.serialization.ByteBufReader;
@@ -45,7 +45,7 @@ public interface BytesReader<T> {
   }
 
   default ByteBufReader<T> asScalaReader() {
-    return ByteBufReader$.MODULE$.read(func(this::fromByteBuf));
+    return ByteBufReader$.MODULE$.apply(func(this::fromByteBuf));
   }
 
   static <T> BytesReader<T> fromScala(final ByteBufReader<T> delegate) {
@@ -61,7 +61,7 @@ public interface BytesReader<T> {
 
     @Override
     public T fromByteBuf(final ByteBuf bb) {
-      return delegate.fromByteBuf(bb).right().get();
+      return delegate.fromByteBuf(bb);
     }
 
     @Override

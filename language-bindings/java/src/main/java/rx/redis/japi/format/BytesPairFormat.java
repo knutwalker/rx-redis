@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package rx.redis.japi;
+package rx.redis.japi.format;
 
 import io.netty.buffer.ByteBuf;
 import rx.redis.serialization.ByteBufFormat;
@@ -66,13 +66,13 @@ public interface BytesPairFormat<T, U> extends BytesFormat<Tuple2<T, U>> {
 
     @Override
     public Map.Entry<T, U> entryFromByteBuf(final ByteBuf bb) {
-      final Tuple2<T, U> tuple = delegate.fromByteBuf(bb).right().get();
+      final Tuple2<T, U> tuple = delegate.fromByteBuf(bb);
       return new AbstractMap.SimpleImmutableEntry<>(tuple._1(), tuple._2());
     }
 
     @Override
     public Tuple2<T, U> fromByteBuf(final ByteBuf bb) {
-      return delegate.fromByteBuf(bb).right().get();
+      return delegate.fromByteBuf(bb);
     }
 
     @Override

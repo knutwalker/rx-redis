@@ -20,6 +20,9 @@ import io.netty.buffer.ByteBuf;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.redis.clients.RawClient;
+import rx.redis.japi.format.BytesFormat;
+import rx.redis.japi.format.BytesReader;
+import rx.redis.japi.format.BytesWriter;
 import rx.redis.resp.RespType;
 import rx.redis.serialization.Writes;
 import scala.Option;
@@ -31,11 +34,13 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 
+@SuppressWarnings("unused")
 public final class Client {
 
   private final RawClient raw;
@@ -105,8 +110,10 @@ public final class Client {
   // String Commands
   // ================
 
-  public <T> Observable<Optional<T>> getAs(final String key, final BytesReader<T> byteBufReader) {
-    return raw.get(key, byteBufReader.asScalaReader()).map(optionFunc());
+  public <T> Observable<Optional<T>> getAs(final String key, final BytesReader<T> bytesReader) {
+    return raw.get(key,
+        Objects.requireNonNull(bytesReader, "bytesReader must not be null")
+            .asScalaReader()).map(optionFunc());
   }
 
   public Observable<Optional<String>> get(final String key) {
@@ -117,8 +124,10 @@ public final class Client {
     return getAs(key, DefaultBytes.BYTES);
   }
 
-  public <T> Observable<Boolean> setAs(final String key, final T value, final BytesWriter<T> byteBufWriter) {
-    return raw.set(key, value, byteBufWriter.asScalaWriter()).map(toJBool);
+  public <T> Observable<Boolean> setAs(final String key, final T value, final BytesWriter<T> bytesWriter) {
+    return raw.set(key, value,
+        Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
+            .asScalaWriter()).map(toJBool);
   }
 
   public Observable<Boolean> set(final String key, final String value) {
@@ -129,12 +138,16 @@ public final class Client {
     return setAs(key, value, DefaultBytes.BYTES);
   }
 
-  public <T> Observable<Boolean> setEx(final String key, final T value, final FiniteDuration expires, final BytesWriter<T> byteBufWriter) {
-    return raw.setEx(key, value, expires, byteBufWriter.asScalaWriter()).map(toJBool);
+  public <T> Observable<Boolean> setEx(final String key, final T value, final FiniteDuration expires, final BytesWriter<T> bytesWriter) {
+    return raw.setEx(key, value, expires,
+        Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
+            .asScalaWriter()).map(toJBool);
   }
 
-  public <T> Observable<Boolean> setNx(final String key, final T value, final BytesWriter<T> byteBufWriter) {
-    return raw.setNx(key, value, byteBufWriter.asScalaWriter()).map(toJBool);
+  public <T> Observable<Boolean> setNx(final String key, final T value, final BytesWriter<T> bytesWriter) {
+    return raw.setNx(key, value,
+        Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
+            .asScalaWriter()).map(toJBool);
   }
 
   public Observable<Long> incr(final String key) {
@@ -153,8 +166,10 @@ public final class Client {
     return raw.decrBy(key, amount).map(toJLong);
   }
 
-  public <T> Observable<Optional<T>> mgetAs(final BytesReader<T> byteBufReader, final String... keys) {
-    return raw.mget(tsToSeq(keys), byteBufReader.asScalaReader()).map(optionFunc());
+  public <T> Observable<Optional<T>> mgetAs(final BytesReader<T> bytesReader, final String... keys) {
+    return raw.mget(tsToSeq(keys),
+        Objects.requireNonNull(bytesReader, "bytesReader must not be null")
+            .asScalaReader()).map(optionFunc());
   }
 
   public Observable<Optional<String>> mget(final String... keys) {
@@ -166,19 +181,23 @@ public final class Client {
   }
 
   @SafeVarargs
-  public final <T> Observable<Boolean> msetAs(final BytesWriter<T> byteBufWriter, final Map.Entry<String, T>... items) {
-    return raw.mset(tsMapToSeq(x -> Tuple2.apply(x.getKey(), x.getValue()), items), byteBufWriter.asScalaWriter()).map(toJBool);
+  public final <T> Observable<Boolean> msetAs(final BytesWriter<T> bytesWriter, final Map.Entry<String, T>... items) {
+    return raw.mset(tsMapToSeq(x -> Tuple2.apply(x.getKey(), x.getValue()), items),
+        Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
+            .asScalaWriter()).map(toJBool);
   }
 
   @SafeVarargs
-  public final <T> Observable<Boolean> msetAs(final BytesWriter<T> byteBufWriter, final Tuple2<String, T>... items) {
-    return raw.mset(tsToSeq(items), byteBufWriter.asScalaWriter()).map(toJBool);
+  public final <T> Observable<Boolean> msetAs(final BytesWriter<T> bytesWriter, final Tuple2<String, T>... items) {
+    return raw.mset(tsToSeq(items),
+        Objects.requireNonNull(bytesWriter, "bytesWriter must not be null")
+            .asScalaWriter()).map(toJBool);
   }
 
   @SuppressWarnings("unchecked")
-  public final <T> Observable<Boolean> msetAs(final BytesWriter<T> byteBufWriter, final Map<String, T> items) {
+  public final <T> Observable<Boolean> msetAs(final BytesWriter<T> bytesWriter, final Map<String, T> items) {
     final Map.Entry<String, T>[] entries = (Map.Entry<String, T>[]) items.entrySet().toArray();
-    return msetAs(byteBufWriter, entries);
+    return msetAs(bytesWriter, entries);
   }
 
   @SafeVarargs
@@ -221,8 +240,10 @@ public final class Client {
   //  Hash Commands
   // ===============
 
-  public <A> Observable<Optional<A>> hgetAs(final String key, final String field, final BytesReader<A> byteBufReader) {
-    return raw.hget(key, field, byteBufReader.asScalaReader()).map(optionFunc());
+  public <A> Observable<Optional<A>> hgetAs(final String key, final String field, final BytesReader<A> bytesReader) {
+    return raw.hget(key, field,
+        Objects.requireNonNull(bytesReader, "bytesReader must not be null")
+            .asScalaReader()).map(optionFunc());
   }
 
   public Observable<Optional<String>> hget(final String key, final String field) {
@@ -233,8 +254,10 @@ public final class Client {
     return hgetAs(key, field, DefaultBytes.BYTES);
   }
 
-  public <A> Observable<Tuple2<String, A>> hgetAllAs(final String key, final BytesReader<A> byteBufReader) {
-    return raw.hgetAll(key, byteBufReader.asScalaReader());
+  public <A> Observable<Tuple2<String, A>> hgetAllAs(final String key, final BytesReader<A> bytesReader) {
+    return raw.hgetAll(key,
+        Objects.requireNonNull(bytesReader, "bytesReader must not be null")
+            .asScalaReader());
   }
 
   public Observable<Map.Entry<String, String>> hgetAll(final String key) {
@@ -254,8 +277,8 @@ public final class Client {
     return raw.ping();
   }
 
-  public <T> Observable<T> echo(final T message, final BytesFormat<T> byteBufFormat) {
-    return raw.echo(message, byteBufFormat.asScala());
+  public <T> Observable<T> echo(final T message, final BytesFormat<T> bytesFormat) {
+    return raw.echo(message, Objects.requireNonNull(bytesFormat, "bytesFormat must not be null").asScala());
   }
 
   public Observable<String> echo(final String message) {

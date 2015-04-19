@@ -16,7 +16,7 @@
 
 package com.example;
 
-import rx.redis.japi.BytesFormat;
+import rx.redis.japi.format.BytesFormat;
 import rx.redis.japi.DefaultBytes;
 
 public final class Person {
