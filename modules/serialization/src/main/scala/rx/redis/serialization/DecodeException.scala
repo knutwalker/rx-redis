@@ -18,13 +18,15 @@ package rx.redis.serialization
 
 import rx.redis.resp.RespType
 
-final class DecodeException[Expected] private (val resp: RespType, reason: Throwable)
-  extends IllegalArgumentException(s"Could not decode [$resp]", reason)
+final class DecodeException[Expected] private (val resp: RespType, msg: String, reason: Throwable)
+  extends IllegalArgumentException(
+    s"Could not decode [${resp.toString.replaceAll("\\r", "")}]$msg",
+    reason)
 
 object DecodeException {
   def apply[A](resp: RespType): DecodeException[A] =
-    new DecodeException[A](resp, null)
+    new DecodeException[A](resp, "", null)
 
   def apply[A](resp: RespType, reason: Throwable): DecodeException[A] =
-    new DecodeException[A](resp, reason)
+    new DecodeException[A](resp, ": " + reason.getMessage, reason)
 }

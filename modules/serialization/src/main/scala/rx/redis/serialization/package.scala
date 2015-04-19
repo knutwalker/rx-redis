@@ -16,7 +16,6 @@
 
 package rx.redis
 
-import rx.redis.serialization.ByteBufWriter._
 import rx.redis.util.Utf8
 
 import io.netty.buffer.{ Unpooled, ByteBuf }
@@ -28,13 +27,13 @@ package object serialization {
 
     val buf = Unpooled.buffer()
     buf.writeByte('*'.toInt)
-    writeLongAsString.toByteBuf(buf, result.length.toLong)
+    buf.writeBytes(result.length.toString.getBytes(Utf8))
     buf.writeByte('\r'.toInt)
     buf.writeByte('\n'.toInt)
 
     result.foldLeft(buf) { (bb, op) ⇒
       bb.writeByte('$'.toInt)
-      writeLongAsString.toByteBuf(bb, op.length.toLong)
+      buf.writeBytes(op.length.toString.getBytes(Utf8))
       buf.writeByte('\r'.toInt)
       buf.writeByte('\n'.toInt)
       bb.writeBytes(op.getBytes(Utf8))

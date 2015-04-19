@@ -33,5 +33,5 @@ object HGetAll {
     Writes.writes[HGetAll]
 
   implicit def readsFormat[A: ByteBufReader]: Reads.Aux[HGetAll, (String, A)] =
-    Reads.listPair[HGetAll, String, A]
+    Reads.listPair[HGetAll, String, A](ByteBufReader.readFramelessString, implicitly)
 }

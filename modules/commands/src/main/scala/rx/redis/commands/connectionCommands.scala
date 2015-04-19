@@ -23,7 +23,7 @@ case object Ping {
     Writes.writes[Ping.type]
 
   implicit val readsFormat: Reads.Aux[Ping.type, String] =
-    Reads.value[Ping.type, String]
+    Reads.value[Ping.type, String](ByteBufReader.readFramelessString)
 }
 
 case class Echo[A: ByteBufFormat](value: A)

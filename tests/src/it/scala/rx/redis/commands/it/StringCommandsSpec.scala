@@ -16,6 +16,8 @@
 
 package rx.redis.commands.it
 
+import rx.redis.serialization.{ByteBufWriter, ByteBufReader}
+
 import rx.functions.Func2
 
 class StringCommandsSpec extends ItCommandsSuite {
@@ -46,7 +48,7 @@ class StringCommandsSpec extends ItCommandsSuite {
   }
 
   test("INCR* and DECR*") {
-    def get() = client.get[Long]("foo").synch.getOrElse(0L)
+    def get() = client.get("foo")(ByteBufReader.readLongAsString).synch.getOrElse(0L)
 
     assert(get() == 0)
     client.incr("foo")
@@ -94,7 +96,7 @@ class StringCommandsSpec extends ItCommandsSuite {
   }
 
   test("STRLEN") {
-    client.set("foo", "barinessy")
+    client.set("foo", "barinessy")(ByteBufWriter.writeFramelessString)
     assert(client.strLen("foo").synch == 9)
     assert(client.strLen("bar").synch == 0)
   }

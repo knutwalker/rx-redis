@@ -62,8 +62,8 @@ object ByteBufFormat {
   implicit val formatInt: ByteBufFormat[Int] =
     from(ByteBufReader.readInt, ByteBufWriter.writeInt)
 
-  //  implicit val formatLong: ByteBufFormat[Long] =
-  //    from(ByteBufReader.readLong, ByteBufWriter.writeLong)
+  implicit val formatLong: ByteBufFormat[Long] =
+    from(ByteBufReader.readLong, ByteBufWriter.writeLong)
 
   implicit val formatDouble: ByteBufFormat[Double] =
     from(ByteBufReader.readDouble, ByteBufWriter.writeDouble)
@@ -71,24 +71,22 @@ object ByteBufFormat {
   implicit val formatFloat: ByteBufFormat[Float] =
     from(ByteBufReader.readFloat, ByteBufWriter.writeFloat)
 
-  //  implicit val formatByteArray: ByteBufFormat[Array[Byte]] =
-  //    from(ByteBufReader.readByteArray, ByteBufWriter.writeByteArray)
+  implicit val formatByteArray: ByteBufFormat[Array[Byte]] =
+    from(ByteBufReader.readByteArray, ByteBufWriter.writeByteArray)
 
-  //  implicit val formatString: ByteBufFormat[String] =
-  //    from(ByteBufReader.readString, ByteBufWriter.writeString)
+  implicit val formatString: ByteBufFormat[String] =
+    from(ByteBufReader.readString, ByteBufWriter.writeString)
 
   // Option
   // List / etc...
 
-  //  object Unbounded {
+  val formatFramelessByteArray: ByteBufFormat[Array[Byte]] =
+    from(ByteBufReader.readFramelessByteArray, ByteBufWriter.writeFramelessByteArray)
 
-  implicit val formatUnboundedByteArray: ByteBufFormat[Array[Byte]] =
-    from(ByteBufReader.readUnboundedByteArray, ByteBufWriter.writeUnboundedByteArray)
+  val formatFramelessString: ByteBufFormat[String] =
+    from(ByteBufReader.readFramelessString, ByteBufWriter.writeFramelessString)
 
-  implicit val formatUnboundedString: ByteBufFormat[String] =
-    from(ByteBufReader.readUnboundedString, ByteBufWriter.writeUnboundedString)
-
-  implicit val formatLongAsString: ByteBufFormat[Long] =
+  val formatLongAsString: ByteBufFormat[Long] =
     from(ByteBufReader.readLongAsString, ByteBufWriter.writeLongAsString)
-  //  }
+
 }

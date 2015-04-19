@@ -32,7 +32,7 @@ class CommandsSuite extends FunSuite {
 
   protected def ser[A: Writes](c: A, expectedBuf: ByteBuf): Unit = {
     val actualBuf = Writes[A].write(Unpooled.buffer(), c)
-    assert(actualBuf == expectedBuf)
+    try assert(actualBuf == expectedBuf) finally actualBuf.release()
   }
 
   protected def sers[A: Writes](c: A, expectedParts: String*) =

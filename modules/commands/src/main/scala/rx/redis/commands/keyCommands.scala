@@ -18,7 +18,7 @@ package rx.redis.commands
 
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
-import rx.redis.serialization.{ Reads, Writes }
+import rx.redis.serialization.{ ByteBufReader, Reads, Writes }
 
 case class Del(keys: String*)
 object Del {
@@ -63,7 +63,7 @@ object Keys {
     Writes.writes[Keys]
 
   implicit val readsFormat: Reads.Aux[Keys, String] =
-    Reads.list[Keys, String]
+    Reads.list[Keys, String](ByteBufReader.readFramelessString)
 }
 
 case object RandomKey {
@@ -71,7 +71,7 @@ case object RandomKey {
     Writes.writes[RandomKey.type]
 
   implicit val readsFormat: Reads.Aux[RandomKey.type, Option[String]] =
-    Reads.opt[RandomKey.type, String]
+    Reads.opt[RandomKey.type, String](ByteBufReader.readFramelessString)
 }
 
 case class Ttl(key: String)

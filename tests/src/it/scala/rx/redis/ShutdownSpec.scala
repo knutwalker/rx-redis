@@ -18,6 +18,7 @@ package rx.redis
 
 import rx.redis.clients.RawClient
 import rx.redis.util.{DefaultRedisHost, DefaultRedisPort}
+import serialization.ByteBufReader
 
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
@@ -32,7 +33,7 @@ class ShutdownSpec extends FunSuite with BeforeAndAfter {
 
   private def getFoo = {
     val client = RawClient(DefaultRedisHost, DefaultRedisPort)
-    val single = client.get[Long]("foo").toBlocking.single()
+    val single = client.get("foo")(ByteBufReader.readLongAsString).toBlocking.single()
     client.disconnect().toBlocking.lastOrDefault(())
     single.getOrElse(-1L)
   }

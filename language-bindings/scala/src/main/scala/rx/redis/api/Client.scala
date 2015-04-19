@@ -71,19 +71,19 @@ final class Client(underlying: GenericClient) {
     underlying.get[A](key)
 
   def get(key: String): Observable[Option[String]] =
-    underlying.get[String](key)
+    getAs(key)(ByteBufReader.readFramelessString)
 
   def getBytes(key: String): Observable[Option[Array[Byte]]] =
-    underlying.get[Array[Byte]](key)
+    getAs(key)(ByteBufReader.readFramelessByteArray)
 
   def setAs[A: ByteBufWriter](key: String, value: A): Observable[Boolean] =
     underlying.set[A](key: String, value)
 
   def set(key: String, value: String): Observable[Boolean] =
-    underlying.set[String](key, value)
+    setAs(key, value)(ByteBufWriter.writeFramelessString)
 
   def set(key: String, value: Array[Byte]): Observable[Boolean] =
-    underlying.set[Array[Byte]](key, value)
+    setAs(key, value)(ByteBufWriter.writeFramelessByteArray)
 
   def setEx[A: ByteBufWriter](key: String, value: A, expires: FiniteDuration): Observable[Boolean] =
     underlying.setEx[A](key, value, expires)
@@ -107,19 +107,19 @@ final class Client(underlying: GenericClient) {
     underlying.mget[A](keys: _*)
 
   def mget(keys: String*): Observable[Option[String]] =
-    underlying.mget[String](keys: _*)
+    mgetAs(keys: _*)(ByteBufReader.readFramelessString)
 
   def mgetBytes(keys: String*): Observable[Option[Array[Byte]]] =
-    underlying.mget[Array[Byte]](keys: _*)
+    mgetAs(keys: _*)(ByteBufReader.readFramelessByteArray)
 
   def msetAs[A: ByteBufWriter](items: (String, A)*): Observable[Boolean] =
     underlying.mset[A](items: _*)
 
   def mset(items: (String, String)*): Observable[Boolean] =
-    underlying.mset[String](items: _*)
+    msetAs(items: _*)(ByteBufWriter.writeFramelessString)
 
   def msetBytes(items: (String, Array[Byte])*): Observable[Boolean] =
-    underlying.mset[Array[Byte]](items: _*)
+    msetAs(items: _*)(ByteBufWriter.writeFramelessByteArray)
 
   def strLen(key: String): Observable[Long] =
     underlying.strLen(key)
@@ -132,19 +132,19 @@ final class Client(underlying: GenericClient) {
     underlying.hget[A](key, field)
 
   def hget(key: String, field: String): Observable[Option[String]] =
-    underlying.hget[String](key, field)
+    hgetAs(key, field)(ByteBufReader.readFramelessString)
 
   def hgetBytes(key: String, field: String): Observable[Option[Array[Byte]]] =
-    underlying.hget[Array[Byte]](key, field)
+    hgetAs(key, field)(ByteBufReader.readFramelessByteArray)
 
   def hgetAllAs[A: ByteBufReader](key: String): Observable[(String, A)] =
     underlying.hgetAll[A](key)
 
   def hgetAll(key: String): Observable[(String, String)] =
-    underlying.hgetAll[String](key)
+    hgetAllAs(key)(ByteBufReader.readFramelessString)
 
   def hgetAllBytes(key: String): Observable[(String, Array[Byte])] =
-    underlying.hgetAll[Array[Byte]](key)
+    hgetAllAs(key)(ByteBufReader.readFramelessByteArray)
 
   // =====================
   //  Connection Commands

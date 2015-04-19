@@ -21,13 +21,10 @@ import rx.redis.util._
 import io.netty.buffer.{ Unpooled, ByteBuf }
 
 import annotation.implicitNotFound
-import concurrent.duration.{ Deadline, FiniteDuration }
-import util.control.NonFatal
 
 @implicitNotFound("Cannot find a ByteBufWriter of ${A}. You have to implement an rx.redis.serialization.ByteBufWriter[${A}] in order to write an ${A} as a custom value.")
 trait ByteBufWriter[@specialized(Boolean, Byte, Int, Long) A] {
 
-  // TODO: ByteBufOutputStream?
   def toByteBuf(bb: ByteBuf, value: A): ByteBuf
 
   def knownSize(value: A): Int = 0
@@ -78,35 +75,17 @@ object ByteBufWriter {
     apply((bb, a) ⇒ f(bb)(a))
 
   def apply[A](f: (ByteBuf, A) ⇒ ByteBuf): ByteBufWriter[A] = new ByteBufWriter[A] {
-    def toByteBuf(bb: ByteBuf, a: A): ByteBuf = try {
-      f(bb, a)
-    } catch {
-      case NonFatal(ex) ⇒
-        // ???  EncodeResult, maybe?
-        bb
-    }
+    def toByteBuf(bb: ByteBuf, a: A): ByteBuf = f(bb, a)
   }
 
   def applySize[A](f: (ByteBuf, A) ⇒ ByteBuf, size: Int): ByteBufWriter[A] = new ByteBufWriter[A] {
-    def toByteBuf(bb: ByteBuf, a: A): ByteBuf = try {
-      f(bb, a)
-    } catch {
-      case NonFatal(ex) ⇒
-        // ???  EncodeResult, maybe?
-        bb
-    }
+    def toByteBuf(bb: ByteBuf, a: A): ByteBuf = f(bb, a)
     override def knownSize(value: A): Int = size
     override def hasKnownSize: Boolean = true
   }
 
   def applySized[A](f: (ByteBuf, A) ⇒ ByteBuf, size: A ⇒ Int): ByteBufWriter[A] = new ByteBufWriter[A] {
-    def toByteBuf(bb: ByteBuf, a: A): ByteBuf = try {
-      f(bb, a)
-    } catch {
-      case NonFatal(ex) ⇒
-        // ???  EncodeResult, maybe?
-        bb
-    }
+    def toByteBuf(bb: ByteBuf, a: A): ByteBuf = f(bb, a)
     override def knownSize(value: A): Int = size(value)
     override def hasKnownSize: Boolean = true
   }
@@ -125,8 +104,8 @@ object ByteBufWriter {
   implicit val writeInt: ByteBufWriter[Int] =
     applySize(_.writeInt(_), 4)
 
-  //  implicit val writeLong: ByteBufWriter[Long] =
-  //    apply(_.writeLong(_))
+  implicit val writeLong: ByteBufWriter[Long] =
+    apply(_.writeLong(_))
 
   implicit val writeDouble: ByteBufWriter[Double] =
     applySize(_.writeDouble(_), 8)
@@ -134,37 +113,24 @@ object ByteBufWriter {
   implicit val writeFloat: ByteBufWriter[Float] =
     applySize(_.writeFloat(_), 4)
 
-  //  implicit val writeByteArray: ByteBufWriter[Array[Byte]] =
-  //    (writeInt andWrite Unbounded.writeUnboundedByteArray)
-  //      .contramap(bs ⇒ (bs.length, bs))
+  implicit val writeByteArray: ByteBufWriter[Array[Byte]] =
+    applySized((bb, bs) ⇒ {
+      bb.writeInt(bs.length)
+      bb.writeBytes(bs)
+    }, _.length + 4)
 
-  //  implicit val writeString: ByteBufWriter[String] =
-  //    writeByteArray.contramap(_.getBytes(Utf8))
-
-  //  val writeStringAscii: ByteBufWriter[String] =
-  //    (writeInt andWrite writeByte.contraflatMap[String](_.map(_.toByte)))
-  //      .contramap(s ⇒ (s.length, s))
+  implicit val writeString: ByteBufWriter[String] =
+    writeByteArray.contramap(_.getBytes(Utf8))
 
   // Option
   // List / Container / Sizable
 
-  //  object Unbounded {
-
-  implicit lazy val writeUnboundedByteArray: ByteBufWriter[Array[Byte]] =
+  val writeFramelessByteArray: ByteBufWriter[Array[Byte]] =
     applySized(_.writeBytes(_), _.length)
 
-  implicit val writeUnboundedString: ByteBufWriter[String] =
-    writeUnboundedByteArray.contramap(_.getBytes(Utf8))
+  val writeFramelessString: ByteBufWriter[String] =
+    writeFramelessByteArray.contramap(_.getBytes(Utf8))
 
-  implicit val writeLongAsString: ByteBufWriter[Long] =
-    writeUnboundedString.contramap(_.toString)
-  //  }
-
-  implicit val writeFiniteDuration: ByteBufWriter[FiniteDuration] =
-    writeLongAsString.contramap(_.toSeconds)
-  //    Unbounded.writeLongAsString.contramap(_.toSeconds)
-
-  implicit val writeDeadline: ByteBufWriter[Deadline] =
-    writeLongAsString.contramap(d ⇒ (d.timeLeft.toMillis + System.currentTimeMillis()) / 1000)
-  //    Unbounded.writeLongAsString.contramap(d ⇒ d.timeLeft.toMillis + System.currentTimeMillis() / 1000)
+  val writeLongAsString: ByteBufWriter[Long] =
+    writeFramelessString.contramap(_.toString)
 }

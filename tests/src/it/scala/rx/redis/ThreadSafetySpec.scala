@@ -30,7 +30,7 @@ import org.scalatest.FunSuite
 class ThreadSafetySpec extends FunSuite {
 
   val total = 10000
-  val threadCount = 2
+  val threadCount = 8
 
   private class TestThread(
       commandToSend: () ⇒ ByteBuf,
@@ -69,7 +69,11 @@ class ThreadSafetySpec extends FunSuite {
 
     val client = RawClient(DefaultRedisHost, DefaultRedisPort)
 
-    def createThread(n: Int) = new TestThread(() ⇒ cmd"ECHO ${n.toString}", RespBytes(n.toString), client, _ => ())
+    def createThread(n: Int) = new TestThread(
+      () ⇒ cmd"ECHO ${n.toString}",
+      RespBytes(n.toString),
+      client,
+      _ => ())
 
     val threads = List.tabulate(threadCount)(createThread)
 
@@ -86,9 +90,11 @@ class ThreadSafetySpec extends FunSuite {
 
     def client = RawClient(DefaultRedisHost, DefaultRedisPort)
 
-    def createThread(n: Int) = new TestThread(() ⇒ cmd"ECHO ${n.toString}", RespBytes(n.toString), client, { c =>
-      c.disconnect().toBlocking.lastOrDefault(())
-    })
+    def createThread(n: Int) = new TestThread(
+      () ⇒ cmd"ECHO ${n.toString}",
+      RespBytes(n.toString),
+      client,
+      _.disconnect().toBlocking.lastOrDefault(()))
 
     val threads = List.tabulate(threadCount)(createThread)
 

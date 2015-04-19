@@ -22,7 +22,6 @@ import io.netty.buffer.ByteBuf
 
 import annotation.implicitNotFound
 import util.control.NonFatal
-import util.{ Failure, Success, Try }
 
 @implicitNotFound("Cannot find a ByteBufReader of ${A}. You have to implement an rx.redis.serialization.ByteBufReader[${A}] in order to read an ${A} as a custom value.")
 trait ByteBufReader[@specialized(Boolean, Byte, Int, Long) A] {
@@ -48,11 +47,7 @@ trait ByteBufReader[@specialized(Boolean, Byte, Int, Long) A] {
 object ByteBufReader {
 
   def apply[A](f: ByteBuf ⇒ A): ByteBufReader[A] = new ByteBufReader[A] {
-    def fromByteBuf(bb: ByteBuf): A = // try {
-      f(bb)
-    //    } catch {
-    //      case NonFatal(ex) ⇒ Left(List(ex))
-    //    }
+    def fromByteBuf(bb: ByteBuf): A = f(bb)
   }
 
   def of[A](implicit A: ByteBufReader[A]): ByteBufReader[A] = A
@@ -69,8 +64,8 @@ object ByteBufReader {
   implicit val readInt: ByteBufReader[Int] =
     apply(_.readInt())
 
-  //  implicit val readLong: ByteBufReader[Long] =
-  //    apply(_.readLong())
+  implicit val readLong: ByteBufReader[Long] =
+    apply(_.readLong())
 
   implicit val readDouble: ByteBufReader[Double] =
     apply(_.readDouble())
@@ -78,26 +73,25 @@ object ByteBufReader {
   implicit val readFloat: ByteBufReader[Float] =
     apply(_.readFloat())
 
-  //  implicit val readByteArray: ByteBufReader[Array[Byte]] =
-  //    readOr(bb ⇒ {
-  //      val length = bb.readInt()
-  //      if (!bb.isReadable(length)) Left(s"Cannot read $length more bytes")
-  //      else {
-  //        val target = new Array[Byte](length)
-  //        bb.readBytes(target)
-  //        Right(target)
-  //      }
-  //    })
+  implicit val readByteArray: ByteBufReader[Array[Byte]] =
+    apply(bb ⇒ {
+      val length = bb.readInt()
+      bb.ensuring(_.isReadable(length),
+        s"An array of $length bytes should be decoded, but there are only" +
+          s" ${bb.readableBytes()} more bytes left to read. This ByteBuf likely" +
+          s" represents different data or a different encoding")
+      val target = new Array[Byte](length)
+      bb.readBytes(target)
+      target
+    })
 
-  //  implicit val readString: ByteBufReader[String] =
-  //    readByteArray.map(bs ⇒ new String(bs, Utf8))
+  implicit val readString: ByteBufReader[String] =
+    readByteArray.map(bs ⇒ new String(bs, Utf8))
 
   // Option
   // List / etc...
 
-  //  object Unbounded {
-
-  implicit val readUnboundedByteArray: ByteBufReader[Array[Byte]] =
+  val readFramelessByteArray: ByteBufReader[Array[Byte]] =
     apply(bb ⇒ if (bb.hasArray) {
       val backing = bb.array()
       val offset = bb.arrayOffset() + bb.readerIndex()
@@ -115,10 +109,9 @@ object ByteBufReader {
       array
     })
 
-  implicit val readUnboundedString: ByteBufReader[String] =
-    readUnboundedByteArray.map(bs ⇒ new String(bs, Utf8))
+  val readFramelessString: ByteBufReader[String] =
+    readFramelessByteArray.map(bs ⇒ new String(bs, Utf8))
 
-  implicit val readLongAsString: ByteBufReader[Long] =
-    readUnboundedString.map(_.toLong)
-  //  }
+  val readLongAsString: ByteBufReader[Long] =
+    readFramelessString.map(_.toLong)
 }

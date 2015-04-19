@@ -17,11 +17,7 @@
 package rx.redis.japi;
 
 import rx.redis.japi.format.BytesFormat;
-import rx.redis.japi.format.BytesWriter;
 import rx.redis.serialization.ByteBufFormat$;
-import rx.redis.serialization.ByteBufWriter$;
-import scala.concurrent.duration.Deadline;
-import scala.concurrent.duration.FiniteDuration;
 
 import static scala.compat.java8.JFunction.func;
 
@@ -32,22 +28,22 @@ public final class DefaultBytes {
   private DefaultBytes() {}
 
   public final static BytesFormat<String> STRING =
-      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatUnboundedString());
+      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatString());
+
+  public final static BytesFormat<String> FRAMELESS_STRING =
+      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatFramelessString());
 
   public final static BytesFormat<byte[]> BYTES =
-      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatUnboundedByteArray());
+      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatByteArray());
+
+  public final static BytesFormat<byte[]> FRAMELESS_BYTES =
+      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatFramelessByteArray());
 
   public final static BytesFormat<Integer> INT =
       BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatInt()
           .xmap(func(x -> (Integer) x), func(x -> x)));
 
   public final static BytesFormat<Long> LONG =
-      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatLongAsString()
+      BytesFormat.fromScala(ByteBufFormat$.MODULE$.formatLong()
           .xmap(func(x -> (Long) x), func(x -> x)));
-
-  public final static BytesWriter<FiniteDuration> DURATION =
-      BytesWriter.fromScala(ByteBufWriter$.MODULE$.writeFiniteDuration());
-
-  public final static BytesWriter<Deadline> DEADLINE =
-      BytesWriter.fromScala(ByteBufWriter$.MODULE$.writeDeadline());
 }

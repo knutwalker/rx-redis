@@ -16,6 +16,8 @@
 
 package rx.redis.serialization
 
+import concurrent.duration.{ Deadline, FiniteDuration }
+
 import java.util.Locale
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
@@ -31,84 +33,148 @@ class WritesMacro(val c: blackbox.Context) {
     c.abort(c.enclosingPosition, "\n" + msg)
 
   val bbuf = tq"io.netty.buffer.ByteBuf"
+  val utf8 = q"rx.redis.util.Utf8"
 
   private[this] val asterisk = '*'.toInt
   private[this] val dollar = '$'.toInt
   private[this] val crlf = Array('\r'.toByte, '\n'.toByte)
 
-  private class ArgType(tpe: Type, tc: Type, field: MethodSymbol) {
-    private[this] val proper: Type = field.infoIn(tpe).resultType
-    private[this] val access = q"value.${field.name}"
+  object CodeGens {
+
+    private[serialization] def genByteArrayCode(value: c.Tree, bb: c.TermName) =
+      q"""
+      $bb.writeBytes($value.length.toString.getBytes($utf8))
+      $bb.writeBytes($crlf)
+      $bb.writeBytes($value)
+      """
+
+    private[serialization] def genStringCode(value: c.Tree, bb: c.TermName) =
+      q"""
+      $bb.writeBytes($value.length.toString.getBytes($utf8))
+      $bb.writeBytes($crlf)
+      $bb.writeBytes($value.getBytes($utf8))
+      """
+
+    private[serialization] def genLongCode(value: c.Tree, bb: c.TermName) = {
+      val term = c.freshName(TermName("longValue"))
+      q"""
+      val $term = $value.toString
+      $bb.writeBytes($term.length.toString.getBytes($utf8))
+      $bb.writeBytes($crlf)
+      $bb.writeBytes($term.getBytes($utf8))
+      """
+    }
+
+    private[serialization] def genDurationCode(value: c.Tree, bb: c.TermName) = {
+      val term = c.freshName(TermName("durationValue"))
+      q"""
+      val $term = $value.toSeconds.toString
+      $bb.writeBytes($term.length.toString.getBytes($utf8))
+      $bb.writeBytes($crlf)
+      $bb.writeBytes($term.getBytes($utf8))
+      """
+    }
+
+    private[serialization] def genDeadlineCode(value: c.Tree, bb: c.TermName) = {
+      val term = c.freshName(TermName("deadlineValue"))
+      q"""
+      val $term = (($value.timeLeft.toMillis + java.lang.System.currentTimeMillis()) / 1000).toString
+      $bb.writeBytes($term.length.toString.getBytes($utf8))
+      $bb.writeBytes($crlf)
+      $bb.writeBytes($term.getBytes($utf8))
+      """
+    }
+
+    private[serialization] def genTypeClassCode(value: c.Tree, tc: c.Tree, bb: c.TermName) = {
+      val knownSize = c.freshName(TermName("knownSize"))
+      val contentHolder = c.freshName(TermName("contentHolder"))
+      val content = c.freshName(TermName("content"))
+      q"""
+      if ($tc.hasKnownSize) {
+        val $knownSize = $tc.knownSize($value)
+        $bb.writeBytes($knownSize.toString.getBytes($utf8))
+        $bb.writeBytes($crlf)
+        $tc.toByteBuf($bb, $value)
+      } else {
+        val $contentHolder = $bb.alloc().buffer()
+        val $content = $tc.toByteBuf($contentHolder, $value)
+        $bb.writeBytes($content.readableBytes().toString.getBytes($utf8))
+        $bb.writeBytes($crlf)
+        $bb.writeBytes($content)
+      }
+      """
+    }
+  }
+
+  private class ArgType(tpe: c.Type, tc: c.Type, field: MethodSymbol, valueName: c.TermName, bb: c.TermName) {
+    private[this] val proper = field.infoIn(tpe).resultType
+    private[this] val access = q"$valueName.${field.name}"
 
     private[this] val isRepeated =
       proper.resultType.typeSymbol == definitions.RepeatedParamClass
 
-    private[this] val neededTypeClassType: Type =
+    private[this] val concreteType =
       if (!isRepeated) proper
       else proper.typeArgs.head
 
     private[this] val isTupleType =
-      neededTypeClassType.typeArgs.nonEmpty &&
-        definitions.TupleClass.seq.exists(t ⇒ neededTypeClassType.baseType(t) != NoType)
+      concreteType.typeArgs.nonEmpty &&
+        definitions.TupleClass.seq.exists(t ⇒ concreteType.baseType(t) != NoType)
 
     private[this] val tupleSize =
       if (!isTupleType) 1
-      else neededTypeClassType.typeArgs.size
+      else concreteType.typeArgs.size
 
-    private[this] val neededTypeClasses: List[Type] =
-      if (!isTupleType)
-        List(appliedType(tc.typeConstructor, neededTypeClassType :: Nil))
-      else
-        neededTypeClassType.typeArgs.map(t ⇒ appliedType(tc.typeConstructor, t :: Nil))
+    private[this] def typeClassType(underlying: c.Type) =
+      appliedType(tc.typeConstructor, underlying :: Nil)
 
-    private[this] def resolvedOneTypeClass(tc: Type): c.Tree = {
-      val paramWrites = c.inferImplicitValue(tc)
-      if (paramWrites == EmptyTree) {
+    private[this] def resolveTypeClass(tc: c.Type) = {
+      val resolved = c.inferImplicitValue(tc)
+      if (resolved == EmptyTree) {
         fail(
-          "Missing implicit instance of " + tc + "\n" +
-            "This is required to serialize instances of " + tc.typeArgs.head)
+          s"""Missing implicit instance of $tc
+             |This is required to serialize instances of ${tc.typeArgs.head}""".stripMargin)
       }
-      paramWrites
+      resolved
     }
 
-    private[this] val resolvedTypeClasses: List[c.Tree] = {
-      neededTypeClasses.map(resolvedOneTypeClass)
-    }
-
-    private[this] def generateSingleArgBBUf(value: c.Tree, tc: c.Tree): c.Tree =
+    private[this] def generateSingleArg(value: c.Tree, forType: c.Type) = {
+      import CodeGens._
+      val contentCode = forType match {
+        case s if s =:= typeOf[Array[Byte]]    ⇒ genByteArrayCode(value, bb)
+        case s if s =:= typeOf[String]         ⇒ genStringCode(value, bb)
+        case s if s =:= typeOf[Long]           ⇒ genLongCode(value, bb)
+        case s if s =:= typeOf[Int]            ⇒ genLongCode(value, bb)
+        case s if s =:= typeOf[FiniteDuration] ⇒ genDurationCode(value, bb)
+        case s if s =:= typeOf[Deadline]       ⇒ genDeadlineCode(value, bb)
+        case _ ⇒
+          val tc = resolveTypeClass(typeClassType(forType))
+          genTypeClassCode(value, tc, bb)
+      }
       q"""
-      bb.writeByte($dollar)
-      if ($tc.hasKnownSize) {
-        val knownSize = $tc.knownSize($value)
-        bb.writeBytes(knownSize.toString.getBytes(rx.redis.util.Utf8))
-        bb.writeBytes($crlf)
-        $tc.toByteBuf(bb, $value)
-      } else {
-        val contentHolder = bb.alloc().buffer()
-        val content = $tc.toByteBuf(contentHolder, $value)
-        bb.writeBytes(content.readableBytes().toString.getBytes(rx.redis.util.Utf8))
-        bb.writeBytes($crlf)
-        bb.writeBytes(content)
-      }
-      bb.writeBytes($crlf)
+      $bb.writeByte($dollar)
+      $contentCode
+      $bb.writeBytes($crlf)
       """
+    }
 
-    private[this] def generateSimpleArgBBUf(value: c.Tree): c.Tree =
-      generateSingleArgBBUf(value, resolvedTypeClasses.head)
+    private[this] def generateSimpleArg(value: c.Tree) =
+      generateSingleArg(value, concreteType)
 
-    private[this] def generateTupleArgBBUf(value: c.Tree): c.Tree = {
+    private[this] def generateTupleArg(value: c.Tree) = {
       val tuples =
-        resolvedTypeClasses.zipWithIndex map {
-          case (tcls, i) ⇒
+        concreteType.typeArgs.zipWithIndex map {
+          case (tplTpe, i) ⇒
             val tupleAccess = TermName(s"_${i + 1}")
-            generateSingleArgBBUf(Select(value, tupleAccess), tcls)
+            generateSingleArg(Select(value, tupleAccess), tplTpe)
         }
       q"..$tuples"
     }
 
-    private[this] def generateRepeatedArgsBBUf(): c.Tree = {
-      val items = fq"x <- $access"
-      val singleArg = generateSimpleArgBBUf(q"x")
+    private[this] def generateRepeatedArgs() = {
+      val x = c.freshName(TermName("x"))
+      val items = fq"$x <- $access"
+      val singleArg = generateSimpleArg(q"$x")
       q"""
       for ($items) {
         $singleArg
@@ -116,9 +182,10 @@ class WritesMacro(val c: blackbox.Context) {
       """
     }
 
-    private[this] def generateRepeatedTupleArgsBBUf(): c.Tree = {
-      val items = fq"x <- $access"
-      val tupleArgs = generateTupleArgBBUf(q"x")
+    private[this] def generateRepeatedTupleArgs() = {
+      val x = c.freshName(TermName("x"))
+      val items = fq"$x <- $access"
+      val tupleArgs = generateTupleArg(q"$x")
       q"""
       for ($items) {
         $tupleArgs
@@ -126,14 +193,14 @@ class WritesMacro(val c: blackbox.Context) {
       """
     }
 
-    val tree: c.Tree =
+    val tree: Tree =
       if (isRepeated)
-        if (isTupleType) generateRepeatedTupleArgsBBUf()
-        else generateRepeatedArgsBBUf()
-      else if (isTupleType) generateTupleArgBBUf(access)
-      else generateSimpleArgBBUf(access)
+        if (isTupleType) generateRepeatedTupleArgs()
+        else generateRepeatedArgs()
+      else if (isTupleType) generateTupleArg(access)
+      else generateSimpleArg(access)
 
-    val sizeHint: Option[c.Tree] =
+    val sizeHint: Option[Tree] =
       if (isRepeated)
         if (isTupleType) Some(q"$tupleSize * $access.length")
         else Some(q"$access.length")
@@ -146,7 +213,7 @@ class WritesMacro(val c: blackbox.Context) {
       else Some(1)
   }
 
-  private[this] def sizeHeader(args: List[ArgType]): c.Tree = {
+  private[this] def sizeHeader(args: List[ArgType]) = {
     val argsSize = args.size
     val argSizeTrees = args flatMap (_.sizeHint)
     val definiteSize = q"${1 + (argsSize - argSizeTrees.length)}"
@@ -155,45 +222,27 @@ class WritesMacro(val c: blackbox.Context) {
     }
   }
 
-  private[this] def knownSizeHeader(args: List[ArgType], name: Array[Byte]): c.Tree = {
+  private[this] def knownSizeHeader(args: List[ArgType], name: Array[Byte], bb: c.TermName) = {
     val knownSize: Option[Int] = args.foldLeft(Some(1): Option[Int])((sz, arg) ⇒
       for (s1 ← sz; s2 ← arg.knownSize) yield s1 + s2)
 
     knownSize match {
       case None ⇒ q"""
-        bb.writeByte($asterisk)
-        bb.writeBytes(${sizeHeader(args)}.toString.getBytes(rx.redis.util.Utf8))
-        bb.writeBytes($name)
+        $bb.writeByte($asterisk)
+        $bb.writeBytes(${sizeHeader(args)}.toString.getBytes($utf8))
+        $bb.writeBytes($name)
         """
       case Some(x) ⇒
         val length = x.toString.getBytes(Utf8)
-        val headerLength = 1 + length.length + name.length
-        val header = new Array[Byte](headerLength)
-        header(0) = asterisk.toByte
-        System.arraycopy(length, 0, header, 1, length.length)
-        System.arraycopy(name, 0, header, 1 + length.length, name.length)
-        q"bb.writeBytes($header)"
+        val header = Array(asterisk.toByte) ++ length ++ name
+        q"$bb.writeBytes($header)"
     }
   }
 
   private[this] def nameHeaderResp(name: String): Array[Byte] = {
     val header = name.toUpperCase(Locale.ROOT).getBytes(Utf8)
     val length = name.length.toString.getBytes(Utf8)
-
-    val hlen = header.length
-    val llen = length.length
-
-    val headerLength = 2 + 1 + llen + 2 + hlen + 2
-    val headerBytes = new Array[Byte](headerLength)
-
-    System.arraycopy(crlf, 0, headerBytes, 0, 2) // bb.writeBytes($crlf)
-    headerBytes(2) = dollar.toByte // bb.writeByte($dollar)
-    System.arraycopy(length, 0, headerBytes, 3, llen) // bb.writeBytes(${nameHeader(typeName)}.length.toString.getBytes())
-    System.arraycopy(crlf, 0, headerBytes, 3 + llen, 2) // bb.writeBytes($crlf)
-    System.arraycopy(header, 0, headerBytes, 5 + llen, header.length) // bb.writeBytes(${nameHeader(typeName)})
-    System.arraycopy(crlf, 0, headerBytes, 5 + llen + hlen, 2) // bb.writeBytes($crlf)
-
-    headerBytes
+    crlf ++ Array(dollar.toByte) ++ length ++ crlf ++ header ++ crlf
   }
 
   private[this] def macroImpl[A, TC[_], M[_]](implicit aTag: c.WeakTypeTag[A], tcaTag: c.WeakTypeTag[TC[A]], maTag: c.WeakTypeTag[M[A]]): c.Tree = {
@@ -202,19 +251,22 @@ class WritesMacro(val c: blackbox.Context) {
 
     val finalTpe = appliedType(maTag.tpe.typeConstructor, tpe :: Nil)
     val typeName = tpe.typeSymbol.name.toString
+
     val objectName = c.freshName(TermName(typeName + "Writes"))
+    val valueParam = c.freshName(TermName("value"))
+    val bbParam = c.freshName(TermName("bb"))
 
     val arguments = tpe.decls.toList.collect {
-      case method: MethodSymbol if method.isCaseAccessor ⇒ new ArgType(tpe, tcaTag.tpe, method)
+      case method: MethodSymbol if method.isCaseAccessor ⇒ new ArgType(tpe, tcaTag.tpe, method, valueParam, bbParam)
     }
     val argumentTrees = arguments map (_.tree)
 
     val generated = q"""
     object $objectName extends $finalTpe {
-      def write(bb: $bbuf, value: $tpe): $bbuf = {
-        ${knownSizeHeader(arguments, nameHeaderResp(typeName))}
+      def write($bbParam: $bbuf, $valueParam: $tpe): $bbuf = {
+        ${knownSizeHeader(arguments, nameHeaderResp(typeName), bbParam)}
         ..$argumentTrees
-        bb
+        $bbParam
       }
     }
     $objectName

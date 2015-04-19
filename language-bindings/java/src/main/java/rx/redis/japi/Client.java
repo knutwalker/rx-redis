@@ -117,11 +117,11 @@ public final class Client {
   }
 
   public Observable<Optional<String>> get(final String key) {
-    return getAs(key, DefaultBytes.STRING);
+    return getAs(key, DefaultBytes.FRAMELESS_STRING);
   }
 
   public Observable<Optional<byte[]>> getBytes(final String key) {
-    return getAs(key, DefaultBytes.BYTES);
+    return getAs(key, DefaultBytes.FRAMELESS_BYTES);
   }
 
   public <T> Observable<Boolean> setAs(final String key, final T value, final BytesWriter<T> bytesWriter) {
@@ -131,11 +131,11 @@ public final class Client {
   }
 
   public Observable<Boolean> set(final String key, final String value) {
-    return setAs(key, value, DefaultBytes.STRING);
+    return setAs(key, value, DefaultBytes.FRAMELESS_STRING);
   }
 
   public Observable<Boolean> set(final String key, final byte[] value) {
-    return setAs(key, value, DefaultBytes.BYTES);
+    return setAs(key, value, DefaultBytes.FRAMELESS_BYTES);
   }
 
   public <T> Observable<Boolean> setEx(final String key, final T value, final FiniteDuration expires, final BytesWriter<T> bytesWriter) {
@@ -173,11 +173,11 @@ public final class Client {
   }
 
   public Observable<Optional<String>> mget(final String... keys) {
-    return mgetAs(DefaultBytes.STRING, keys);
+    return mgetAs(DefaultBytes.FRAMELESS_STRING, keys);
   }
 
   public Observable<Optional<byte[]>> mgetBytes(final String... keys) {
-    return mgetAs(DefaultBytes.BYTES, keys);
+    return mgetAs(DefaultBytes.FRAMELESS_BYTES, keys);
   }
 
   @SafeVarargs
@@ -202,34 +202,34 @@ public final class Client {
 
   @SafeVarargs
   public final Observable<Boolean> mset(final Map.Entry<String, String>... items) {
-    return msetAs(DefaultBytes.STRING, items);
+    return msetAs(DefaultBytes.FRAMELESS_STRING, items);
   }
 
   @SafeVarargs
   public final Observable<Boolean> mset(final Tuple2<String, String>... items) {
-    return msetAs(DefaultBytes.STRING, items);
+    return msetAs(DefaultBytes.FRAMELESS_STRING, items);
   }
 
   @SuppressWarnings("unchecked")
   public final Observable<Boolean> mset(final Map<String, String> items) {
     final Map.Entry<String, String>[] entries = (Map.Entry<String, String>[]) items.entrySet().toArray();
-    return msetAs(DefaultBytes.STRING, entries);
+    return msetAs(DefaultBytes.FRAMELESS_STRING, entries);
   }
 
   @SafeVarargs
   public final Observable<Boolean> msetBytes(final Map.Entry<String, byte[]>... items) {
-    return msetAs(DefaultBytes.BYTES, items);
+    return msetAs(DefaultBytes.FRAMELESS_BYTES, items);
   }
 
   @SafeVarargs
   public final Observable<Boolean> msetBytes(final Tuple2<String, byte[]>... items) {
-    return msetAs(DefaultBytes.BYTES, items);
+    return msetAs(DefaultBytes.FRAMELESS_BYTES, items);
   }
 
   @SuppressWarnings("unchecked")
   public final Observable<Boolean> msetBytes(final Map<String, byte[]> items) {
     final Map.Entry<String, byte[]>[] entries = (Map.Entry<String, byte[]>[]) items.entrySet().toArray();
-    return msetAs(DefaultBytes.BYTES, entries);
+    return msetAs(DefaultBytes.FRAMELESS_BYTES, entries);
   }
 
   public Observable<Long> strLen(final String key) {
@@ -247,11 +247,11 @@ public final class Client {
   }
 
   public Observable<Optional<String>> hget(final String key, final String field) {
-    return hgetAs(key, field, DefaultBytes.STRING);
+    return hgetAs(key, field, DefaultBytes.FRAMELESS_STRING);
   }
 
   public Observable<Optional<byte[]>> hgetBytes(final String key, final String field) {
-    return hgetAs(key, field, DefaultBytes.BYTES);
+    return hgetAs(key, field, DefaultBytes.FRAMELESS_BYTES);
   }
 
   public <A> Observable<Tuple2<String, A>> hgetAllAs(final String key, final BytesReader<A> bytesReader) {
@@ -261,11 +261,11 @@ public final class Client {
   }
 
   public Observable<Map.Entry<String, String>> hgetAll(final String key) {
-    return underlying.hgetAll(key, DefaultBytes.STRING.asScalaReader()).map(entryFunc());
+    return underlying.hgetAll(key, DefaultBytes.FRAMELESS_STRING.asScalaReader()).map(entryFunc());
   }
 
   public Observable<Map.Entry<String, byte[]>> hgetAllBytes(final String key) {
-    return underlying.hgetAll(key, DefaultBytes.BYTES.asScala()).map(entryFunc());
+    return underlying.hgetAll(key, DefaultBytes.FRAMELESS_BYTES.asScala()).map(entryFunc());
   }
 
 
@@ -282,11 +282,11 @@ public final class Client {
   }
 
   public Observable<String> echo(final String message) {
-    return echo(message, DefaultBytes.STRING);
+    return echo(message, DefaultBytes.FRAMELESS_STRING);
   }
 
   public Observable<byte[]> echo(final byte[] message) {
-    return echo(message, DefaultBytes.BYTES);
+    return echo(message, DefaultBytes.FRAMELESS_BYTES);
   }
 
   // =================

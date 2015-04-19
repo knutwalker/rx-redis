@@ -22,6 +22,8 @@ import rx.Observer
 
 import io.netty.channel.{ ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise }
 
+import scala.util.control.NonFatal
+
 import java.util
 
 private[redis] class RxAdapter(queue: util.Queue[Observer[RespType]]) extends ChannelDuplexHandler {
@@ -35,6 +37,8 @@ private[redis] class RxAdapter(queue: util.Queue[Observer[RespType]]) extends Ch
       } catch {
         case cc: ClassCastException ⇒
           sender.onError(new RuntimeException("msg is not a [rx.redis.resp.RespType]"))
+        case NonFatal(ex) ⇒
+          sender.onError(ex)
       }
     }
     ctx.fireChannelRead(msg)

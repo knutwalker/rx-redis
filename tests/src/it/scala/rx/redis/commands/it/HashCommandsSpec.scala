@@ -17,9 +17,12 @@
 package rx.redis.commands.it
 
 import rx.redis._
+import serialization.ByteBufReader
 
 
 class HashCommandsSpec extends ItCommandsSuite {
+
+  implicit val frameless = ByteBufReader.readFramelessString
 
   test("HGET") {
     client.command(cmd"HSET foo bar baz")

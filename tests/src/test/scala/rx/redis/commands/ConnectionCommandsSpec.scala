@@ -29,7 +29,7 @@ class ConnectionCommandsSpec extends CommandsSuite {
 
   test("ECHO") {
     val echo = Echo("foobar")
-    sers(echo, "ECHO", "foobar")
-    ser(echo, cmd"ECHO foobar")
+    sers(echo, "ECHO", "\u0000\u0000\u0000\u0006foobar")
+    ser(echo, cmd"ECHO \u0000\u0000\u0000\u0006foobar")
   }
 }

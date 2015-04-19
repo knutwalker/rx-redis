@@ -35,24 +35,24 @@ class StringCommandsSpec extends CommandsSuite {
 
   test("SET") {
     val set = Set("foo", "bar")
-    sers(set, "SET", "foo", "bar")
-    ser(set, cmd"SET foo bar")
+    sers(set, "SET", "foo", "\u0000\u0000\u0000\u0003bar")
+    ser(set, cmd"SET foo \u0000\u0000\u0000\u0003bar")
 
     val set2 = Set("foo", "foo\r\nbar")
-    sers(set2, "SET", "foo", "foo\r\nbar")
-    ser(set2, cmd"SET foo foo\r\nbar")
+    sers(set2, "SET", "foo", "\u0000\u0000\u0000\u0008foo\r\nbar")
+    ser(set2, cmd"SET foo \u0000\u0000\u0000\u0008foo\r\nbar")
   }
 
   test("SETEX") {
     val setEx = SetEx("foo", 13.seconds, "bar")
-    sers(setEx, "SETEX", "foo", "13", "bar")
-    ser(setEx, cmd"SETEX foo 13 bar")
+    sers(setEx, "SETEX", "foo", "13", "\u0000\u0000\u0000\u0003bar")
+    ser(setEx, cmd"SETEX foo 13 \u0000\u0000\u0000\u0003bar")
   }
 
   test("SETNX") {
     val setNx = SetNx("foo", "bar")
-    sers(setNx, "SETNX", "foo", "bar")
-    ser(setNx, cmd"SETNX foo bar")
+    sers(setNx, "SETNX", "foo", "\u0000\u0000\u0000\u0003bar")
+    ser(setNx, cmd"SETNX foo \u0000\u0000\u0000\u0003bar")
   }
 
   test("INCR") {
@@ -87,8 +87,8 @@ class StringCommandsSpec extends CommandsSuite {
 
   test("MSET") {
     val mset = MSet("foo" -> "bar", "bar" -> "baz")
-    sers(mset, "MSET", "foo", "bar", "bar", "baz")
-    ser(mset, cmd"MSET foo bar bar baz")
+    sers(mset, "MSET", "foo", "\u0000\u0000\u0000\u0003bar", "bar", "\u0000\u0000\u0000\u0003baz")
+    ser(mset, cmd"MSET foo \u0000\u0000\u0000\u0003bar bar \u0000\u0000\u0000\u0003baz")
   }
 
   test("STRLEN") {
