@@ -27,89 +27,56 @@ import util.{ Failure, Success, Try }
 @implicitNotFound("Cannot find a ByteBufReader of ${A}. You have to implement an rx.redis.serialization.ByteBufReader[${A}] in order to read an ${A} as a custom value.")
 trait ByteBufReader[@specialized(Boolean, Byte, Int, Long) A] {
 
-  // TODO: DecodeResult from luschy
-  def fromByteBuf(bb: ByteBuf): Either[List[Throwable], A]
+  def fromByteBuf(bb: ByteBuf): A
 
-  final def readAndRelease(bb: ByteBuf): Either[List[Throwable], A] =
+  final def readAndRelease(bb: ByteBuf): A =
     try fromByteBuf(bb) finally bb.release()
 
-  def map[B](f: A ⇒ B): ByteBufReader[B] = {
-    val self = fromByteBuf _
-    ByteBufReader(self andThen (_.right.map(f)))
-  }
+  def map[B](f: A ⇒ B): ByteBufReader[B] =
+    ByteBufReader(fromByteBuf _ andThen f)
 
-  def flatMap[B](f: A ⇒ Either[List[Throwable], B]): ByteBufReader[B] = {
-    val self = fromByteBuf _
-    ByteBufReader(self andThen (_.right.flatMap(f)))
-  }
+  def flatMap[B](f: A ⇒ ByteBufReader[B]): ByteBufReader[B] =
+    ByteBufReader(bb ⇒ f(fromByteBuf(bb)).fromByteBuf(bb))
 
-  def andRead[B](f: ⇒ ByteBufReader[B]): ByteBufReader[(A, B)] = {
-    val self = fromByteBuf _
-    ByteBufReader(bb ⇒ for {
-      a ← self(bb).right
-      b ← f.fromByteBuf(bb).right
-    } yield (a, b))
-  }
+  def andRead[B](f: ⇒ ByteBufReader[B]): ByteBufReader[(A, B)] =
+    ByteBufReader(bb ⇒ (fromByteBuf(bb), f.fromByteBuf(bb)))
 
-  def orRead[B](f: ⇒ ByteBufReader[B]): ByteBufReader[Either[A, B]] = {
-    val self = fromByteBuf _
-    ByteBufReader(bb ⇒ self(bb) match {
-      case Left(xs) ⇒ f.fromByteBuf(bb) match {
-        case Left(ys) ⇒ Left(xs ++ ys)
-        case Right(b) ⇒ Right(Right(b))
-      }
-      case Right(a) ⇒ Right(Left(a))
-    })
-  }
+  def orRead[B](f: ⇒ ByteBufReader[B]): ByteBufReader[Either[A, B]] =
+    ByteBufReader(bb ⇒ try Left(fromByteBuf(bb)) catch { case NonFatal(_) ⇒ Right(f.fromByteBuf(bb)) })
 }
 
 object ByteBufReader {
 
-  def read[A](f: ByteBuf ⇒ A): ByteBufReader[A] =
-    apply(bb ⇒ Right(f(bb)))
-
-  def maybeRead[A](f: ByteBuf ⇒ Option[A]): ByteBufReader[A] =
-    apply(bb ⇒ f(bb).toRight(List(new IllegalArgumentException("Could not decode."))))
-
-  def tryRead[A](f: ByteBuf ⇒ Try[A]): ByteBufReader[A] =
-    apply(bb ⇒ f(bb) match {
-      case Success(a)  ⇒ Right(a)
-      case Failure(ex) ⇒ Left(List(ex))
-    })
-
-  def readOr[A](f: ByteBuf ⇒ Either[String, A]): ByteBufReader[A] =
-    apply(bb ⇒ f(bb).left.map(m ⇒ List(new IllegalArgumentException(m))))
-
-  def apply[A](f: ByteBuf ⇒ Either[List[Throwable], A]): ByteBufReader[A] = new ByteBufReader[A] {
-    def fromByteBuf(bb: ByteBuf): Either[List[Throwable], A] = try {
+  def apply[A](f: ByteBuf ⇒ A): ByteBufReader[A] = new ByteBufReader[A] {
+    def fromByteBuf(bb: ByteBuf): A = // try {
       f(bb)
-    } catch {
-      case NonFatal(ex) ⇒ Left(List(ex))
-    }
+    //    } catch {
+    //      case NonFatal(ex) ⇒ Left(List(ex))
+    //    }
   }
 
   def of[A](implicit A: ByteBufReader[A]): ByteBufReader[A] = A
 
   implicit val readBoolean: ByteBufReader[Boolean] =
-    read(_.readBoolean())
+    apply(_.readBoolean())
 
   implicit val readByte: ByteBufReader[Byte] =
-    read(_.readByte())
+    apply(_.readByte())
 
   implicit val readChar: ByteBufReader[Char] =
-    read(_.readChar())
+    apply(_.readChar())
 
   implicit val readInt: ByteBufReader[Int] =
-    read(_.readInt())
+    apply(_.readInt())
 
   //  implicit val readLong: ByteBufReader[Long] =
-  //    read(_.readLong())
+  //    apply(_.readLong())
 
   implicit val readDouble: ByteBufReader[Double] =
-    read(_.readDouble())
+    apply(_.readDouble())
 
   implicit val readFloat: ByteBufReader[Float] =
-    read(_.readFloat())
+    apply(_.readFloat())
 
   //  implicit val readByteArray: ByteBufReader[Array[Byte]] =
   //    readOr(bb ⇒ {
@@ -131,7 +98,7 @@ object ByteBufReader {
   //  object Unbounded {
 
   implicit val readUnboundedByteArray: ByteBufReader[Array[Byte]] =
-    read(bb ⇒ if (bb.hasArray) {
+    apply(bb ⇒ if (bb.hasArray) {
       val backing = bb.array()
       val offset = bb.arrayOffset() + bb.readerIndex()
       val length = bb.readableBytes()

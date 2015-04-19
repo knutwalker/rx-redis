@@ -18,19 +18,17 @@ package rx.redis.clients
 
 import rx.redis.RedisCommand
 import rx.redis.commands._
-import rx.redis.pipeline.{ NettyClient, RxNettyClient }
+import rx.redis.pipeline.{ OperatorDecode, NettyClient, RxNettyClient }
 import rx.redis.resp.RespType
-import rx.redis.serialization.{ writeStringAsRedisCommand, ByteBufFormat, ByteBufReader, ByteBufWriter, Id, Reads, Writes }
+import rx.redis.serialization.{ writeStringAsRedisCommand, ByteBufFormat, ByteBufReader, ByteBufWriter, Reads, Writes }
 
 import rx.Observable.OnSubscribe
-import rx.functions.Func1
 import rx.subjects.AsyncSubject
 import rx.{ Observable, Subscriber }
 
 import io.netty.buffer.ByteBuf
 import io.netty.channel.{ ChannelFuture, ChannelFutureListener }
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 import util.control.{ NoStackTrace, NonFatal }
 
@@ -128,106 +126,88 @@ abstract class RawClient {
     }
   }
 
-  private[this] def withError[A](o: Observable[A]): Observable[A] = {
-    o.onErrorResumeNext(new Func1[Throwable, Observable[A]] {
-      def call(t1: Throwable): Observable[A] = {
-        Observable.error(
-          new IllegalArgumentException(s"Cannot interpret value", t1))
-      }
-    })
-  }
-
-  private[this] def single[A](cmd: A)(implicit A: Writes[A], R: Reads[A, Id]): Observable[R.R] = withError {
-    command(cmd)(A).map[R.R](new Func1[RespType, R.R] {
-      def call(t1: RespType): R.R = R.read(t1)
-    })
-  }
-
-  private[this] def multiple[A](cmd: A)(implicit A: Writes[A], R: Reads[A, List]): Observable[R.R] = withError {
-    command(cmd)(A).flatMap[R.R](new Func1[RespType, Observable[R.R]] {
-      def call(t1: RespType): Observable[R.R] = Observable.from(R.read(t1).asJava)
-    })
-  }
+  private[this] def run[A](cmd: A)(implicit A: Writes[A], R: Reads[A]): Observable[R.R] =
+    command(cmd)(A).lift(new OperatorDecode[A, R.R](R))
 
   // ==============
   //  Key Commands
   // ==============
 
   final def del(keys: String*): Observable[Long] =
-    single(Del(keys: _*))
+    run(Del(keys: _*))
 
   final def exists(key: String): Observable[Boolean] =
-    single(Exists(key))
+    run(Exists(key))
 
   final def expire(key: String, expires: FiniteDuration): Observable[Boolean] =
-    single(Expire(key, expires))
+    run(Expire(key, expires))
 
   final def expireAt(key: String, deadline: Deadline): Observable[Boolean] =
-    single(ExpireAt(key, deadline))
+    run(ExpireAt(key, deadline))
 
   final def keys(pattern: String): Observable[String] =
-    multiple(Keys(pattern))
+    run(Keys(pattern))
 
   final def randomKey(): Observable[Option[String]] =
-    single(RandomKey)
+    run(RandomKey)
 
   final def ttl(key: String): Observable[Long] =
-    single(Ttl(key))
+    run(Ttl(key))
 
   // =================
   //  String Commands
   // =================
 
   final def decr(key: String): Observable[Long] =
-    single(Decr(key))
+    run(Decr(key))
 
   final def decrBy(key: String, amount: Long): Observable[Long] =
-    single(DecrBy(key, amount))
+    run(DecrBy(key, amount))
 
   final def get[A: ByteBufReader](key: String): Observable[Option[A]] =
-    single(Get(key))
+    run(Get(key))
 
   final def incr(key: String): Observable[Long] =
-    single(Incr(key))
+    run(Incr(key))
 
   final def incrBy(key: String, amount: Long): Observable[Long] =
-    single(IncrBy(key, amount))
+    run(IncrBy(key, amount))
 
   final def mget[A: ByteBufReader](keys: String*): Observable[Option[A]] =
-    multiple(MGet(keys: _*))
+    run(MGet(keys: _*))
 
   final def mset[A: ByteBufWriter](items: (String, A)*): Observable[Boolean] =
-    single(MSet(items: _*))
+    run(MSet(items: _*))
 
   final def set[A: ByteBufWriter](key: String, value: A): Observable[Boolean] =
-    single(Set(key, value))
+    run(Set(key, value))
 
   final def setEx[A: ByteBufWriter](key: String, value: A, expires: FiniteDuration): Observable[Boolean] =
-    single(SetEx(key, expires, value))
+    run(SetEx(key, expires, value))
 
   final def setNx[A: ByteBufWriter](key: String, value: A): Observable[Boolean] =
-    single(SetNx(key, value))
+    run(SetNx(key, value))
 
   final def strLen(key: String): Observable[Long] =
-    single(StrLen(key))
+    run(StrLen(key))
 
   // =====================
   //  Connection Commands
   // =====================
 
   final def echo[A: ByteBufFormat](msg: A): Observable[A] =
-    single(Echo(msg))
+    run(Echo(msg))
 
   final def ping(): Observable[String] =
-    single(Ping)
+    run(Ping)
 
   // ===============
   //  Hash Commands
   // ===============
 
   final def hget[A: ByteBufReader](key: String, field: String): Observable[Option[A]] =
-    single(HGet(key, field))
+    run(HGet(key, field))
 
   final def hgetAll[A: ByteBufReader](key: String): Observable[(String, A)] =
-    multiple(HGetAll(key))
+    run(HGetAll(key))
 }

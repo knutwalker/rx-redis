@@ -36,14 +36,14 @@ sealed trait ByteBufFormat[A] extends ByteBufWriter[A] with ByteBufReader[A] {
 object ByteBufFormat {
 
   def format[A](f: ByteBuf ⇒ A, g: A ⇒ ByteBuf): ByteBufFormat[A] =
-    from(ByteBufReader.read(f), ByteBufWriter.write(g))
+    from(ByteBufReader(f), ByteBufWriter.write(g))
 
-  def apply[A](f: ByteBuf ⇒ Either[List[Throwable], A], g: (ByteBuf, A) ⇒ ByteBuf): ByteBufFormat[A] =
+  def apply[A](f: ByteBuf ⇒ A, g: (ByteBuf, A) ⇒ ByteBuf): ByteBufFormat[A] =
     from(ByteBufReader(f), ByteBufWriter(g))
 
   def from[A](implicit reader: ByteBufReader[A], writer: ByteBufWriter[A]): ByteBufFormat[A] = {
     new ByteBufFormat[A] {
-      def fromByteBuf(bb: ByteBuf): Either[List[Throwable], A] = reader.fromByteBuf(bb)
+      def fromByteBuf(bb: ByteBuf): A = reader.fromByteBuf(bb)
       def toByteBuf(bb: ByteBuf, a: A): ByteBuf = writer.toByteBuf(bb, a)
     }
   }

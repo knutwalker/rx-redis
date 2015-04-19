@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package rx.redis.commands
+package rx.redis.serialization
 
-import rx.redis.serialization.{ ByteBufReader, Reads, Writes }
+import rx.redis.resp.RespType
 
-case class HGet(key: String, field: String)
-object HGet {
-  implicit val writes: Writes[HGet] =
-    Writes.writes[HGet]
+final class DecodeException[Expected] private (val resp: RespType, reason: Throwable)
+  extends IllegalArgumentException(s"Could not decode [$resp]", reason)
 
-  implicit def readsFormat[A: ByteBufReader]: Reads.Aux[HGet, Option[A]] =
-    Reads.opt[HGet, A]
-}
+object DecodeException {
+  def apply[A](resp: RespType): DecodeException[A] =
+    new DecodeException[A](resp, null)
 
-case class HGetAll(key: String)
-object HGetAll {
-  implicit val writes: Writes[HGetAll] =
-    Writes.writes[HGetAll]
-
-  implicit def readsFormat[A: ByteBufReader]: Reads.Aux[HGetAll, (String, A)] =
-    Reads.listPair[HGetAll, String, A]
+  def apply[A](resp: RespType, reason: Throwable): DecodeException[A] =
+    new DecodeException[A](resp, reason)
 }

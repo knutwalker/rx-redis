@@ -23,8 +23,6 @@ import io.netty.buffer.{ Unpooled, ByteBuf }
 
 package object serialization {
 
-  type Id[A] = A
-
   implicit def writeStringAsRedisCommand(s: String with RedisCommand): ByteBuf = {
     val result = s.split(' ')
 

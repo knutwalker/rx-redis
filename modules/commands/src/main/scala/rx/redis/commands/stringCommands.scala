@@ -16,7 +16,7 @@
 
 package rx.redis.commands
 
-import rx.redis.serialization.{ ByteBufReader, ByteBufWriter, Id, Reads, Writes }
+import rx.redis.serialization.{ ByteBufReader, ByteBufWriter, Reads, Writes }
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,7 +25,7 @@ object Get {
   implicit val writes: Writes[Get] =
     Writes.writes[Get]
 
-  implicit def readsFormat[A: ByteBufReader]: Reads[Get, Id] { type R = Option[A] } =
+  implicit def readsFormat[A: ByteBufReader]: Reads.Aux[Get, Option[A]] =
     Reads.opt[Get, A]
 }
 
@@ -34,7 +34,7 @@ object Set {
   implicit def writes[A: ByteBufWriter]: Writes[Set[A]] =
     Writes.writes[Set[A]]
 
-  implicit val readsFormat: Reads[Set[_], Id] { type R = Boolean } =
+  implicit val readsFormat: Reads.Aux[Set[_], Boolean] =
     Reads.bool[Set[_]]
 }
 
@@ -43,7 +43,7 @@ object SetEx {
   implicit def writes[A: ByteBufWriter]: Writes[SetEx[A]] =
     Writes.writes[SetEx[A]]
 
-  implicit val readsFormat: Reads[SetEx[_], Id] { type R = Boolean } =
+  implicit val readsFormat: Reads.Aux[SetEx[_], Boolean] =
     Reads.bool[SetEx[_]]
 }
 
@@ -52,7 +52,7 @@ object SetNx {
   implicit def writes[A: ByteBufWriter]: Writes[SetNx[A]] =
     Writes.writes[SetNx[A]]
 
-  implicit val readsFormat: Reads[SetNx[_], Id] { type R = Boolean } =
+  implicit val readsFormat: Reads.Aux[SetNx[_], Boolean] =
     Reads.bool[SetNx[_]]
 }
 
@@ -61,7 +61,7 @@ object Incr {
   implicit val writes: Writes[Incr] =
     Writes.writes[Incr]
 
-  implicit val readsFormat: Reads[Incr, Id] { type R = Long } =
+  implicit val readsFormat: Reads.Aux[Incr, Long] =
     Reads.int[Incr]
 }
 
@@ -70,7 +70,7 @@ object Decr {
   implicit val writes: Writes[Decr] =
     Writes.writes[Decr]
 
-  implicit val readsFormat: Reads[Decr, Id] { type R = Long } =
+  implicit val readsFormat: Reads.Aux[Decr, Long] =
     Reads.int[Decr]
 }
 
@@ -79,7 +79,7 @@ object IncrBy {
   implicit val writes: Writes[IncrBy] =
     Writes.writes[IncrBy]
 
-  implicit val readsFormat: Reads[IncrBy, Id] { type R = Long } =
+  implicit val readsFormat: Reads.Aux[IncrBy, Long] =
     Reads.int[IncrBy]
 }
 
@@ -88,7 +88,7 @@ object DecrBy {
   implicit val writes: Writes[DecrBy] =
     Writes.writes[DecrBy]
 
-  implicit val readsFormat: Reads[DecrBy, Id] { type R = Long } =
+  implicit val readsFormat: Reads.Aux[DecrBy, Long] =
     Reads.int[DecrBy]
 }
 
@@ -97,7 +97,7 @@ object MGet {
   implicit val writes: Writes[MGet] =
     Writes.writes[MGet]
 
-  implicit def readsFormat[A: ByteBufReader]: Reads[MGet, List] { type R = Option[A] } =
+  implicit def readsFormat[A: ByteBufReader]: Reads.Aux[MGet, Option[A]] =
     Reads.listOpt[MGet, A]
 }
 
@@ -106,7 +106,7 @@ object MSet {
   implicit def writes[A: ByteBufWriter]: Writes[MSet[A]] =
     Writes.writes[MSet[A]]
 
-  implicit val readsFormat: Reads[MSet[_], Id] { type R = Boolean } =
+  implicit val readsFormat: Reads.Aux[MSet[_], Boolean] =
     Reads.bool[MSet[_]]
 }
 
@@ -115,6 +115,6 @@ object StrLen {
   implicit val writes: Writes[StrLen] =
     Writes.writes[StrLen]
 
-  implicit val readsFormat: Reads[StrLen, Id] { type R = Long } =
+  implicit val readsFormat: Reads.Aux[StrLen, Long] =
     Reads.int[StrLen]
 }

@@ -18,14 +18,14 @@ package rx.redis.commands
 
 import scala.concurrent.duration.{ Deadline, FiniteDuration }
 
-import rx.redis.serialization.{ Id, Reads, Writes }
+import rx.redis.serialization.{ Reads, Writes }
 
 case class Del(keys: String*)
 object Del {
   implicit val writes: Writes[Del] =
     Writes.writes[Del]
 
-  implicit val readsFormat: Reads[Del, Id] { type R = Long } =
+  implicit val readsFormat: Reads.Aux[Del, Long] =
     Reads.int[Del]
 }
 
@@ -34,7 +34,7 @@ object Exists {
   implicit val writes: Writes[Exists] =
     Writes.writes[Exists]
 
-  implicit val readsFormat: Reads[Exists, Id] { type R = Boolean } =
+  implicit val readsFormat: Reads.Aux[Exists, Boolean] =
     Reads.bool[Exists]
 }
 
@@ -43,7 +43,7 @@ object Expire {
   implicit val writes: Writes[Expire] =
     Writes.writes[Expire]
 
-  implicit val readsFormat: Reads[Expire, Id] { type R = Boolean } =
+  implicit val readsFormat: Reads.Aux[Expire, Boolean] =
     Reads.bool[Expire]
 }
 
@@ -53,7 +53,7 @@ object ExpireAt {
   implicit val writes: Writes[ExpireAt] =
     Writes.writes[ExpireAt]
 
-  implicit val readsFormat: Reads[ExpireAt, Id] { type R = Boolean } =
+  implicit val readsFormat: Reads.Aux[ExpireAt, Boolean] =
     Reads.bool[ExpireAt]
 }
 
@@ -62,7 +62,7 @@ object Keys {
   implicit val writes: Writes[Keys] =
     Writes.writes[Keys]
 
-  implicit val readsFormat: Reads[Keys, List] { type R = String } =
+  implicit val readsFormat: Reads.Aux[Keys, String] =
     Reads.list[Keys, String]
 }
 
@@ -70,7 +70,7 @@ case object RandomKey {
   implicit val writes: Writes[RandomKey.type] =
     Writes.writes[RandomKey.type]
 
-  implicit val readsFormat: Reads[RandomKey.type, Id] { type R = Option[String] } =
+  implicit val readsFormat: Reads.Aux[RandomKey.type, Option[String]] =
     Reads.opt[RandomKey.type, String]
 }
 
@@ -79,6 +79,6 @@ object Ttl {
   implicit val writes: Writes[Ttl] =
     Writes.writes[Ttl]
 
-  implicit val readsFormat: Reads[Ttl, Id] { type R = Long } =
+  implicit val readsFormat: Reads.Aux[Ttl, Long] =
     Reads.int[Ttl]
 }
