@@ -49,6 +49,8 @@ abstract class RawClient extends GenericClient {
 
   protected def closeClient(): Observable[Unit]
 
+  def shallowClose(): Observable[Unit] = netty.shallowClose()
+
   protected final def alloc: ByteBufAllocator = netty.alloc
 
   protected final def eagerObservable(f: ChannelFuture): Observable[Unit] = {

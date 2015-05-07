@@ -28,9 +28,14 @@ trait NettyClient {
 
   def send(bb: ByteBuf, receiver: Observer[RespType]): Unit
 
+  @deprecated("buffer is not used", "0.4.0")
   def buffer(data: RespType, receiver: Observer[RespType]): Unit
 
   def flush(): ChannelFuture
 
   def close(): Observable[Unit]
+
+  def reopen(): NettyClient
+
+  def shallowClose(): Observable[Unit]
 }

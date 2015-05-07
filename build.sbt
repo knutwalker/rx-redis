@@ -50,7 +50,7 @@ lazy val japi = project in file("language-bindings") / "java" enablePlugins Auto
   buildsUberJar,
   rxRedisSettings,
   name := "rx-redis-java",
-  libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "0.3.0")
+  libraryDependencies += "org.scala-lang.modules" %% "scala-java8-compat" % "0.4.0")
 
 lazy val `scala-examples` = project in file("examples") / "scala" enablePlugins AutomateHeaderPlugin dependsOn api settings (
   Revolver.settings,
@@ -121,7 +121,7 @@ lazy val buildSettings  = List(
   organizationHomepage := Some(url("http://knutwalker.de/")),
            description := "Reactive Extension for Redis",
           scalaVersion := "2.11.6",
-          nettyVersion := "4.0.27.Final",
+          nettyVersion := "4.0.28.Final",
          rxJavaVersion := "1.0.8",
         rxScalaVersion := "0.24.1")
 

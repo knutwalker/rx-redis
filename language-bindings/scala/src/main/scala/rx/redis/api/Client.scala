@@ -23,9 +23,10 @@ import scala.concurrent.duration.{ Deadline, FiniteDuration }
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.Observable
 
+import rx.redis.RedisCommand
 import rx.redis.clients.GenericClient
 import rx.redis.resp.RespType
-import rx.redis.serialization.{ ByteBufFormat, ByteBufReader, ByteBufWriter }
+import rx.redis.serialization.{ Writes, ByteBufFormat, ByteBufReader, ByteBufWriter }
 
 final class Client(underlying: GenericClient) {
   @deprecated("Use disconnect", "0.4.0")
@@ -35,8 +36,20 @@ final class Client(underlying: GenericClient) {
   private[api] def disconnect(): Observable[Unit] =
     underlying.disconnect()
 
-  def command(dt: ByteBuf): Observable[RespType] =
-    underlying.command(dt)
+  def repoen(): Client =
+    new Client(underlying.reopen())
+
+  def shallowClose(): Observable[Unit] =
+    underlying.shallowClose()
+
+  def sendCommand(dt: ByteBuf): Observable[RespType] =
+    underlying.sendCommand(dt)
+
+  def command(s: String with RedisCommand): Observable[RespType] =
+    underlying.command(s)
+
+  def command[A: Writes](cmd: A): Observable[RespType] =
+    underlying.command(cmd)
 
   // ==============
   //  Key Commands

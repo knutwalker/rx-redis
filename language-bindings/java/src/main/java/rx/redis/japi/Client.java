@@ -66,7 +66,7 @@ public final class Client {
   }
 
   public Observable<RespType> command(final ByteBuf cmd) {
-    return underlying.command(cmd);
+    return underlying.sendCommand(cmd);
   }
 
   public <A> Observable<RespType> command(final A cmd, final Writes<A> A) {

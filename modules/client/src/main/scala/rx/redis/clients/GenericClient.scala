@@ -34,10 +34,14 @@ trait GenericClient extends KeyCommands
 
   def disconnect(): Observable[Unit]
 
-  def command(bb: ByteBuf): Observable[RespType]
+  def reopen(): GenericClient
+
+  def shallowClose(): Observable[Unit]
+
+  def sendCommand(bb: ByteBuf): Observable[RespType]
 
   final def command(s: String with RedisCommand): Observable[RespType] =
-    command(writeStringAsRedisCommand(s))
+    sendCommand(writeStringAsRedisCommand(s))
 
   final def command[A](cmd: A)(implicit A: Writes[A]): Observable[RespType] = {
     val buf = alloc.buffer()
@@ -49,7 +53,7 @@ trait GenericClient extends KeyCommands
         Observable.error(ex)
     }
     if (buf.isReadable) {
-      command(buf)
+      sendCommand(buf)
     } else {
       buf.release()
       Observable.empty()

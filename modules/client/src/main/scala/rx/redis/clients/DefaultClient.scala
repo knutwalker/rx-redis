@@ -26,14 +26,16 @@ import io.netty.buffer.ByteBuf
 
 private[redis] final class DefaultClient(protected val netty: NettyClient) extends RawClient {
 
-  def command(bb: ByteBuf): Observable[RespType] = {
+  def sendCommand(bb: ByteBuf): Observable[RespType] = {
     val s = AsyncSubject.create[RespType]()
     netty.send(bb, s)
     s
   }
 
+  def reopen(): GenericClient =
+    new DefaultClient(netty.reopen())
+
   protected def closeClient(): Observable[Unit] = {
     eagerObservable(netty.close())
   }
-
 }

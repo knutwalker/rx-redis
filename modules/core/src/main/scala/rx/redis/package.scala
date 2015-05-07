@@ -16,18 +16,14 @@
 
 package rx
 
+import scala.StringContext.treatEscapes
+
 package object redis {
 
   implicit class CommandQuote(val ctx: StringContext) extends AnyVal {
-    def cmd(args: String*): String with RedisCommand = {
-      val strings = ctx.parts.iterator
-      val expressions = args.iterator
-      val result = strings.
-        zipAll(expressions, "", "").
-        map { case (a, b) ⇒ a + b }.
-        foldLeft("")(_ + _).
-        replaceAllLiterally("\\r\\n", "\r\n")
-
+    def cmd(args: Any*): String with RedisCommand = {
+      val interpolated = ctx.standardInterpolator(treatEscapes, args)
+      val result = interpolated.replaceAllLiterally("\\r\\n", "\r\n")
       RedisCommand(result)
     }
   }
