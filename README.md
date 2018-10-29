@@ -73,7 +73,7 @@ import rx.redis.api.RxRedis
 
 val client = RxRedis("localhost", 6379)
 client.set("foo", "bar")
-client.get("foo", "bar").foreach(println)
+client.get("foo").foreach(println)
 
 client.del("foo").doOnCompleted(client.shutdown()).subscribe()
 RxRedis.await(client)
@@ -93,7 +93,7 @@ import rx.redis.japi.Client;
 
 final Client client = RxRedis.connect("localhost", 6379);
 client.set("foo", "bar");
-client.get("foo", "bar").forEach(System.out::println);
+client.get("foo").forEach(System.out::println);
 
 client.del("foo").doOnCompleted(client::shutdown).subscribe();
 RxRedis.await(client);
